@@ -18,12 +18,12 @@
             }
         </script>
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet">
+        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
     <body
-        class="theme-page surface-transition min-h-screen bg-linen text-cocoa dark:bg-ink dark:text-cream"
+        class="theme-page surface-transition min-h-screen bg-cream text-cocoa dark:bg-ink dark:text-cream"
         x-data="shopApp({
             apiBaseUrl: @js(config('services.denetfils_api.base_url')),
             locale: @js($currentLocale),
@@ -35,40 +35,48 @@
         })"
         x-init="init()"
     >
-        <header class="absolute inset-x-0 top-0 z-30">
-            <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
-                <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="text-lg font-semibold tracking-wide text-white">
-                    Denetfils
+        <header class="fixed inset-x-0 top-0 z-40 px-4 pt-3 sm:px-6">
+            <nav class="glass-panel mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-3 sm:px-5">
+                <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-cocoa text-sm font-black text-cream dark:bg-cream dark:text-ink">DF</span>
+                    <span>
+                        <span class="block text-sm font-extrabold uppercase tracking-[0.18em] text-cocoa dark:text-cream">Denetfils</span>
+                        <span class="hidden text-xs font-medium text-cocoa/60 dark:text-cream/60 sm:block">{{ __('home.nav.promise') }}</span>
+                    </span>
                 </a>
-                <div class="flex items-center gap-2 rounded-full bg-white/12 p-1 text-sm text-white ring-1 ring-white/20 backdrop-blur">
-                    <a
-                        href="{{ route('home.localized', ['locale' => $alternateLocale]) }}"
-                        class="rounded-full px-3 py-2 font-medium transition hover:bg-white/15"
-                        aria-label="{{ __('home.locale.switch_to', ['language' => __('home.locale.' . $alternateLocale)]) }}"
-                    >
-                        {{ strtoupper($alternateLocale) }}
-                    </a>
+                <div class="hidden items-center gap-1 rounded-full bg-cocoa/5 p-1 text-sm font-semibold text-cocoa/70 dark:bg-white/10 dark:text-cream/70 md:flex">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" class="rounded-full px-4 py-2 transition hover:bg-white hover:text-cocoa dark:hover:bg-white/10 dark:hover:text-cream">{{ __('home.nav.shop') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="rounded-full px-4 py-2 transition hover:bg-white hover:text-cocoa dark:hover:bg-white/10 dark:hover:text-cream">{{ __('home.nav.checkout') }}</a>
+                </div>
+                <div class="flex items-center gap-2">
                     <button
                         type="button"
-                        class="rounded-full px-3 py-2 font-medium transition hover:bg-white/15"
+                        class="rounded-full bg-terracotta px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-clay"
                         x-on:click="loadCart(true)"
                     >
                         {{ __('home.cart.title') }}
                         <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-cocoa" x-text="itemCount"></span>
                     </button>
-                    <div class="flex rounded-full bg-black/12 p-0.5" aria-label="{{ __('home.theme.label') }}">
+                    <a
+                        href="{{ route('home.localized', ['locale' => $alternateLocale]) }}"
+                        class="rounded-full border border-cocoa/10 bg-white/70 px-3 py-2 text-sm font-bold text-cocoa transition hover:border-terracotta/40 dark:border-white/10 dark:bg-white/5 dark:text-cream"
+                        aria-label="{{ __('home.locale.switch_to', ['language' => __('home.locale.' . $alternateLocale)]) }}"
+                    >
+                        {{ strtoupper($alternateLocale) }}
+                    </a>
+                    <div class="hidden rounded-full border border-cocoa/10 bg-white/70 p-1 text-xs font-bold dark:border-white/10 dark:bg-white/5 sm:flex" aria-label="{{ __('home.theme.label') }}">
                         <button
                             type="button"
-                            class="rounded-full px-3 py-1.5 font-medium transition"
-                            x-bind:class="theme === 'light' ? 'bg-white text-cocoa' : 'text-white hover:bg-white/15'"
+                            class="rounded-full px-2.5 py-1.5 transition"
+                            x-bind:class="theme === 'light' ? 'bg-cocoa text-white dark:bg-cream dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
                             x-on:click="setTheme('light')"
                         >
                             {{ __('home.theme.light') }}
                         </button>
                         <button
                             type="button"
-                            class="rounded-full px-3 py-1.5 font-medium transition"
-                            x-bind:class="theme === 'dark' ? 'bg-white text-cocoa' : 'text-white hover:bg-white/15'"
+                            class="rounded-full px-2.5 py-1.5 transition"
+                            x-bind:class="theme === 'dark' ? 'bg-cocoa text-white dark:bg-cream dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
                             x-on:click="setTheme('dark')"
                         >
                             {{ __('home.theme.dark') }}
@@ -173,6 +181,13 @@
                 </div>
             </aside>
         </div>
+
+        <footer class="theme-band-soft border-t border-cocoa/10 bg-white px-5 py-10 text-sm text-cocoa/65 dark:border-white/10 dark:bg-ink dark:text-cream/65 sm:px-8">
+            <div class="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="font-semibold text-cocoa dark:text-cream">Denetfils</p>
+                <p>{{ __('home.footer.line') }}</p>
+            </div>
+        </footer>
 
         @livewireScripts
     </body>
