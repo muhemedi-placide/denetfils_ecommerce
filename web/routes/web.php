@@ -36,6 +36,14 @@ Route::get('/{locale}/paiement-securise', [ShopController::class, 'securePayment
     ->whereIn('locale', ['fr', 'en'])
     ->name('pages.payment');
 
+Route::get('/{locale}/panier', [ShopController::class, 'cart'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('cart.show');
+
+Route::get('/{locale}/commande', [ShopController::class, 'checkout'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('checkout.show');
+
 Route::get('/{locale}/products/{slug}', [ShopController::class, 'show'])
     ->whereIn('locale', ['fr', 'en'])
     ->name('products.show');
