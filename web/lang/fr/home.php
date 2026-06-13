@@ -171,6 +171,7 @@ return [
         'price' => 'Prix',
         'variant' => 'Variante',
         'available' => ':count disponibles',
+        'related_title' => 'Produits associés',
         'shipping_note' => 'Livraison, TVA et paiement sécurisé intégrés au parcours de commande.',
     ],
     'checkout' => [
