@@ -42,6 +42,7 @@ Terminal 1:
 ```powershell
 cd api
 php artisan migrate
+php artisan db:seed --class=CoreSeeder
 php artisan db:seed --class=EcommerceSeeder
 php artisan serve --host=127.0.0.1 --port=8000
 ```
@@ -64,6 +65,13 @@ php artisan serve --host=127.0.0.1 --port=8001
 Verifier:
 
 - API: `http://127.0.0.1:8000/api/v1/health`
+- Swagger UI: `http://127.0.0.1:8000/api/documentation`
+- OpenAPI JSON: `http://127.0.0.1:8000/docs`
+- SEO site API: `http://127.0.0.1:8000/api/v1/seo/site?locale=fr`
+- Robots: `http://127.0.0.1:8000/robots.txt`
+- Sitemap XML: `http://127.0.0.1:8000/sitemap.xml`
+- Auth API: `http://127.0.0.1:8000/api/v1/auth/login`
+- Pays supportes API: `http://127.0.0.1:8000/api/v1/supported-countries?locale=fr`
 - Categories API: `http://127.0.0.1:8000/api/v1/categories?locale=fr`
 - Produits API: `http://127.0.0.1:8000/api/v1/products?locale=fr`
 - Produits filtres: `http://127.0.0.1:8000/api/v1/products?locale=fr&category=boissons-naturelles&q=hibiscus&sort=price_desc`
@@ -76,6 +84,7 @@ Verifier:
 ```powershell
 cd api
 php artisan test
+php artisan l5-swagger:generate
 
 cd ..\web
 php artisan test
