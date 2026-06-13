@@ -33,24 +33,9 @@ return [
     'slider' => [
         'badge' => 'Sélection Denetfils',
         'items' => [
-            [
-                'label' => 'Aides culinaires',
-                'title' => 'Pâte de djon djon & piment Edenne pour redonner vie à vos plats.',
-                'body' => 'Deux essentiels de la cuisine haïtienne : le djondjon pour parfumer les mets et le piment Edenne pour une chaleur maîtrisée.',
-                'image' => 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1400&q=85',
-            ],
-            [
-                'label' => 'Épicerie haïtienne',
-                'title' => 'Céréales, féculents, sauces et boissons pour une cuisine généreuse.',
-                'body' => 'Des produits soigneusement sélectionnés pour préserver le goût, la tradition et la qualité dans chaque panier.',
-                'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=85',
-            ],
-            [
-                'label' => 'Recettes & transmission',
-                'title' => 'Une maison familiale qui fait voyager les saveurs haïtiennes.',
-                'body' => 'DEN & FILS prolonge un héritage culinaire transmis depuis plusieurs générations, entre mémoire familiale et exigence moderne.',
-                'image' => 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1400&q=85',
-            ],
+            ['label' => 'Aides culinaires', 'title' => 'Pâte de djon djon & piment Edenne pour redonner vie à vos plats.', 'body' => 'Deux essentiels de la cuisine haïtienne : le djondjon pour parfumer les mets et le piment Edenne pour une chaleur maîtrisée.', 'image' => 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1400&q=85'],
+            ['label' => 'Épicerie haïtienne', 'title' => 'Céréales, féculents, sauces et boissons pour une cuisine généreuse.', 'body' => 'Des produits soigneusement sélectionnés pour préserver le goût, la tradition et la qualité dans chaque panier.', 'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=85'],
+            ['label' => 'Recettes & transmission', 'title' => 'Une maison familiale qui fait voyager les saveurs haïtiennes.', 'body' => 'DEN & FILS prolonge un héritage culinaire transmis depuis plusieurs générations, entre mémoire familiale et exigence moderne.', 'image' => 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1400&q=85'],
         ],
     ],
     'about' => [
@@ -64,11 +49,7 @@ return [
         'vision_title' => 'Notre vision',
         'vision_body' => 'Basée en France, DEN & FILS supervise l’importation, la sélection, la fabrication et la distribution. La société porte les marques LAKAY, SELAKAY et KETIKOTI, avec une volonté claire : protéger l’authenticité des recettes et garantir une qualité constante.',
         'reach_title' => 'Présence internationale',
-        'reach_items' => [
-            'Europe : distribution via des grossistes spécialisés.',
-            'Canada : partenariats commerciaux fiables.',
-            'États-Unis : présence via SELAKAY LLC et DEN & FILS LLC.',
-        ],
+        'reach_items' => ['Europe : distribution via des grossistes spécialisés.', 'Canada : partenariats commerciaux fiables.', 'États-Unis : présence via SELAKAY LLC et DEN & FILS LLC.'],
         'commitment_title' => 'Notre engagement',
         'commitment_body' => 'DEN & FILS travaille avec des coopératives locales sélectionnées pour la qualité, le respect humain et le développement local. L’entreprise affirme aussi une mission sociale : soutenir l’éducation des enfants en Haïti, particulièrement dans les zones vulnérables.',
         'points' => [
@@ -91,16 +72,9 @@ return [
         ['value' => '5+', 'label' => 'Générations de transmission culinaire familiale.'],
         ['value' => '3', 'label' => 'Présence commerciale : Europe, Canada et États-Unis.'],
     ],
-    'categories' => [
-        'eyebrow' => 'Rayons populaires',
-        'title' => 'Trouvez rapidement les produits Denetfils.',
-        'body' => 'Aides culinaires, féculents, boissons, sauces et snacks : une navigation claire pour composer votre panier.',
-        'count' => ':count produits',
-    ],
+    'categories' => ['eyebrow' => 'Rayons populaires', 'title' => 'Trouvez rapidement les produits Denetfils.', 'body' => 'Aides culinaires, féculents, boissons, sauces et snacks : une navigation claire pour composer votre panier.', 'count' => ':count produits'],
     'offers' => [
-        'main_eyebrow' => 'À découvrir',
-        'main_title' => 'Les essentiels de la cuisine haïtienne.',
-        'cta' => 'Voir les produits',
+        'main_eyebrow' => 'À découvrir', 'main_title' => 'Les essentiels de la cuisine haïtienne.', 'cta' => 'Voir les produits',
         'cards' => [
             ['eyebrow' => 'Djondjon', 'title' => 'Pâte de djon djon', 'body' => 'Une aide culinaire authentique pour parfumer riz, sauces et plats de fête.'],
             ['eyebrow' => 'Edenne', 'title' => 'Pâte de piment', 'body' => 'Une touche de feu maîtrisée pour relever les recettes caribéennes.'],
@@ -120,35 +94,63 @@ return [
             ['date' => '05/11/2025', 'category' => 'Recette', 'title' => 'Recette de riz Djondjon', 'body' => 'Un classique haïtien pour cuisiner le riz avec la pâte de djon djon SELAKAY.'],
         ],
     ],
-    'products' => [
-        'eyebrow' => 'Catalogue boutique',
-        'title' => 'Des produits authentiques, prêts à rejoindre votre cuisine.',
-        'body' => 'Image, origine, disponibilité, prix et bouton panier : chaque carte garde les informations essentielles.',
-        'cta' => 'Au panier',
-        'stock_label' => ':count en stock',
-        'api_error' => 'Le catalogue est momentanément indisponible. Veuillez réessayer dans quelques instants.',
-        'empty' => 'Aucun produit n’est disponible pour le moment.',
-    ],
-    'filters' => [
-        'search' => 'Recherche', 'search_placeholder' => 'Rechercher un produit, une origine ou une référence.', 'category' => 'Catégorie', 'all_categories' => 'Toutes les catégories', 'sort' => 'Tri',
-        'sort_options' => ['default' => 'Sélection Denetfils', 'latest' => 'Plus récents', 'price_asc' => 'Prix croissant', 'price_desc' => 'Prix décroissant'],
-        'apply' => 'Filtrer', 'reset' => 'Réinitialiser',
-    ],
-    'cart' => [
-        'title' => 'Panier', 'subtitle' => 'Vos produits sélectionnés sont conservés sur cet appareil.', 'close' => 'Fermer le panier', 'loading' => 'Chargement du panier...', 'empty' => 'Votre panier est vide.', 'remove' => 'Retirer cet article', 'total' => 'Total', 'checkout_later' => 'Passer la commande', 'api_error' => 'Impossible de mettre à jour le panier.', 'expired' => 'Ce panier n’est plus disponible. Un nouveau panier sera créé au prochain ajout.', 'empty_total' => '0,00 EUR',
-    ],
-    'product' => [
-        'back' => 'Retour au catalogue', 'details' => 'Informations produit', 'details_body' => 'Une fiche claire pour consulter les informations utiles avant l’achat.', 'category' => 'Catégorie', 'sku' => 'Référence', 'stock' => 'Stock', 'weight' => 'Poids', 'price' => 'Prix', 'variant' => 'Variante', 'available' => ':count disponibles', 'related_title' => 'Produits associés', 'shipping_note' => 'Livraison, TVA et paiement sécurisé intégrés au parcours de commande.',
-    ],
+    'products' => ['eyebrow' => 'Catalogue boutique', 'title' => 'Des produits authentiques, prêts à rejoindre votre cuisine.', 'body' => 'Image, origine, disponibilité, prix et bouton panier : chaque carte garde les informations essentielles.', 'cta' => 'Au panier', 'stock_label' => ':count en stock', 'api_error' => 'Le catalogue est momentanément indisponible. Veuillez réessayer dans quelques instants.', 'empty' => 'Aucun produit n’est disponible pour le moment.'],
+    'filters' => ['search' => 'Recherche', 'search_placeholder' => 'Rechercher un produit, une origine ou une référence.', 'category' => 'Catégorie', 'all_categories' => 'Toutes les catégories', 'sort' => 'Tri', 'sort_options' => ['default' => 'Sélection Denetfils', 'latest' => 'Plus récents', 'price_asc' => 'Prix croissant', 'price_desc' => 'Prix décroissant'], 'apply' => 'Filtrer', 'reset' => 'Réinitialiser'],
+    'cart' => ['title' => 'Panier', 'subtitle' => 'Vos produits sélectionnés sont conservés sur cet appareil.', 'close' => 'Fermer le panier', 'loading' => 'Chargement du panier...', 'empty' => 'Votre panier est vide.', 'remove' => 'Retirer cet article', 'total' => 'Total', 'checkout_later' => 'Passer la commande', 'api_error' => 'Impossible de mettre à jour le panier.', 'expired' => 'Ce panier n’est plus disponible. Un nouveau panier sera créé au prochain ajout.', 'empty_total' => '0,00 EUR'],
+    'product' => ['back' => 'Retour au catalogue', 'details' => 'Informations produit', 'details_body' => 'Une fiche claire pour consulter les informations utiles avant l’achat.', 'category' => 'Catégorie', 'sku' => 'Référence', 'stock' => 'Stock', 'weight' => 'Poids', 'price' => 'Prix', 'variant' => 'Variante', 'available' => ':count disponibles', 'related_title' => 'Produits associés', 'shipping_note' => 'Livraison, TVA et paiement sécurisé intégrés au parcours de commande.'],
     'checkout' => [
-        'eyebrow' => 'Infos utiles',
-        'title' => 'Commander chez Denetfils.',
-        'body' => 'Retrouvez les informations qui aident à commander sereinement : livraison, disponibilité et accompagnement client.',
+        'eyebrow' => 'Infos utiles', 'title' => 'Commander chez Denetfils.', 'body' => 'Retrouvez les informations qui aident à commander sereinement : livraison, disponibilité et accompagnement client.',
         'steps' => [
             ['number' => '01', 'title' => 'Livraison', 'body' => 'Livraison offerte dès 35€ et informations visibles avant validation.'],
             ['number' => '02', 'title' => 'Disponibilité', 'body' => 'Les produits indiquent leur stock pour éviter les mauvaises surprises.'],
             ['number' => '03', 'title' => 'Assistance', 'body' => 'Contact par téléphone, email ou WhatsApp selon vos besoins.'],
         ],
     ],
-    'footer' => ['line' => 'DEN & FILS — produits alimentaires haïtiens, tradition familiale et livraison en Europe.'],
+    'utility_pages' => [
+        'delivery' => [
+            'eyebrow' => 'Liens utiles', 'title' => 'Livraison', 'intro' => 'Retrouvez les informations essentielles pour préparer votre commande DEN & FILS.',
+            'sections' => [
+                ['title' => 'Livraison gratuite dès 35€', 'body' => 'L’offre spéciale de la boutique indique une livraison gratuite à partir de 35€ de commande. Les conditions exactes sont affichées dans le parcours d’achat selon l’adresse et le panier.'],
+                ['title' => 'Adresse de livraison', 'body' => 'Le client doit renseigner une adresse complète et valide. Les frais et possibilités de livraison sont confirmés avant validation de la commande.'],
+                ['title' => 'Assistance', 'body' => 'Pour toute question, DEN & FILS est joignable par téléphone au +33 6 95 73 73 90 ou par email à contact@denetfils.fr.'],
+            ],
+        ],
+        'legal' => [
+            'eyebrow' => 'Liens utiles', 'title' => 'Mentions légales', 'intro' => 'Informations officielles de la société DEN et FILS.',
+            'sections' => [
+                ['title' => 'Éditeur du site', 'body' => 'DEN et FILS, 4 Rue des Grands Champs, 51520 Saint Martin sur le Pré, France.'],
+                ['title' => 'Contact', 'body' => 'Téléphone : +33 6 95 73 73 90. Email : contact@denetfils.fr.'],
+                ['title' => 'TVA', 'body' => 'N° TVA : FR88 939445672.'],
+            ],
+        ],
+        'terms' => [
+            'eyebrow' => 'Liens utiles', 'title' => 'Conditions d’utilisation', 'intro' => 'Règles générales d’utilisation de la boutique DEN & FILS.',
+            'sections' => [
+                ['title' => 'Utilisation du site', 'body' => 'Le visiteur utilise le site pour consulter les produits, ajouter des articles au panier et accéder aux informations commerciales de DEN & FILS.'],
+                ['title' => 'Informations produits', 'body' => 'Les descriptions, prix et disponibilités peuvent évoluer. Le client doit vérifier le récapitulatif de commande avant validation.'],
+                ['title' => 'Newsletter et données', 'body' => 'L’inscription à la newsletter permet de recevoir les offres, nouveautés et actualités. Le client peut se désinscrire à tout moment.'],
+            ],
+        ],
+        'payment' => [
+            'eyebrow' => 'Liens utiles', 'title' => 'Paiement sécurisé', 'intro' => 'DEN & FILS met en avant une commande simple et sécurisée.',
+            'sections' => [
+                ['title' => 'Commande sécurisée', 'body' => 'Le paiement intervient dans le parcours de commande après vérification du panier, de la livraison et du total à régler.'],
+                ['title' => 'Vérification du panier', 'body' => 'Le client peut contrôler les produits, quantités, prix et frais avant de finaliser son achat.'],
+                ['title' => 'Support client', 'body' => 'En cas de doute avant paiement, le client peut contacter DEN & FILS par téléphone ou par email.'],
+            ],
+        ],
+    ],
+    'footer' => [
+        'line' => 'DEN & FILS — produits alimentaires haïtiens, tradition familiale et livraison en Europe.',
+        'products_title' => 'Produits',
+        'promotions' => 'Promotions',
+        'new_products' => 'Nouveaux produits',
+        'best_sellers' => 'Meilleures ventes',
+        'useful_links_title' => 'Liens utiles',
+        'delivery' => 'Livraison',
+        'legal' => 'Mentions légales',
+        'terms' => "Conditions d'utilisation",
+        'secure_payment' => 'Paiement sécurisé',
+        'information_title' => 'Informations',
+    ],
 ];
