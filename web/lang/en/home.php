@@ -72,6 +72,8 @@ return [
         'eyebrow' => 'About Denetfils',
         'title' => 'A food shop designed for customers in France and Europe.',
         'body' => 'Denetfils highlights a clear selection of food products with a readable, reassuring shopping experience adapted to European market habits.',
+        'image_alt' => 'Selection of fresh food and grocery products for family cooking.',
+        'image_caption' => 'Products selected for a clear, serious and trustworthy customer experience.',
         'points' => [
             ['eyebrow' => 'Selection', 'title' => 'Useful products', 'body' => 'References selected for everyday cooking.'],
             ['eyebrow' => 'Clarity', 'title' => 'Simple shopping', 'body' => 'Search, aisles and cart stay easy to use.'],
