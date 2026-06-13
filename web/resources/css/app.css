@@ -12,11 +12,20 @@
 
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 9.5rem;
 }
 
 body {
     @apply bg-cream text-cocoa antialiased;
+    overflow-x: hidden;
     text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+select {
+    -webkit-tap-highlight-color: transparent;
 }
 
 img {
@@ -48,16 +57,29 @@ img {
 }
 
 .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full bg-terracotta px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition duration-200 hover:bg-clay disabled:cursor-wait disabled:opacity-70;
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-full bg-terracotta px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-white transition duration-200 hover:bg-clay disabled:cursor-wait disabled:opacity-70 sm:px-5;
     box-shadow: 0 12px 28px rgba(79, 176, 0, 0.24);
 }
 
 .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full border border-leaf/20 bg-white px-5 py-3 text-sm font-bold uppercase tracking-wide text-cocoa transition duration-200 hover:border-terracotta hover:bg-mint hover:text-leaf;
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-full border border-leaf/20 bg-white px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-cocoa transition duration-200 hover:border-terracotta hover:bg-mint hover:text-leaf sm:px-5;
 }
 
 .input-premium {
-    @apply rounded-full border border-leaf/15 bg-white px-4 py-3 text-sm text-cocoa outline-none transition placeholder:text-cocoa/45 focus:border-terracotta focus:ring-4 focus:ring-terracotta/10;
+    @apply min-h-[44px] rounded-full border border-leaf/20 bg-white px-4 py-3 text-sm text-cocoa outline-none transition placeholder:text-cocoa/40 focus:border-terracotta focus:ring-4 focus:ring-terracotta/10;
+}
+
+.mobile-scrollbarless {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.mobile-scrollbarless::-webkit-scrollbar {
+    display: none;
+}
+
+.safe-bottom {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 
 .soft-grid {
@@ -90,6 +112,21 @@ img {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (max-width: 767px) {
+    html {
+        scroll-padding-top: 12rem;
+    }
+
+    #home,
+    #home > div {
+        min-height: 72svh;
+    }
+
+    .premium-card:hover {
+        transform: none;
     }
 }
 
