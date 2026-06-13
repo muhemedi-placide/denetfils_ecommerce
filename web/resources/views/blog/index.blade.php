@@ -21,7 +21,10 @@
                     <article class="group overflow-hidden rounded-[1.5rem] border border-leaf/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/5">
                         <div class="h-2 bg-terracotta"></div>
                         <div class="p-6">
-                            <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $post['category'] }}</p>
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $post['category'] }}</p>
+                                <time class="rounded-full bg-mint px-3 py-1 text-xs font-bold text-leaf dark:bg-white/10 dark:text-cream">{{ $post['date'] }}</time>
+                            </div>
                             <h2 class="mt-4 text-xl font-extrabold leading-snug text-cocoa transition group-hover:text-leaf dark:text-cream">
                                 {{ $post['title'] }}
                             </h2>
