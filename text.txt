@@ -262,6 +262,8 @@ GET    /api/v1/tax/calculate         # Calculer TVA pour adresse
 GET    /api/v1/shipping/quote        # Tarif livraison
 ```
 
+couche SEO/performance : métas dynamiques, canonical, hreflang, Open Graph, Twitter Card, JSON-LD Organisation/Site/Breadcrumb/Product/Article, robots.txt, sitemap.xml, et optimiser les images/chargements critiques.
+
 ### 6.2 Authentification
 - Sanctum tokens pour clients
 - API key pour intégrations backend
