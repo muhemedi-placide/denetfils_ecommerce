@@ -7,7 +7,7 @@
     $robots = trim($__env->yieldContent('robots')) ?: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
     $ogType = trim($__env->yieldContent('og_type')) ?: 'website';
     $ogImage = trim($__env->yieldContent('og_image')) ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=85';
-    $preloadImage = trim($__env->yieldContent('preload_image')) ?: $ogImage;
+    $preloadImage = trim($__env->yieldContent('preload_image'));
     $jsonLd = [
         '@context' => 'https://schema.org',
         '@graph' => [
