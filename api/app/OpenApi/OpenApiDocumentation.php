@@ -20,7 +20,9 @@ use OpenApi\Attributes as OA;
         new OA\Tag(name: 'Catalog', description: 'Categories and localized products'),
         new OA\Tag(name: 'Cart', description: 'Guest cart API'),
         new OA\Tag(name: 'Europe', description: 'Supported countries and GDPR consent metadata'),
+        new OA\Tag(name: 'SEO', description: 'SEO, robots, sitemap and structured data'),
         new OA\Tag(name: 'Admin', description: 'Protected administration endpoints'),
+        new OA\Tag(name: 'Admin Catalog', description: 'Protected catalog management endpoints'),
     ],
 )]
 #[OA\SecurityScheme(
@@ -134,13 +136,209 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'name', type: 'string', example: 'Miel de montagne'),
         new OA\Property(property: 'slug', type: 'string', example: 'miel-de-montagne'),
         new OA\Property(property: 'description', type: 'string'),
+        new OA\Property(property: 'short_description', type: 'string', nullable: true),
         new OA\Property(property: 'origin', type: 'string', nullable: true, example: 'Origine France'),
         new OA\Property(property: 'sku', type: 'string', example: 'DEN-MIEL-250'),
         new OA\Property(property: 'price_cents', type: 'integer', example: 890),
         new OA\Property(property: 'formatted_price', type: 'string', example: '8,90 EUR'),
         new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
         new OA\Property(property: 'stock_quantity', type: 'integer', example: 35),
+        new OA\Property(property: 'primary_image', ref: '#/components/schemas/OptimizedImage', nullable: true),
+        new OA\Property(property: 'images', type: 'array', items: new OA\Items(ref: '#/components/schemas/OptimizedImage')),
+        new OA\Property(property: 'rich_content', ref: '#/components/schemas/ProductRichContent'),
+        new OA\Property(property: 'commerce', ref: '#/components/schemas/ProductCommerce'),
+        new OA\Property(property: 'seo', ref: '#/components/schemas/SeoPayload'),
     ],
+)]
+#[OA\Schema(
+    schema: 'OptimizedImage',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'url', type: 'string', format: 'uri'),
+        new OA\Property(property: 'alt_text', type: 'string', nullable: true),
+        new OA\Property(property: 'width', type: 'integer', nullable: true, example: 1200),
+        new OA\Property(property: 'height', type: 'integer', nullable: true, example: 900),
+        new OA\Property(property: 'aspect_ratio', type: 'number', nullable: true, example: 1.3333),
+        new OA\Property(property: 'dominant_color', type: 'string', nullable: true, example: '#f4efe7'),
+        new OA\Property(property: 'loading', type: 'string', example: 'eager'),
+        new OA\Property(property: 'fetch_priority', type: 'string', example: 'high'),
+        new OA\Property(property: 'sources', type: 'array', items: new OA\Items(type: 'object')),
+    ],
+)]
+#[OA\Schema(
+    schema: 'ProductRichContent',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'badges', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'highlights', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'ingredients', type: 'string', nullable: true),
+        new OA\Property(property: 'allergens', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'nutrition_facts', type: 'object'),
+        new OA\Property(property: 'certifications', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'storage_instructions', type: 'string', nullable: true),
+        new OA\Property(property: 'usage_instructions', type: 'string', nullable: true),
+    ],
+)]
+#[OA\Schema(
+    schema: 'ProductCommerce',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'brand', type: 'string', example: 'Denetfils'),
+        new OA\Property(property: 'availability', type: 'string', example: 'in_stock'),
+        new OA\Property(property: 'is_available', type: 'boolean', example: true),
+        new OA\Property(property: 'max_order_quantity', type: 'integer', example: 12),
+        new OA\Property(property: 'rating', type: 'object'),
+        new OA\Property(property: 'sales_count', type: 'integer', example: 240),
+        new OA\Property(property: 'shipping', type: 'object'),
+        new OA\Property(property: 'return_policy', type: 'string', nullable: true),
+        new OA\Property(property: 'guarantee', type: 'string', nullable: true),
+    ],
+)]
+#[OA\Schema(
+    schema: 'SeoPayload',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'meta', type: 'object'),
+        new OA\Property(property: 'canonical', type: 'string', format: 'uri'),
+        new OA\Property(property: 'hreflang', type: 'array', items: new OA\Items(type: 'object')),
+        new OA\Property(property: 'open_graph', type: 'object'),
+        new OA\Property(property: 'twitter_card', type: 'object'),
+        new OA\Property(property: 'json_ld', type: 'object'),
+    ],
+)]
+#[OA\Schema(
+    schema: 'LocalizedText',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'fr', type: 'string', example: 'Miel de montagne'),
+        new OA\Property(property: 'en', type: 'string', example: 'Mountain honey'),
+    ],
+)]
+#[OA\Schema(
+    schema: 'AdminCategory',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'name', ref: '#/components/schemas/LocalizedText'),
+        new OA\Property(property: 'slug', type: 'string', example: 'epicerie-fine'),
+        new OA\Property(property: 'sort_order', type: 'integer', example: 1),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+        new OA\Property(property: 'products_count', type: 'integer', nullable: true, example: 3),
+    ],
+)]
+#[OA\Schema(
+    schema: 'AdminProductImage',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'url', type: 'string', format: 'uri', example: 'https://example.com/product.jpg'),
+        new OA\Property(property: 'width', type: 'integer', nullable: true, example: 1200),
+        new OA\Property(property: 'height', type: 'integer', nullable: true, example: 900),
+        new OA\Property(property: 'dominant_color', type: 'string', nullable: true, example: '#f4efe7'),
+        new OA\Property(property: 'alt_text', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'sort_order', type: 'integer', example: 1),
+    ],
+)]
+#[OA\Schema(
+    schema: 'AdminProductVariant',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'name', ref: '#/components/schemas/LocalizedText'),
+        new OA\Property(property: 'sku', type: 'string', nullable: true, example: 'DEN-MIEL-250-A'),
+        new OA\Property(property: 'price_adjustment_cents', type: 'integer', example: 0),
+        new OA\Property(property: 'stock_quantity', type: 'integer', nullable: true, example: 35),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+    ],
+)]
+#[OA\Schema(
+    schema: 'AdminProduct',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'category_id', type: 'integer', example: 1),
+        new OA\Property(property: 'category', ref: '#/components/schemas/AdminCategory'),
+        new OA\Property(property: 'name', ref: '#/components/schemas/LocalizedText'),
+        new OA\Property(property: 'slug', type: 'string', example: 'miel-de-montagne'),
+        new OA\Property(property: 'description', ref: '#/components/schemas/LocalizedText'),
+        new OA\Property(property: 'short_description', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'origin', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'highlights', type: 'object', nullable: true),
+        new OA\Property(property: 'badges', type: 'object', nullable: true),
+        new OA\Property(property: 'tags', type: 'object', nullable: true),
+        new OA\Property(property: 'ingredients', type: 'object', nullable: true),
+        new OA\Property(property: 'allergens', type: 'object', nullable: true),
+        new OA\Property(property: 'nutrition_facts', type: 'object', nullable: true),
+        new OA\Property(property: 'certifications', type: 'object', nullable: true),
+        new OA\Property(property: 'storage_instructions', type: 'object', nullable: true),
+        new OA\Property(property: 'usage_instructions', type: 'object', nullable: true),
+        new OA\Property(property: 'shipping_profile', type: 'object', nullable: true),
+        new OA\Property(property: 'return_policy', type: 'object', nullable: true),
+        new OA\Property(property: 'guarantee', type: 'object', nullable: true),
+        new OA\Property(property: 'sku', type: 'string', example: 'DEN-MIEL-250'),
+        new OA\Property(property: 'price_cents', type: 'integer', example: 890),
+        new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'weight_grams', type: 'integer', nullable: true, example: 250),
+        new OA\Property(property: 'stock_quantity', type: 'integer', example: 35),
+        new OA\Property(property: 'max_order_quantity', type: 'integer', nullable: true, example: 12),
+        new OA\Property(property: 'rating_average', type: 'number', example: 4.7),
+        new OA\Property(property: 'rating_count', type: 'integer', example: 38),
+        new OA\Property(property: 'sales_count', type: 'integer', example: 240),
+        new OA\Property(property: 'seo_title', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'seo_description', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'seo_keywords', type: 'object', nullable: true),
+        new OA\Property(property: 'canonical_path', type: 'string', nullable: true, example: '/{locale}/products/miel-de-montagne'),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+        new OA\Property(property: 'images', type: 'array', items: new OA\Items(ref: '#/components/schemas/AdminProductImage')),
+        new OA\Property(property: 'variants', type: 'array', items: new OA\Items(ref: '#/components/schemas/AdminProductVariant')),
+    ],
+)]
+#[OA\Schema(
+    schema: 'AdminCategoryRequest',
+    required: ['name', 'slug'],
+    properties: [
+        new OA\Property(property: 'name', ref: '#/components/schemas/LocalizedText'),
+        new OA\Property(property: 'slug', type: 'string', example: 'coffrets-europe'),
+        new OA\Property(property: 'sort_order', type: 'integer', example: 10),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
+    schema: 'AdminProductRequest',
+    required: ['category_id', 'name', 'slug', 'description', 'sku', 'price_cents', 'stock_quantity'],
+    properties: [
+        new OA\Property(property: 'category_id', type: 'integer', example: 1),
+        new OA\Property(property: 'name', ref: '#/components/schemas/LocalizedText'),
+        new OA\Property(property: 'slug', type: 'string', example: 'coffret-decouverte'),
+        new OA\Property(property: 'description', ref: '#/components/schemas/LocalizedText'),
+        new OA\Property(property: 'short_description', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'origin', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'highlights', type: 'object', nullable: true),
+        new OA\Property(property: 'badges', type: 'object', nullable: true),
+        new OA\Property(property: 'nutrition_facts', type: 'object', nullable: true),
+        new OA\Property(property: 'shipping_profile', type: 'object', nullable: true),
+        new OA\Property(property: 'return_policy', type: 'object', nullable: true),
+        new OA\Property(property: 'sku', type: 'string', example: 'DEN-BOX-EU-001'),
+        new OA\Property(property: 'price_cents', type: 'integer', example: 2590),
+        new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'weight_grams', type: 'integer', nullable: true, example: 1200),
+        new OA\Property(property: 'stock_quantity', type: 'integer', example: 25),
+        new OA\Property(property: 'max_order_quantity', type: 'integer', nullable: true, example: 6),
+        new OA\Property(property: 'rating_average', type: 'number', nullable: true, example: 4.8),
+        new OA\Property(property: 'rating_count', type: 'integer', nullable: true, example: 14),
+        new OA\Property(property: 'sales_count', type: 'integer', nullable: true, example: 80),
+        new OA\Property(property: 'seo_title', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'seo_description', ref: '#/components/schemas/LocalizedText', nullable: true),
+        new OA\Property(property: 'seo_keywords', type: 'object', nullable: true),
+        new OA\Property(property: 'canonical_path', type: 'string', nullable: true),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+        new OA\Property(property: 'images', type: 'array', items: new OA\Items(ref: '#/components/schemas/AdminProductImage')),
+        new OA\Property(property: 'variants', type: 'array', items: new OA\Items(ref: '#/components/schemas/AdminProductVariant')),
+    ],
+    type: 'object',
 )]
 #[OA\Schema(
     schema: 'Cart',
@@ -290,6 +488,47 @@ class OpenApiDocumentation
         ],
     )]
     public function health(): void
+    {
+    }
+
+    #[OA\Get(
+        path: '/api/v1/seo/site',
+        operationId: 'seoSite',
+        tags: ['SEO'],
+        parameters: [
+            new OA\Parameter(name: 'locale', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['fr', 'en'])),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Site SEO foundation', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/SeoPayload'),
+            ])),
+        ],
+    )]
+    public function seoSite(): void
+    {
+    }
+
+    #[OA\Get(
+        path: '/robots.txt',
+        operationId: 'robotsTxt',
+        tags: ['SEO'],
+        responses: [
+            new OA\Response(response: 200, description: 'Robots directives', content: new OA\MediaType(mediaType: 'text/plain')),
+        ],
+    )]
+    public function robotsTxt(): void
+    {
+    }
+
+    #[OA\Get(
+        path: '/sitemap.xml',
+        operationId: 'sitemapXml',
+        tags: ['SEO'],
+        responses: [
+            new OA\Response(response: 200, description: 'XML sitemap', content: new OA\MediaType(mediaType: 'application/xml')),
+        ],
+    )]
+    public function sitemapXml(): void
     {
     }
 
@@ -632,6 +871,156 @@ class OpenApiDocumentation
         ],
     )]
     public function meAddressesDestroy(): void
+    {
+    }
+
+    #[OA\Get(
+        path: '/api/v1/admin/categories',
+        operationId: 'adminCatalogCategoriesIndex',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        parameters: [
+            new OA\Parameter(name: 'q', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'is_active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Paginated admin categories', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AdminCategory')),
+            ])),
+        ],
+    )]
+    public function adminCatalogCategoriesIndex(): void
+    {
+    }
+
+    #[OA\Post(
+        path: '/api/v1/admin/categories',
+        operationId: 'adminCatalogCategoriesStore',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AdminCategoryRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Admin category created', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/AdminCategory'),
+            ])),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationError')),
+        ],
+    )]
+    public function adminCatalogCategoriesStore(): void
+    {
+    }
+
+    #[OA\Get(
+        path: '/api/v1/admin/categories/{category}',
+        operationId: 'adminCatalogCategoriesShow',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        parameters: [
+            new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Admin category detail', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/AdminCategory'),
+            ])),
+        ],
+    )]
+    public function adminCatalogCategoriesShow(): void
+    {
+    }
+
+    #[OA\Patch(
+        path: '/api/v1/admin/categories/{category}',
+        operationId: 'adminCatalogCategoriesUpdate',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        parameters: [
+            new OA\Parameter(name: 'category', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AdminCategoryRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Admin category updated', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/AdminCategory'),
+            ])),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationError')),
+        ],
+    )]
+    public function adminCatalogCategoriesUpdate(): void
+    {
+    }
+
+    #[OA\Get(
+        path: '/api/v1/admin/products',
+        operationId: 'adminCatalogProductsIndex',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        parameters: [
+            new OA\Parameter(name: 'q', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'category', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'category_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'is_active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Paginated admin products', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AdminProduct')),
+            ])),
+        ],
+    )]
+    public function adminCatalogProductsIndex(): void
+    {
+    }
+
+    #[OA\Post(
+        path: '/api/v1/admin/products',
+        operationId: 'adminCatalogProductsStore',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AdminProductRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Admin product created', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/AdminProduct'),
+            ])),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationError')),
+        ],
+    )]
+    public function adminCatalogProductsStore(): void
+    {
+    }
+
+    #[OA\Get(
+        path: '/api/v1/admin/products/{product}',
+        operationId: 'adminCatalogProductsShow',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        parameters: [
+            new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Admin product detail', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/AdminProduct'),
+            ])),
+        ],
+    )]
+    public function adminCatalogProductsShow(): void
+    {
+    }
+
+    #[OA\Patch(
+        path: '/api/v1/admin/products/{product}',
+        operationId: 'adminCatalogProductsUpdate',
+        security: [['sanctum' => []]],
+        tags: ['Admin Catalog'],
+        parameters: [
+            new OA\Parameter(name: 'product', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AdminProductRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Admin product updated', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/AdminProduct'),
+            ])),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ValidationError')),
+        ],
+    )]
+    public function adminCatalogProductsUpdate(): void
     {
     }
 

@@ -47,7 +47,21 @@ class ProductsApiTest extends TestCase
             ->assertJsonPath('data.slug', 'miel-de-montagne')
             ->assertJsonPath('data.name', 'Mountain honey')
             ->assertJsonPath('data.currency', 'EUR')
-            ->assertJsonPath('data.primary_image.alt_text', 'Jar of artisanal honey.');
+            ->assertJsonPath('data.primary_image.alt_text', 'Jar of artisanal honey.')
+            ->assertJsonPath('data.primary_image.loading', 'eager')
+            ->assertJsonPath('data.primary_image.fetch_priority', 'high')
+            ->assertJsonPath('data.rich_content.highlights.0', 'Premium selection')
+            ->assertJsonPath('data.commerce.availability', 'in_stock')
+            ->assertJsonPath('data.seo.open_graph.type', 'product')
+            ->assertJsonPath('data.seo.json_ld.product.@type', 'Product')
+            ->assertJsonPath('data.seo.json_ld.breadcrumb.@type', 'BreadcrumbList');
+
+        $this->assertStringContainsString(
+            '/en/products/miel-de-montagne',
+            $response->json('data.seo.canonical'),
+        );
+
+        $this->assertGreaterThanOrEqual(4, count($response->json('data.primary_image.sources')));
     }
 
     public function test_products_can_be_filtered_by_category_and_search(): void

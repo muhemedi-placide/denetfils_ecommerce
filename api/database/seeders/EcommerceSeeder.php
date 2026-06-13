@@ -40,6 +40,7 @@ class EcommerceSeeder extends Seeder
         });
 
         foreach ($this->products() as $productData) {
+            $productData = array_replace_recursive($this->defaultProductExperience(), $productData);
             $images = $productData['images'];
             $variants = $productData['variants'];
             $categorySlug = $productData['category_slug'];
@@ -60,6 +61,9 @@ class EcommerceSeeder extends Seeder
             foreach ($images as $index => $image) {
                 $product->images()->create([
                     ...$image,
+                    'width' => $image['width'] ?? 1200,
+                    'height' => $image['height'] ?? 900,
+                    'dominant_color' => $image['dominant_color'] ?? '#f4efe7',
                     'sort_order' => $index + 1,
                 ]);
             }
@@ -256,6 +260,95 @@ class EcommerceSeeder extends Seeder
                     ['name' => ['fr' => 'Sachet 80 g', 'en' => '80 g pouch'], 'sku' => 'DEN-INF-HIB-80-A', 'price_adjustment_cents' => 0, 'stock_quantity' => 40],
                 ],
             ],
+        ];
+    }
+
+    private function defaultProductExperience(): array
+    {
+        return [
+            'short_description' => [
+                'fr' => 'Produit selectionne par Denetfils pour une experience alimentaire fiable, claire et adaptee au marche europeen.',
+                'en' => 'A Denetfils selected product for a clear, reliable food shopping experience tailored for Europe.',
+            ],
+            'highlights' => [
+                'fr' => ['Selection premium', 'Prix en EUR', 'Preparation soignee', 'Fiche produit detaillee'],
+                'en' => ['Premium selection', 'EUR pricing', 'Careful preparation', 'Detailed product page'],
+            ],
+            'badges' => [
+                'fr' => ['Best seller', 'Stock suivi', 'Livraison UE'],
+                'en' => ['Best seller', 'Tracked stock', 'EU delivery'],
+            ],
+            'tags' => [
+                'fr' => ['epicerie', 'premium', 'denetfils'],
+                'en' => ['grocery', 'premium', 'denetfils'],
+            ],
+            'ingredients' => [
+                'fr' => 'Voir les informations detaillees sur l emballage fournisseur.',
+                'en' => 'See detailed information on the supplier packaging.',
+            ],
+            'allergens' => [
+                'fr' => ['Peut contenir des traces de fruits a coque ou sesame selon atelier.'],
+                'en' => ['May contain traces of nuts or sesame depending on the workshop.'],
+            ],
+            'nutrition_facts' => [
+                'serving_basis' => 'per_100g',
+                'energy_kcal' => null,
+                'fat_g' => null,
+                'saturated_fat_g' => null,
+                'carbohydrates_g' => null,
+                'sugars_g' => null,
+                'protein_g' => null,
+                'salt_g' => null,
+            ],
+            'certifications' => [
+                'fr' => ['Selection fournisseur verifiee'],
+                'en' => ['Verified supplier selection'],
+            ],
+            'storage_instructions' => [
+                'fr' => 'Conserver dans un endroit frais, sec et a l abri de la lumiere.',
+                'en' => 'Store in a cool, dry place away from light.',
+            ],
+            'usage_instructions' => [
+                'fr' => 'A consommer selon les indications du produit et la date de durabilite minimale.',
+                'en' => 'Use according to product instructions and best-before date.',
+            ],
+            'shipping_profile' => [
+                'dispatch_time' => [
+                    'fr' => 'Preparation sous 24 a 48 h ouvrables.',
+                    'en' => 'Prepared within 24 to 48 business hours.',
+                ],
+                'delivery_zone' => [
+                    'fr' => 'France et pays europeens supportes.',
+                    'en' => 'France and supported European countries.',
+                ],
+                'cold_chain' => false,
+                'free_shipping_threshold_cents' => 6900,
+            ],
+            'return_policy' => [
+                'fr' => 'Produit alimentaire non repris apres ouverture, sauf defaut ou erreur de preparation.',
+                'en' => 'Food products cannot be returned after opening, except for defects or preparation errors.',
+            ],
+            'guarantee' => [
+                'fr' => 'Controle qualite avant expedition et support client base en Europe.',
+                'en' => 'Quality check before dispatch and Europe-based customer support.',
+            ],
+            'max_order_quantity' => 12,
+            'rating_average' => 4.7,
+            'rating_count' => 38,
+            'sales_count' => 240,
+            'seo_title' => [
+                'fr' => 'Produit alimentaire premium Denetfils',
+                'en' => 'Denetfils premium food product',
+            ],
+            'seo_description' => [
+                'fr' => 'Achetez ce produit alimentaire Denetfils avec prix en EUR, details complets, livraison europeenne et fiche SEO structuree.',
+                'en' => 'Shop this Denetfils food product with EUR pricing, complete details, European delivery and structured SEO data.',
+            ],
+            'seo_keywords' => [
+                'fr' => ['denetfils', 'boutique alimentaire', 'produit premium'],
+                'en' => ['denetfils', 'food shop', 'premium product'],
+            ],
+            'published_at' => now(),
         ];
     }
 }

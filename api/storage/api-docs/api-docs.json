@@ -25,6 +25,77 @@
                 }
             }
         },
+        "/api/v1/seo/site": {
+            "get": {
+                "tags": [
+                    "SEO"
+                ],
+                "operationId": "seoSite",
+                "parameters": [
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "fr",
+                                "en"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Site SEO foundation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SeoPayload"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/robots.txt": {
+            "get": {
+                "tags": [
+                    "SEO"
+                ],
+                "operationId": "robotsTxt",
+                "responses": {
+                    "200": {
+                        "description": "Robots directives",
+                        "content": {
+                            "text/plain": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/sitemap.xml": {
+            "get": {
+                "tags": [
+                    "SEO"
+                ],
+                "operationId": "sitemapXml",
+                "responses": {
+                    "200": {
+                        "description": "XML sitemap",
+                        "content": {
+                            "application/xml": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/register": {
             "post": {
                 "tags": [
@@ -870,6 +941,416 @@
                 ]
             }
         },
+        "/api/v1/admin/categories": {
+            "get": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogCategoriesIndex",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated admin categories",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AdminCategory"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogCategoriesStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminCategoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Admin category created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminCategory"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/categories/{category}": {
+            "get": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogCategoriesShow",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin category detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminCategory"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogCategoriesUpdate",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminCategoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Admin category updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminCategory"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/products": {
+            "get": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogProductsIndex",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated admin products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AdminProduct"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogProductsStore",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Admin product created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminProduct"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/products/{product}": {
+            "get": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogProductsShow",
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin product detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminProduct"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogProductsUpdate",
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Admin product updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminProduct"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/admin/users": {
             "get": {
                 "tags": [
@@ -1488,6 +1969,10 @@
                     "description": {
                         "type": "string"
                     },
+                    "short_description": {
+                        "type": "string",
+                        "nullable": true
+                    },
                     "origin": {
                         "type": "string",
                         "example": "Origine France",
@@ -1512,6 +1997,647 @@
                     "stock_quantity": {
                         "type": "integer",
                         "example": 35
+                    },
+                    "primary_image": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/OptimizedImage"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OptimizedImage"
+                        }
+                    },
+                    "rich_content": {
+                        "$ref": "#/components/schemas/ProductRichContent"
+                    },
+                    "commerce": {
+                        "$ref": "#/components/schemas/ProductCommerce"
+                    },
+                    "seo": {
+                        "$ref": "#/components/schemas/SeoPayload"
+                    }
+                },
+                "type": "object"
+            },
+            "OptimizedImage": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "alt_text": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "width": {
+                        "type": "integer",
+                        "example": 1200,
+                        "nullable": true
+                    },
+                    "height": {
+                        "type": "integer",
+                        "example": 900,
+                        "nullable": true
+                    },
+                    "aspect_ratio": {
+                        "type": "number",
+                        "example": 1.3333,
+                        "nullable": true
+                    },
+                    "dominant_color": {
+                        "type": "string",
+                        "example": "#f4efe7",
+                        "nullable": true
+                    },
+                    "loading": {
+                        "type": "string",
+                        "example": "eager"
+                    },
+                    "fetch_priority": {
+                        "type": "string",
+                        "example": "high"
+                    },
+                    "sources": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ProductRichContent": {
+                "properties": {
+                    "badges": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "highlights": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "ingredients": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "allergens": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "nutrition_facts": {
+                        "type": "object"
+                    },
+                    "certifications": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "storage_instructions": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "usage_instructions": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "ProductCommerce": {
+                "properties": {
+                    "brand": {
+                        "type": "string",
+                        "example": "Denetfils"
+                    },
+                    "availability": {
+                        "type": "string",
+                        "example": "in_stock"
+                    },
+                    "is_available": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "max_order_quantity": {
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "rating": {
+                        "type": "object"
+                    },
+                    "sales_count": {
+                        "type": "integer",
+                        "example": 240
+                    },
+                    "shipping": {
+                        "type": "object"
+                    },
+                    "return_policy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "guarantee": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "SeoPayload": {
+                "properties": {
+                    "meta": {
+                        "type": "object"
+                    },
+                    "canonical": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "hreflang": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "open_graph": {
+                        "type": "object"
+                    },
+                    "twitter_card": {
+                        "type": "object"
+                    },
+                    "json_ld": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "LocalizedText": {
+                "properties": {
+                    "fr": {
+                        "type": "string",
+                        "example": "Miel de montagne"
+                    },
+                    "en": {
+                        "type": "string",
+                        "example": "Mountain honey"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminCategory": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "epicerie-fine"
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "products_count": {
+                        "type": "integer",
+                        "example": 3,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AdminProductImage": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "example": "https://example.com/product.jpg"
+                    },
+                    "width": {
+                        "type": "integer",
+                        "example": 1200,
+                        "nullable": true
+                    },
+                    "height": {
+                        "type": "integer",
+                        "example": 900,
+                        "nullable": true
+                    },
+                    "dominant_color": {
+                        "type": "string",
+                        "example": "#f4efe7",
+                        "nullable": true
+                    },
+                    "alt_text": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "example": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AdminProductVariant": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "DEN-MIEL-250-A",
+                        "nullable": true
+                    },
+                    "price_adjustment_cents": {
+                        "type": "integer",
+                        "example": 0
+                    },
+                    "stock_quantity": {
+                        "type": "integer",
+                        "example": 35,
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "AdminProduct": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "category": {
+                        "$ref": "#/components/schemas/AdminCategory"
+                    },
+                    "name": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "miel-de-montagne"
+                    },
+                    "description": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "short_description": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "origin": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "highlights": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "badges": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "tags": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "ingredients": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "allergens": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "nutrition_facts": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "certifications": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "storage_instructions": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "usage_instructions": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "shipping_profile": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "return_policy": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "guarantee": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "DEN-MIEL-250"
+                    },
+                    "price_cents": {
+                        "type": "integer",
+                        "example": 890
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "EUR"
+                    },
+                    "weight_grams": {
+                        "type": "integer",
+                        "example": 250,
+                        "nullable": true
+                    },
+                    "stock_quantity": {
+                        "type": "integer",
+                        "example": 35
+                    },
+                    "max_order_quantity": {
+                        "type": "integer",
+                        "example": 12,
+                        "nullable": true
+                    },
+                    "rating_average": {
+                        "type": "number",
+                        "example": 4.7
+                    },
+                    "rating_count": {
+                        "type": "integer",
+                        "example": 38
+                    },
+                    "sales_count": {
+                        "type": "integer",
+                        "example": 240
+                    },
+                    "seo_title": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "seo_description": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "seo_keywords": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "canonical_path": {
+                        "type": "string",
+                        "example": "/{locale}/products/miel-de-montagne",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminProductImage"
+                        }
+                    },
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminProductVariant"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AdminCategoryRequest": {
+                "required": [
+                    "name",
+                    "slug"
+                ],
+                "properties": {
+                    "name": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "coffrets-europe"
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "AdminProductRequest": {
+                "required": [
+                    "category_id",
+                    "name",
+                    "slug",
+                    "description",
+                    "sku",
+                    "price_cents",
+                    "stock_quantity"
+                ],
+                "properties": {
+                    "category_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "coffret-decouverte"
+                    },
+                    "description": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "short_description": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "origin": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "highlights": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "badges": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "nutrition_facts": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "shipping_profile": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "return_policy": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "DEN-BOX-EU-001"
+                    },
+                    "price_cents": {
+                        "type": "integer",
+                        "example": 2590
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "EUR"
+                    },
+                    "weight_grams": {
+                        "type": "integer",
+                        "example": 1200,
+                        "nullable": true
+                    },
+                    "stock_quantity": {
+                        "type": "integer",
+                        "example": 25
+                    },
+                    "max_order_quantity": {
+                        "type": "integer",
+                        "example": 6,
+                        "nullable": true
+                    },
+                    "rating_average": {
+                        "type": "number",
+                        "example": 4.8,
+                        "nullable": true
+                    },
+                    "rating_count": {
+                        "type": "integer",
+                        "example": 14,
+                        "nullable": true
+                    },
+                    "sales_count": {
+                        "type": "integer",
+                        "example": 80,
+                        "nullable": true
+                    },
+                    "seo_title": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "seo_description": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LocalizedText"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "seo_keywords": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "canonical_path": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminProductImage"
+                        }
+                    },
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminProductVariant"
+                        }
                     }
                 },
                 "type": "object"
@@ -1916,8 +3042,16 @@
             "description": "Supported countries and GDPR consent metadata"
         },
         {
+            "name": "SEO",
+            "description": "SEO, robots, sitemap and structured data"
+        },
+        {
             "name": "Admin",
             "description": "Protected administration endpoints"
+        },
+        {
+            "name": "Admin Catalog",
+            "description": "Protected catalog management endpoints"
         }
     ]
 }
