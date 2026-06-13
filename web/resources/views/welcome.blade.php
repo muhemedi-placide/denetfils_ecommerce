@@ -9,6 +9,7 @@
     @endphp
 
     <section
+        id="home"
         class="relative min-h-[calc(100vh-132px)] overflow-hidden bg-forest text-white"
         x-data="{ active: 0, slides: @js(trans('home.slider.items')) }"
         x-init="setInterval(() => active = (active + 1) % slides.length, 5600)"
@@ -57,6 +58,25 @@
                     </div>
                 </div>
             @endforeach
+        </div>
+    </section>
+
+    <section id="about" class="bg-white px-5 py-14 dark:bg-ink sm:px-8">
+        <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf">{{ __('home.about.eyebrow') }}</p>
+                <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.about.title') }}</h2>
+                <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.about.body') }}</p>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-3">
+                @foreach (trans('home.about.points') as $point)
+                    <article class="rounded-[1.25rem] border border-leaf/10 bg-linen p-5 dark:border-white/10 dark:bg-white/5">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $point['eyebrow'] }}</p>
+                        <h3 class="mt-3 font-extrabold text-cocoa dark:text-cream">{{ $point['title'] }}</h3>
+                        <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $point['body'] }}</p>
+                    </article>
+                @endforeach
+            </div>
         </div>
     </section>
 
@@ -201,6 +221,27 @@
                 @empty
                     <div class="rounded-[1.5rem] border border-leaf/10 bg-linen p-6 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70 lg:col-span-3">{{ __('home.products.empty') }}</div>
                 @endforelse
+            </div>
+        </div>
+    </section>
+
+    <section id="blog" class="theme-band-soft bg-linen px-5 py-14 dark:bg-[#172414] sm:px-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf">{{ __('home.blog.eyebrow') }}</p>
+                    <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.blog.title') }}</h2>
+                </div>
+                <p class="max-w-lg text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ __('home.blog.body') }}</p>
+            </div>
+            <div class="grid gap-4 lg:grid-cols-3">
+                @foreach (trans('home.blog.posts') as $post)
+                    <article class="rounded-[1.25rem] border border-leaf/10 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $post['category'] }}</p>
+                        <h3 class="mt-3 text-lg font-extrabold text-cocoa dark:text-cream">{{ $post['title'] }}</h3>
+                        <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $post['body'] }}</p>
+                    </article>
+                @endforeach
             </div>
         </div>
     </section>
