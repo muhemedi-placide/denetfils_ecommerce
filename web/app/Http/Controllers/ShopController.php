@@ -21,6 +21,27 @@ class ShopController extends Controller
             'products' => $products['data'],
             'apiError' => $products['error'],
             'filters' => $filters,
+            'activeMenu' => 'home',
+        ]);
+    }
+
+    public function about(string $locale): View
+    {
+        $locale = $this->setLocale($locale);
+
+        return view('pages.about', [
+            'locale' => $locale,
+            'activeMenu' => 'about',
+        ]);
+    }
+
+    public function blog(string $locale): View
+    {
+        $locale = $this->setLocale($locale);
+
+        return view('blog.index', [
+            'locale' => $locale,
+            'activeMenu' => 'blog',
         ]);
     }
 
@@ -31,9 +52,13 @@ class ShopController extends Controller
 
         abort_if(! $product, 404);
 
+        $relatedProducts = $this->relatedProducts($api, $locale, $product);
+
         return view('products.show', [
             'locale' => $locale,
             'product' => $product,
+            'relatedProducts' => $relatedProducts,
+            'activeMenu' => 'products',
         ]);
     }
 
@@ -55,5 +80,21 @@ class ShopController extends Controller
             'q' => trim((string) $request->query('q', '')),
             'sort' => in_array($sort, ['default', 'price_asc', 'price_desc', 'latest'], true) ? $sort : 'default',
         ];
+    }
+
+    private function relatedProducts(ShopApiClient $api, string $locale, array $product): array
+    {
+        $categorySlug = (string) data_get($product, 'category.slug', '');
+
+        $response = $api->products($locale, [
+            'category' => $categorySlug,
+            'sort' => 'latest',
+        ]);
+
+        return collect($response['data'])
+            ->reject(fn (array $item) => (int) ($item['id'] ?? 0) === (int) ($product['id'] ?? 0))
+            ->take(3)
+            ->values()
+            ->all();
     }
 }
