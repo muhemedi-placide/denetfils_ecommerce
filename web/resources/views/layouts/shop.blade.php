@@ -36,9 +36,27 @@
         x-init="init()"
     >
         <header class="sticky top-0 z-40 border-b border-leaf/10 bg-white/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-ink/95">
-            <div class="bg-forest px-5 py-2 text-xs font-semibold text-white dark:bg-[#172414] sm:px-8">
+            <div
+                class="bg-forest px-5 py-2 text-xs font-semibold text-white dark:bg-[#172414] sm:px-8"
+                x-data="{ alerts: @js(trans('home.announcements')) }"
+                x-init="setInterval(() => alertIndex = (alertIndex + 1) % alerts.length, 4200)"
+            >
                 <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
-                    <p class="truncate">{{ __('home.announcement') }}</p>
+                    <div class="relative h-5 min-w-0 flex-1 overflow-hidden">
+                        <template x-for="(alert, index) in alerts" x-bind:key="alert">
+                            <p
+                                x-show="alertIndex === index"
+                                x-transition:enter="transition ease-out duration-500"
+                                x-transition:enter-start="translate-y-3 opacity-0"
+                                x-transition:enter-end="translate-y-0 opacity-100"
+                                x-transition:leave="transition ease-in duration-300"
+                                x-transition:leave-start="translate-y-0 opacity-100"
+                                x-transition:leave-end="-translate-y-3 opacity-0"
+                                class="absolute inset-0 truncate"
+                                x-text="alert"
+                            ></p>
+                        </template>
+                    </div>
                     <div class="hidden items-center gap-4 text-white/80 md:flex">
                         <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="hover:text-white">{{ __('home.nav.checkout') }}</a>
                         <a href="{{ route('home.localized', ['locale' => $alternateLocale]) }}" class="hover:text-white">{{ strtoupper($alternateLocale) }}</a>
@@ -48,7 +66,7 @@
 
             <div class="px-5 py-4 sm:px-8">
                 <div class="mx-auto grid max-w-7xl items-center gap-4 lg:grid-cols-[220px_1fr_auto]">
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex items-center gap-3">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#home" class="flex items-center gap-3" x-on:click="activeMenu = 'home'">
                         <span class="flex h-11 w-11 items-center justify-center rounded-full bg-forest text-sm font-black text-white dark:bg-meadow dark:text-ink">DF</span>
                         <span>
                             <span class="block text-base font-extrabold uppercase tracking-[0.18em] text-cocoa dark:text-cream">Denetfils</span>
@@ -74,34 +92,31 @@
                             <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-leaf" x-text="itemCount"></span>
                         </button>
 
-                        <div class="hidden rounded-full border border-leaf/10 bg-white p-1 text-xs font-bold dark:border-white/10 dark:bg-white/5 sm:flex" aria-label="{{ __('home.theme.label') }}">
-                            <button
-                                type="button"
-                                class="rounded-full px-2.5 py-1.5 transition"
-                                x-bind:class="theme === 'light' ? 'bg-forest text-white dark:bg-meadow dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
-                                x-on:click="setTheme('light')"
-                            >
-                                {{ __('home.theme.light') }}
-                            </button>
-                            <button
-                                type="button"
-                                class="rounded-full px-2.5 py-1.5 transition"
-                                x-bind:class="theme === 'dark' ? 'bg-forest text-white dark:bg-meadow dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
-                                x-on:click="setTheme('dark')"
-                            >
-                                {{ __('home.theme.dark') }}
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-leaf/10 bg-white text-leaf transition hover:bg-mint dark:border-white/10 dark:bg-white/5 dark:text-meadow"
+                            x-on:click="toggleTheme()"
+                            aria-label="{{ __('home.theme.toggle') }}"
+                        >
+                            <svg x-show="theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+                            </svg>
+                            <svg x-cloak x-show="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.99 12.44A8.99 8.99 0 1 1 11.56 3a7 7 0 0 0 9.43 9.44Z"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <nav class="hidden border-t border-leaf/10 bg-linen px-5 py-2 text-sm font-bold text-cocoa/75 dark:border-white/10 dark:bg-[#172414] dark:text-cream/75 sm:px-8 lg:block">
-                <div class="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto">
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#categories" class="whitespace-nowrap hover:text-leaf">{{ __('home.categories.eyebrow') }}</a>
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#offers" class="whitespace-nowrap hover:text-leaf">{{ __('home.offers.main_eyebrow') }}</a>
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" class="whitespace-nowrap hover:text-leaf">{{ __('home.products.eyebrow') }}</a>
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="whitespace-nowrap hover:text-leaf">{{ __('home.nav.checkout') }}</a>
+            <nav class="border-t border-leaf/10 bg-linen px-5 py-2 text-sm font-bold text-cocoa/75 dark:border-white/10 dark:bg-[#172414] dark:text-cream/75 sm:px-8">
+                <div class="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#home" x-on:click="activeMenu = 'home'" x-bind:class="activeMenu === 'home' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="whitespace-nowrap rounded-full px-4 py-2 transition">{{ __('home.nav.home') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#about" x-on:click="activeMenu = 'about'" x-bind:class="activeMenu === 'about' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="whitespace-nowrap rounded-full px-4 py-2 transition">{{ __('home.nav.about') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" x-on:click="activeMenu = 'products'" x-bind:class="activeMenu === 'products' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="whitespace-nowrap rounded-full px-4 py-2 transition">{{ __('home.nav.shop') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#blog" x-on:click="activeMenu = 'blog'" x-bind:class="activeMenu === 'blog' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="whitespace-nowrap rounded-full px-4 py-2 transition">{{ __('home.nav.blog') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white hover:text-leaf dark:hover:bg-white/10">{{ __('home.nav.checkout') }}</a>
                 </div>
             </nav>
         </header>
