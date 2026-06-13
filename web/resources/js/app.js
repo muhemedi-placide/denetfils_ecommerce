@@ -8,7 +8,10 @@ Alpine.data('shopApp', (config) => ({
     apiBaseUrl: config.apiBaseUrl.replace(/\/$/, ''),
     locale: config.locale,
     labels: config.labels,
-    theme: localStorage.getItem('theme') || 'light',
+    theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    activeMenu: config.activeMenu || 'home',
+    mobileMenuOpen: false,
+    alertIndex: 0,
     cartOpen: false,
     cartLoading: false,
     cartMutating: false,
@@ -16,15 +19,119 @@ Alpine.data('shopApp', (config) => ({
     cart: null,
 
     init() {
-        this.setTheme(this.theme);
-        this.loadCart(false);
+        this.setTheme(this.theme, false);
+        this.watchSystemTheme();
+        this.watchViewport();
+        this.deferCartRestore();
+        this.initNavigation();
     },
 
-    setTheme(value) {
+    setTheme(value, persist = true) {
         this.theme = value;
-        localStorage.setItem('theme', value);
+
+        if (persist) {
+            localStorage.setItem('theme', value);
+        }
+
         document.documentElement.classList.toggle('dark', value === 'dark');
         document.body.classList.toggle('dark', value === 'dark');
+    },
+
+    toggleTheme() {
+        this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
+    },
+
+    toggleMobileMenu() {
+        this.mobileMenuOpen = !this.mobileMenuOpen;
+    },
+
+    closeMobileMenu() {
+        this.mobileMenuOpen = false;
+    },
+
+    openCart() {
+        this.closeMobileMenu();
+        this.loadCart(true);
+    },
+
+    deferCartRestore() {
+        this.cart = this.emptyCart();
+
+        if (!localStorage.getItem('denetfils_cart_token')) {
+            return;
+        }
+
+        const restore = () => this.loadCart(false);
+
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(restore, { timeout: 2000 });
+            return;
+        }
+
+        window.setTimeout(restore, 1200);
+    },
+
+    watchViewport() {
+        const desktopQuery = window.matchMedia('(min-width: 1024px)');
+        const closeOnDesktop = (event) => {
+            if (event.matches) {
+                this.closeMobileMenu();
+            }
+        };
+
+        closeOnDesktop(desktopQuery);
+        desktopQuery.addEventListener('change', closeOnDesktop);
+    },
+
+    watchSystemTheme() {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        mediaQuery.addEventListener('change', (event) => {
+            if (!localStorage.getItem('theme')) {
+                this.setTheme(event.matches ? 'dark' : 'light', false);
+            }
+        });
+    },
+
+    initNavigation() {
+        const sections = ['home', 'about', 'products', 'blog'];
+        let ticking = false;
+
+        const updateActiveMenu = () => {
+            let current = null;
+            const offset = window.innerHeight * 0.35;
+
+            for (const id of sections) {
+                const element = document.getElementById(id);
+
+                if (element && element.getBoundingClientRect().top <= offset) {
+                    current = id;
+                }
+            }
+
+            if (current) {
+                this.activeMenu = current;
+            }
+        };
+
+        const requestUpdate = () => {
+            if (ticking) {
+                return;
+            }
+
+            ticking = true;
+            window.requestAnimationFrame(() => {
+                updateActiveMenu();
+                ticking = false;
+            });
+        };
+
+        updateActiveMenu();
+        window.addEventListener('scroll', requestUpdate, { passive: true });
+        window.addEventListener('hashchange', () => {
+            this.activeMenu = window.location.hash.replace('#', '') || config.activeMenu || 'home';
+            this.closeMobileMenu();
+        });
     },
 
     get itemCount() {
@@ -145,6 +252,7 @@ Alpine.data('shopApp', (config) => ({
                 body: JSON.stringify(body),
             });
             this.cartOpen = true;
+            this.closeMobileMenu();
         } catch (error) {
             this.cartError = error.message || this.labels.apiError;
             this.cartOpen = true;

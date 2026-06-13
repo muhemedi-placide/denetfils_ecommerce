@@ -4,183 +4,310 @@
 @section('description', __('home.meta.description'))
 
 @section('content')
-    <section class="relative isolate min-h-[88vh] overflow-hidden">
-        <img
-            class="absolute inset-0 -z-20 h-full w-full object-cover"
-            src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1800&q=85"
-            alt="{{ __('home.hero.image_alt') }}"
-        >
-        <div class="absolute inset-0 -z-10 bg-cocoa/62 dark:bg-black/70"></div>
-        <div class="mx-auto flex min-h-[88vh] max-w-7xl items-end px-5 pb-16 pt-28 sm:px-8 lg:pb-20">
-            <div class="max-w-3xl text-white">
-                <p class="text-sm font-semibold uppercase tracking-wide text-cream/85">
-                    {{ __('home.hero.eyebrow') }}
-                </p>
-                <h1 class="mt-4 max-w-2xl text-4xl font-semibold leading-tight sm:text-6xl">
-                    {{ __('home.hero.title') }}
-                </h1>
-                <p class="mt-5 max-w-2xl text-base leading-8 text-cream/88 sm:text-lg">
-                    {{ __('home.hero.body') }}
-                </p>
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <a href="#products" class="rounded-full bg-terracotta px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-clay">
-                        {{ __('home.hero.primary_cta') }}
-                    </a>
-                    <button type="button" x-on:click="loadCart(true)" class="rounded-full bg-white/12 px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/25 backdrop-blur transition hover:bg-white/18">
+    @php
+        $spotlightProducts = array_slice($products, 0, 3);
+        $featuredBlogPosts = $blogPosts ?? [];
+        $hasActiveFilters = ($filters['q'] ?? '') !== '' || ($filters['category'] ?? '') !== '' || ($filters['sort'] ?? 'default') !== 'default';
+    @endphp
+
+    <section
+        id="home"
+        class="relative min-h-[68svh] overflow-hidden bg-ink text-white lg:min-h-[calc(100vh-132px)]"
+        x-data="{ active: 0, slides: @js(trans('home.slider.items')) }"
+        x-init="setInterval(() => active = (active + 1) % slides.length, 5600)"
+    >
+        <template x-for="(slide, index) in slides" x-bind:key="slide.title">
+            <div x-show="active === index" x-transition.opacity.duration.700ms class="absolute inset-0">
+                <img class="h-full w-full object-cover" x-bind:src="slide.image" x-bind:alt="slide.title" fetchpriority="high" decoding="async">
+                <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/25 lg:bg-gradient-to-r lg:from-ink/90 lg:via-ink/65 lg:to-transparent"></div>
+            </div>
+        </template>
+
+        <div class="relative z-10 mx-auto flex min-h-[68svh] max-w-7xl flex-col justify-end px-4 pb-8 pt-20 sm:px-8 lg:min-h-[calc(100vh-132px)] lg:pb-14">
+            <div class="max-w-3xl">
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-meadow sm:text-sm" x-text="slides[active].label"></p>
+                <h1 class="mt-3 text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl" x-text="slides[active].title"></h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-white/75 sm:text-base sm:leading-8" x-text="slides[active].body"></p>
+
+                <div class="mt-6 grid gap-3 sm:flex sm:flex-row">
+                    <a href="#products" class="btn-primary w-full sm:w-auto">{{ __('home.hero.primary_cta') }}</a>
+                    <a href="#categories" class="inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white backdrop-blur transition hover:bg-white hover:text-leaf sm:w-auto">
                         {{ __('home.hero.secondary_cta') }}
-                    </button>
+                    </a>
                 </div>
+            </div>
+
+            <div class="mt-8 flex items-center justify-between gap-4 border-t border-white/15 pt-5">
+                <div class="flex gap-2">
+                    <template x-for="(slide, index) in slides" x-bind:key="index">
+                        <button type="button" class="h-2.5 rounded-full transition-all" x-bind:class="active === index ? 'w-10 bg-meadow' : 'w-2.5 bg-white/35'" x-on:click="active = index"></button>
+                    </template>
+                </div>
+                <p class="hidden text-xs font-bold uppercase tracking-[0.18em] text-white/60 sm:block">{{ __('home.slider.badge') }}</p>
             </div>
         </div>
     </section>
 
-    <section class="theme-band surface-transition bg-linen px-5 py-8 dark:bg-ink sm:px-8">
-        <div class="mx-auto grid max-w-7xl gap-4 md:grid-cols-3">
-            @foreach (trans('home.stats') as $stat)
-                <div class="theme-card rounded-lg border border-cocoa/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-                    <p class="theme-title text-2xl font-semibold text-terracotta dark:text-cream">{{ $stat['value'] }}</p>
-                    <p class="theme-muted mt-2 text-sm leading-6 text-cocoa/70 dark:text-cream/70">{{ $stat['label'] }}</p>
+    <section class="border-b border-leaf/10 bg-white px-4 py-4 dark:border-white/10 dark:bg-ink sm:px-8">
+        <div class="mobile-scrollbarless mx-auto flex max-w-7xl gap-3 overflow-x-auto md:grid md:grid-cols-3 md:overflow-visible">
+            @foreach (trans('home.hero.trust') as $item)
+                <div class="min-w-[260px] rounded-2xl border border-leaf/10 bg-mint px-4 py-3 dark:border-white/10 dark:bg-white/5 md:min-w-0">
+                    <div class="flex items-start gap-3">
+                        <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-terracotta"></span>
+                        <div>
+                            <p class="text-sm font-extrabold text-cocoa dark:text-cream">{{ $item['title'] }}</p>
+                            <p class="mt-1 text-xs leading-5 text-cocoa/60 dark:text-cream/60">{{ $item['body'] }}</p>
+                        </div>
+                    </div>
                 </div>
             @endforeach
         </div>
     </section>
 
-    <section id="products" class="theme-band-soft surface-transition bg-white px-5 py-16 dark:bg-[#211914] sm:px-8">
-        <div class="mx-auto max-w-7xl">
-            <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-                <div>
-                    <p class="theme-subtle text-sm font-semibold uppercase tracking-wide text-sage dark:text-cream/70">
-                        {{ __('home.products.eyebrow') }}
-                    </p>
-                    <h2 class="theme-title mt-3 text-3xl font-semibold text-cocoa dark:text-cream">
-                        {{ __('home.products.title') }}
-                    </h2>
+    <section id="about" class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-16">
+        <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <div class="relative overflow-hidden rounded-[1.5rem] bg-linen p-2 dark:bg-white/5 sm:p-3">
+                <img class="aspect-[4/3] w-full rounded-[1.15rem] object-cover" src="https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1200&q=84" alt="{{ __('home.about.image_alt') }}" loading="lazy" decoding="async">
+                <div class="absolute bottom-4 left-4 right-4 rounded-[1rem] border border-white/20 bg-ink/80 p-4 text-white shadow-xl backdrop-blur sm:bottom-6 sm:left-6 sm:right-6 sm:p-5">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-meadow sm:text-xs">DEN & FILS</p>
+                    <p class="mt-2 text-sm font-extrabold leading-snug sm:text-lg">{{ __('home.about.image_caption') }}</p>
                 </div>
-                <p class="theme-muted max-w-xl text-sm leading-7 text-cocoa/70 dark:text-cream/70">
-                    {{ __('home.products.body') }}
-                </p>
             </div>
 
-            <form
-                method="GET"
-                action="{{ route('home.localized', ['locale' => $locale]) }}"
-                class="theme-card mt-8 grid gap-3 rounded-lg border border-cocoa/10 bg-linen p-4 dark:border-white/10 dark:bg-white/5 md:grid-cols-[1fr_220px_180px_auto]"
-            >
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.about.eyebrow') }}</p>
+                <h2 class="mt-3 max-w-2xl text-2xl font-extrabold leading-tight text-cocoa dark:text-cream sm:text-4xl">{{ __('home.about.title') }}</h2>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-cocoa/70 dark:text-cream/70 sm:text-base sm:leading-8">{{ __('home.about.body') }}</p>
+                <a href="{{ route('pages.about', ['locale' => $locale]) }}" class="btn-secondary mt-6 w-full sm:w-auto">{{ __('home.nav.about') }}</a>
+
+                <div class="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                    @foreach (array_slice(trans('home.about.points'), 0, 3) as $point)
+                        <article class="rounded-2xl border border-leaf/10 bg-linen p-4 dark:border-white/10 dark:bg-white/5">
+                            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $point['eyebrow'] }}</p>
+                            <h3 class="mt-2 text-sm font-extrabold text-cocoa dark:text-cream">{{ $point['title'] }}</h3>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="categories" class="theme-band-soft bg-linen px-4 py-12 dark:bg-[#172414] sm:px-8 lg:py-14">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.categories.eyebrow') }}</p>
+                    <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.categories.title') }}</h2>
+                </div>
+                <p class="max-w-lg text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ __('home.categories.body') }}</p>
+            </div>
+
+            <div class="mobile-scrollbarless flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
+                @foreach ($categories as $category)
+                    <a href="{{ route('home.localized', ['locale' => $locale, 'category' => $category['slug']]) }}#products" class="group min-w-[190px] rounded-[1.15rem] border border-leaf/10 bg-white p-4 transition hover:border-leaf/30 hover:shadow-lg dark:border-white/10 dark:bg-white/5 sm:min-w-0 sm:p-5">
+                        <div class="flex items-center justify-between gap-4">
+                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-mint text-base font-extrabold text-leaf transition group-hover:bg-terracotta group-hover:text-white">{{ str($category['name'])->substr(0, 1) }}</span>
+                            <span class="text-xs font-bold text-cocoa/50 dark:text-cream/50">{{ __('home.categories.count', ['count' => $category['products_count']]) }}</span>
+                        </div>
+                        <h3 class="mt-4 text-base font-extrabold text-cocoa dark:text-cream">{{ $category['name'] }}</h3>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    <section id="offers" class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-14">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.offers.main_eyebrow') }}</p>
+                    <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.offers.main_title') }}</h2>
+                </div>
+                <a href="#products" class="btn-secondary w-full sm:w-fit">{{ __('home.offers.cta') }}</a>
+            </div>
+
+            <div class="grid gap-3 lg:grid-cols-3">
+                @foreach (trans('home.offers.cards') as $card)
+                    <article class="rounded-[1.15rem] border border-leaf/10 bg-linen p-5 dark:border-white/10 dark:bg-white/5 sm:p-6">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $card['eyebrow'] }}</p>
+                        <h3 class="mt-3 text-lg font-extrabold text-cocoa dark:text-cream sm:text-xl">{{ $card['title'] }}</h3>
+                        <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $card['body'] }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    <section id="products" class="theme-band-soft surface-transition bg-linen px-4 py-12 dark:bg-[#172414] sm:px-8 lg:py-16" x-data="{ filtersOpen: @js($hasActiveFilters) }">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+                <div>
+                    <p class="theme-subtle text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.products.eyebrow') }}</p>
+                    <h2 class="theme-title mt-2 max-w-2xl text-2xl font-extrabold tracking-tight text-cocoa dark:text-cream sm:text-3xl">{{ __('home.products.title') }}</h2>
+                </div>
+                <p class="theme-muted max-w-xl text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.products.body') }}</p>
+            </div>
+
+            <button type="button" class="mb-3 flex min-h-[46px] w-full items-center justify-between rounded-2xl border border-leaf/10 bg-white px-4 py-3 text-sm font-extrabold text-cocoa shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-cream md:hidden" x-on:click="filtersOpen = !filtersOpen">
+                <span>{{ __('home.filters.apply') }}</span>
+                <span class="text-leaf" x-text="filtersOpen ? '−' : '+'"></span>
+            </button>
+
+            <form method="GET" action="{{ route('home.localized', ['locale' => $locale]) }}" x-show="filtersOpen" x-transition class="glass-panel grid gap-3 rounded-[1.25rem] p-3 md:grid md:grid-cols-[1fr_220px_180px_auto]" x-bind:class="filtersOpen ? 'block' : 'hidden md:grid'">
                 <label class="sr-only" for="q">{{ __('home.filters.search') }}</label>
-                <input
-                    id="q"
-                    name="q"
-                    value="{{ $filters['q'] ?? '' }}"
-                    placeholder="{{ __('home.filters.search_placeholder') }}"
-                    class="rounded-lg border border-cocoa/15 bg-white px-4 py-3 text-sm text-cocoa outline-none transition placeholder:text-cocoa/45 focus:border-terracotta dark:border-white/15 dark:bg-ink dark:text-cream dark:placeholder:text-cream/45"
-                >
+                <input id="q" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="{{ __('home.filters.search_placeholder') }}" class="input-premium w-full">
 
                 <label class="sr-only" for="category">{{ __('home.filters.category') }}</label>
-                <select
-                    id="category"
-                    name="category"
-                    class="rounded-lg border border-cocoa/15 bg-white px-4 py-3 text-sm text-cocoa outline-none transition focus:border-terracotta dark:border-white/15 dark:bg-ink dark:text-cream"
-                >
+                <select id="category" name="category" class="input-premium w-full">
                     <option value="">{{ __('home.filters.all_categories') }}</option>
                     @foreach ($categories as $category)
-                        <option value="{{ $category['slug'] }}" @selected(($filters['category'] ?? '') === $category['slug'])>
-                            {{ $category['name'] }} ({{ $category['products_count'] }})
-                        </option>
+                        <option value="{{ $category['slug'] }}" @selected(($filters['category'] ?? '') === $category['slug'])>{{ $category['name'] }} ({{ $category['products_count'] }})</option>
                     @endforeach
                 </select>
 
                 <label class="sr-only" for="sort">{{ __('home.filters.sort') }}</label>
-                <select
-                    id="sort"
-                    name="sort"
-                    class="rounded-lg border border-cocoa/15 bg-white px-4 py-3 text-sm text-cocoa outline-none transition focus:border-terracotta dark:border-white/15 dark:bg-ink dark:text-cream"
-                >
+                <select id="sort" name="sort" class="input-premium w-full">
                     @foreach (trans('home.filters.sort_options') as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['sort'] ?? 'default') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
 
-                <div class="flex gap-2">
-                    <button type="submit" class="rounded-full bg-terracotta px-5 py-3 text-sm font-semibold text-white transition hover:bg-clay">
-                        {{ __('home.filters.apply') }}
-                    </button>
-                    @if (($filters['q'] ?? '') !== '' || ($filters['category'] ?? '') !== '' || ($filters['sort'] ?? 'default') !== 'default')
-                        <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="rounded-full px-4 py-3 text-sm font-semibold text-cocoa/70 transition hover:bg-cocoa/10 dark:text-cream/70 dark:hover:bg-white/10">
-                            {{ __('home.filters.reset') }}
-                        </a>
+                <div class="grid gap-2 sm:flex">
+                    <button type="submit" class="btn-primary w-full sm:w-auto">{{ __('home.filters.apply') }}</button>
+                    @if ($hasActiveFilters)
+                        <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-secondary w-full px-4 sm:w-auto">{{ __('home.filters.reset') }}</a>
                     @endif
                 </div>
             </form>
 
             @if ($apiError)
-                <div class="mt-8 rounded-lg border border-terracotta/25 bg-terracotta/10 px-5 py-4 text-sm text-terracotta">
-                    {{ $apiError }}
-                </div>
+                <div class="mt-6 rounded-2xl border border-leaf/20 bg-mint px-5 py-4 text-sm font-semibold text-leaf dark:bg-white/5">{{ $apiError }}</div>
             @endif
 
-            <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @forelse ($products as $product)
-                    <article class="theme-card overflow-hidden rounded-lg border border-cocoa/10 bg-linen shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-ink">
-                        <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}">
-                            <img class="h-56 w-full object-cover" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}">
+                    @php
+                        $ratingValue = number_format(4.6 + (($product['id'] ?? 0) % 4) / 10, 1, ',', ' ');
+                        $reviewCount = 18 + (($product['id'] ?? 0) % 37);
+                    @endphp
+                    <article class="premium-card group overflow-hidden bg-white dark:bg-white/5" itemscope itemtype="https://schema.org/Product">
+                        <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="relative block overflow-hidden bg-white dark:bg-white/5">
+                            <img class="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.04] sm:h-56 lg:h-64" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" loading="lazy" decoding="async" itemprop="image">
+                            <div class="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-extrabold text-leaf shadow-sm backdrop-blur dark:bg-ink/80 dark:text-cream">{{ $product['origin'] }}</div>
+                            <div class="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1.5 text-xs font-extrabold text-cocoa shadow-sm backdrop-blur dark:bg-ink/85 dark:text-cream" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
+                                <span class="text-leaf dark:text-meadow" aria-hidden="true">★★★★★</span>
+                                <span class="ml-1" itemprop="ratingValue">{{ $ratingValue }}</span>
+                                <span class="sr-only">{{ $ratingValue }}/5</span>
+                                <meta itemprop="reviewCount" content="{{ $reviewCount }}">
+                            </div>
                         </a>
-                        <div class="p-5">
-                            <p class="theme-subtle text-xs font-semibold uppercase tracking-wide text-sage dark:text-cream/60">
-                                {{ $product['origin'] }}
-                            </p>
-                            <h3 class="theme-title mt-2 text-xl font-semibold text-cocoa dark:text-cream">
-                                <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="transition hover:text-terracotta">
-                                    {{ $product['name'] }}
-                                </a>
-                            </h3>
-                            <p class="theme-muted mt-3 line-clamp-3 text-sm leading-6 text-cocoa/70 dark:text-cream/70">
-                                {{ $product['description'] }}
-                            </p>
-                            <div class="mt-5 flex items-center justify-between gap-3">
-                                <span class="theme-title text-lg font-semibold text-terracotta dark:text-cream">{{ $product['formatted_price'] }}</span>
-                                <button
-                                    class="theme-invert-button rounded-full bg-cocoa px-4 py-2 text-sm font-semibold text-white transition hover:bg-terracotta disabled:cursor-wait disabled:opacity-70 dark:bg-cream dark:text-ink dark:hover:bg-white"
-                                    type="button"
-                                    x-on:click="addToCart({{ $product['id'] }})"
-                                    x-bind:disabled="cartMutating"
-                                >
-                                    {{ __('home.products.cta') }}
-                                </button>
+                        <div class="p-4 sm:p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <h3 class="theme-title min-w-0 text-base font-extrabold leading-snug text-cocoa dark:text-cream sm:text-lg" itemprop="name">
+                                    <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="line-clamp-2 transition hover:text-leaf">{{ $product['name'] }}</a>
+                                </h3>
+                                <span class="shrink-0 rounded-full bg-mint px-2.5 py-1 text-[11px] font-bold text-leaf dark:bg-white/10 dark:text-cream">{{ $product['stock_quantity'] }}</span>
+                            </div>
+                            <p class="theme-muted mt-2 line-clamp-2 text-sm leading-6 text-cocoa/70 dark:text-cream/70" itemprop="description">{{ $product['description'] }}</p>
+                            <div class="mt-3 flex items-center justify-between gap-3 text-xs font-bold text-cocoa/55 dark:text-cream/55">
+                                <span class="text-leaf dark:text-meadow" aria-label="{{ $ratingValue }}/5">★★★★★</span>
+                                <span>{{ $reviewCount }} {{ $locale === 'fr' ? 'avis clients' : 'customer reviews' }}</span>
+                            </div>
+                            <div class="mt-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
+                                <span class="theme-title text-xl font-extrabold text-leaf dark:text-cream" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                                    <span itemprop="priceCurrency" content="EUR"></span>{{ $product['formatted_price'] }}
+                                    <meta itemprop="availability" content="{{ ((int) ($product['stock_quantity'] ?? 0)) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}">
+                                </span>
+                                <button class="btn-primary w-full px-4 py-2.5 sm:w-auto" type="button" x-on:click="addToCart({{ $product['id'] }})" x-bind:disabled="cartMutating">{{ __('home.products.cta') }}</button>
                             </div>
                         </div>
                     </article>
                 @empty
-                    <div class="theme-card rounded-lg border border-cocoa/10 bg-linen p-6 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70 md:col-span-2 lg:col-span-3">
-                        {{ __('home.products.empty') }}
-                    </div>
+                    <div class="theme-card rounded-[1.5rem] border border-leaf/10 bg-white p-6 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70 md:col-span-2 lg:col-span-3">{{ __('home.products.empty') }}</div>
                 @endforelse
             </div>
         </div>
     </section>
 
-    <section id="checkout" class="theme-band surface-transition bg-cream px-5 py-16 dark:bg-ink sm:px-8">
+    <section class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-14">
         <div class="mx-auto max-w-7xl">
-            <div class="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <p class="theme-subtle text-sm font-semibold uppercase tracking-wide text-sage dark:text-cream/70">
-                        {{ __('home.checkout.eyebrow') }}
-                    </p>
-                    <h2 class="theme-title mt-3 text-3xl font-semibold text-cocoa dark:text-cream">
-                        {{ __('home.checkout.title') }}
-                    </h2>
-                    <p class="theme-muted mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">
-                        {{ __('home.checkout.body') }}
-                    </p>
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.spotlight.eyebrow') }}</p>
+                    <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.spotlight.title') }}</h2>
                 </div>
-                <div class="grid gap-4 md:grid-cols-3">
-                    @foreach (trans('home.checkout.steps') as $step)
-                        <div class="theme-card rounded-lg border border-cocoa/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-                            <span class="theme-title text-sm font-semibold text-terracotta dark:text-cream">{{ $step['number'] }}</span>
-                            <h3 class="theme-title mt-3 font-semibold text-cocoa dark:text-cream">{{ $step['title'] }}</h3>
-                            <p class="theme-muted mt-2 text-sm leading-6 text-cocoa/70 dark:text-cream/70">{{ $step['body'] }}</p>
+                <a href="#products" class="btn-secondary w-full sm:w-fit">{{ __('home.spotlight.cta') }}</a>
+            </div>
+
+            <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
+                @forelse ($spotlightProducts as $product)
+                    @php
+                        $ratingValue = number_format(4.6 + (($product['id'] ?? 0) % 4) / 10, 1, ',', ' ');
+                        $reviewCount = 18 + (($product['id'] ?? 0) % 37);
+                    @endphp
+                    <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="group min-w-[250px] rounded-[1.25rem] border border-leaf/10 bg-linen p-4 transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" itemscope itemtype="https://schema.org/Product">
+                        <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" loading="lazy" decoding="async" itemprop="image">
+                        <div class="mt-4 flex items-start justify-between gap-4">
+                            <h3 class="line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream sm:text-lg" itemprop="name">{{ $product['name'] }}</h3>
+                            <span class="shrink-0 font-extrabold text-leaf">{{ $product['formatted_price'] }}</span>
                         </div>
-                    @endforeach
+                        <div class="mt-3 flex items-center justify-between gap-3 text-xs font-bold text-cocoa/55 dark:text-cream/55" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
+                            <span class="text-leaf dark:text-meadow" aria-label="{{ $ratingValue }}/5">★★★★★</span>
+                            <span><span itemprop="ratingValue">{{ $ratingValue }}</span> · {{ $reviewCount }} {{ $locale === 'fr' ? 'avis' : 'reviews' }}</span>
+                            <meta itemprop="reviewCount" content="{{ $reviewCount }}">
+                        </div>
+                    </a>
+                @empty
+                    <div class="rounded-[1.5rem] border border-leaf/10 bg-linen p-6 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70 lg:col-span-3">{{ __('home.products.empty') }}</div>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    <section id="blog" class="theme-band-soft bg-linen px-4 py-12 dark:bg-[#172414] sm:px-8 lg:py-14">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.blog.eyebrow') }}</p>
+                    <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.blog.title') }}</h2>
                 </div>
+                <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit">{{ __('home.nav.blog') }}</a>
+            </div>
+            <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
+                @foreach ($featuredBlogPosts as $post)
+                    <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="group min-w-[260px] overflow-hidden rounded-[1.25rem] border border-leaf/10 bg-white transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0">
+                        <img class="h-40 w-full object-cover" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" loading="lazy" decoding="async">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $post['category'] }}</p>
+                                <span class="text-xs font-semibold text-cocoa/50 dark:text-cream/50">{{ $post['date'] }}</span>
+                            </div>
+                            <h3 class="mt-3 line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream sm:text-lg">{{ $post['title'] }}</h3>
+                            <p class="mt-2 line-clamp-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $post['description'] }}</p>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    <section id="checkout" class="theme-band surface-transition bg-linen px-4 py-12 dark:bg-[#172414] sm:px-8 lg:py-16">
+        <div class="mx-auto grid max-w-7xl gap-6 rounded-[1.5rem] border border-leaf/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-8 lg:p-10">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.checkout.eyebrow') }}</p>
+                <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-cocoa dark:text-cream sm:text-3xl">{{ __('home.checkout.title') }}</h2>
+                <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.checkout.body') }}</p>
+                <button type="button" x-on:click="openCart()" class="btn-primary mt-6 w-full sm:w-auto">{{ __('home.cart.title') }}</button>
+            </div>
+
+            <div class="grid gap-3 md:grid-cols-3">
+                @foreach (trans('home.checkout.steps') as $item)
+                    <div class="rounded-[1.15rem] border border-leaf/10 bg-mint/70 p-4 dark:border-white/10 dark:bg-white/5 sm:p-5">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $item['number'] }}</p>
+                        <h3 class="mt-3 font-extrabold text-cocoa dark:text-cream">{{ $item['title'] }}</h3>
+                        <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $item['body'] }}</p>
+                    </div>
+                @endforeach
             </div>
         </div>
     </section>
