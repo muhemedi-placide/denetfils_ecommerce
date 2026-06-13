@@ -13,6 +13,10 @@ Route::get('/{locale}/blog', [ShopController::class, 'blog'])
     ->whereIn('locale', ['fr', 'en'])
     ->name('blog.index');
 
+Route::get('/{locale}/blog/{slug}', [ShopController::class, 'blogShow'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('blog.show');
+
 Route::get('/{locale}/livraison', [ShopController::class, 'delivery'])
     ->whereIn('locale', ['fr', 'en'])
     ->name('pages.delivery');
