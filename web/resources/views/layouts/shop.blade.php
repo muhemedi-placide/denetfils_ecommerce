@@ -35,53 +35,73 @@
         })"
         x-init="init()"
     >
-        <header class="fixed inset-x-0 top-0 z-40 px-4 pt-3 sm:px-6">
-            <nav class="glass-panel mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-3 sm:px-5">
-                <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex items-center gap-3">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-forest text-sm font-black text-white dark:bg-meadow dark:text-ink">DF</span>
-                    <span>
-                        <span class="block text-sm font-extrabold uppercase tracking-[0.18em] text-cocoa dark:text-cream">Denetfils</span>
-                        <span class="hidden text-xs font-medium text-cocoa/60 dark:text-cream/60 sm:block">{{ __('home.nav.promise') }}</span>
-                    </span>
-                </a>
-                <div class="hidden items-center gap-1 rounded-full bg-mint p-1 text-sm font-semibold text-cocoa/70 dark:bg-white/10 dark:text-cream/70 md:flex">
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" class="rounded-full px-4 py-2 transition hover:bg-white hover:text-leaf dark:hover:bg-white/10 dark:hover:text-cream">{{ __('home.nav.shop') }}</a>
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="rounded-full px-4 py-2 transition hover:bg-white hover:text-leaf dark:hover:bg-white/10 dark:hover:text-cream">{{ __('home.nav.checkout') }}</a>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button
-                        type="button"
-                        class="rounded-full bg-terracotta px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-clay"
-                        x-on:click="loadCart(true)"
-                    >
-                        {{ __('home.cart.title') }}
-                        <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-leaf" x-text="itemCount"></span>
-                    </button>
-                    <a
-                        href="{{ route('home.localized', ['locale' => $alternateLocale]) }}"
-                        class="rounded-full border border-leaf/10 bg-white/70 px-3 py-2 text-sm font-bold text-cocoa transition hover:border-leaf/40 hover:bg-mint dark:border-white/10 dark:bg-white/5 dark:text-cream"
-                        aria-label="{{ __('home.locale.switch_to', ['language' => __('home.locale.' . $alternateLocale)]) }}"
-                    >
-                        {{ strtoupper($alternateLocale) }}
-                    </a>
-                    <div class="hidden rounded-full border border-leaf/10 bg-white/70 p-1 text-xs font-bold dark:border-white/10 dark:bg-white/5 sm:flex" aria-label="{{ __('home.theme.label') }}">
-                        <button
-                            type="button"
-                            class="rounded-full px-2.5 py-1.5 transition"
-                            x-bind:class="theme === 'light' ? 'bg-forest text-white dark:bg-meadow dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
-                            x-on:click="setTheme('light')"
-                        >
-                            {{ __('home.theme.light') }}
-                        </button>
-                        <button
-                            type="button"
-                            class="rounded-full px-2.5 py-1.5 transition"
-                            x-bind:class="theme === 'dark' ? 'bg-forest text-white dark:bg-meadow dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
-                            x-on:click="setTheme('dark')"
-                        >
-                            {{ __('home.theme.dark') }}
-                        </button>
+        <header class="sticky top-0 z-40 border-b border-leaf/10 bg-white/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-ink/95">
+            <div class="bg-forest px-5 py-2 text-xs font-semibold text-white dark:bg-[#172414] sm:px-8">
+                <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
+                    <p class="truncate">{{ __('home.announcement') }}</p>
+                    <div class="hidden items-center gap-4 text-white/80 md:flex">
+                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="hover:text-white">{{ __('home.nav.checkout') }}</a>
+                        <a href="{{ route('home.localized', ['locale' => $alternateLocale]) }}" class="hover:text-white">{{ strtoupper($alternateLocale) }}</a>
                     </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-4 sm:px-8">
+                <div class="mx-auto grid max-w-7xl items-center gap-4 lg:grid-cols-[220px_1fr_auto]">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex items-center gap-3">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-forest text-sm font-black text-white dark:bg-meadow dark:text-ink">DF</span>
+                        <span>
+                            <span class="block text-base font-extrabold uppercase tracking-[0.18em] text-cocoa dark:text-cream">Denetfils</span>
+                            <span class="text-xs font-medium text-cocoa/60 dark:text-cream/60">{{ __('home.nav.promise') }}</span>
+                        </span>
+                    </a>
+
+                    <form action="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" method="GET" class="hidden overflow-hidden rounded-full border border-leaf/15 bg-linen p-1 dark:border-white/10 dark:bg-white/5 md:flex">
+                        <label class="sr-only" for="global-search">{{ __('home.filters.search') }}</label>
+                        <input id="global-search" name="q" placeholder="{{ __('home.filters.search_placeholder') }}" class="min-w-0 flex-1 bg-transparent px-5 py-3 text-sm text-cocoa outline-none placeholder:text-cocoa/45 dark:text-cream dark:placeholder:text-cream/45">
+                        <button type="submit" class="rounded-full bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-clay">
+                            {{ __('home.filters.search') }}
+                        </button>
+                    </form>
+
+                    <div class="flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            class="rounded-full bg-terracotta px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-clay"
+                            x-on:click="loadCart(true)"
+                        >
+                            {{ __('home.cart.title') }}
+                            <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-leaf" x-text="itemCount"></span>
+                        </button>
+
+                        <div class="hidden rounded-full border border-leaf/10 bg-white p-1 text-xs font-bold dark:border-white/10 dark:bg-white/5 sm:flex" aria-label="{{ __('home.theme.label') }}">
+                            <button
+                                type="button"
+                                class="rounded-full px-2.5 py-1.5 transition"
+                                x-bind:class="theme === 'light' ? 'bg-forest text-white dark:bg-meadow dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
+                                x-on:click="setTheme('light')"
+                            >
+                                {{ __('home.theme.light') }}
+                            </button>
+                            <button
+                                type="button"
+                                class="rounded-full px-2.5 py-1.5 transition"
+                                x-bind:class="theme === 'dark' ? 'bg-forest text-white dark:bg-meadow dark:text-ink' : 'text-cocoa/60 dark:text-cream/60'"
+                                x-on:click="setTheme('dark')"
+                            >
+                                {{ __('home.theme.dark') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="hidden border-t border-leaf/10 bg-linen px-5 py-2 text-sm font-bold text-cocoa/75 dark:border-white/10 dark:bg-[#172414] dark:text-cream/75 sm:px-8 lg:block">
+                <div class="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#categories" class="whitespace-nowrap hover:text-leaf">{{ __('home.categories.eyebrow') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#offers" class="whitespace-nowrap hover:text-leaf">{{ __('home.offers.main_eyebrow') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" class="whitespace-nowrap hover:text-leaf">{{ __('home.products.eyebrow') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="whitespace-nowrap hover:text-leaf">{{ __('home.nav.checkout') }}</a>
                 </div>
             </nav>
         </header>
@@ -90,7 +110,7 @@
             @yield('content')
         </main>
 
-        <div x-cloak x-show="cartOpen" class="fixed inset-0 z-40">
+        <div x-cloak x-show="cartOpen" class="fixed inset-0 z-50">
             <button
                 type="button"
                 class="absolute inset-0 bg-black/45 backdrop-blur-sm"
