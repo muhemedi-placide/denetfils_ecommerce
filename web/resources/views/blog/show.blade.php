@@ -2,12 +2,44 @@
 
 @section('title', $post['title'] . ' | Denetfils')
 @section('description', $post['description'])
+@section('canonical', route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]))
+@section('og_type', 'article')
+@section('og_image', $post['image'])
+
+@push('structured-data')
+    @php
+        $articleDate = \Carbon\Carbon::createFromFormat('d/m/Y', $post['date'])->toDateString();
+        $articleSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $post['title'],
+            'description' => $post['description'],
+            'image' => [$post['image']],
+            'datePublished' => $articleDate,
+            'dateModified' => $articleDate,
+            'author' => ['@type' => 'Organization', 'name' => 'DEN & FILS'],
+            'publisher' => ['@type' => 'Organization', 'name' => 'DEN & FILS'],
+            'mainEntityOfPage' => route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]),
+        ];
+        $breadcrumbSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                ['@type' => 'ListItem', 'position' => 1, 'name' => __('home.nav.home'), 'item' => route('home.localized', ['locale' => $locale])],
+                ['@type' => 'ListItem', 'position' => 2, 'name' => __('home.nav.blog'), 'item' => route('blog.index', ['locale' => $locale])],
+                ['@type' => 'ListItem', 'position' => 3, 'name' => $post['title'], 'item' => route('blog.show', ['locale' => $locale, 'slug' => $post['slug']])],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($articleSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+    <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+@endpush
 
 @section('content')
     <article>
         <section class="soft-grid px-4 py-10 dark:bg-ink sm:px-8 lg:py-18">
             <div class="mx-auto max-w-5xl">
-                <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60">
+                <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60" aria-label="Breadcrumb">
                     <a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-leaf">{{ __('home.nav.home') }}</a>
                     <span>/</span>
                     <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="transition hover:text-leaf">{{ __('home.nav.blog') }}</a>
@@ -18,7 +50,7 @@
                 <div class="mt-6">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="rounded-full bg-mint px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-leaf dark:bg-white/10 dark:text-meadow">{{ $post['category'] }}</span>
-                        <time class="rounded-full border border-leaf/10 bg-white px-3 py-1 text-xs font-bold text-cocoa/60 dark:border-white/10 dark:bg-white/5 dark:text-cream/60">{{ $post['date'] }}</time>
+                        <time class="rounded-full border border-leaf/10 bg-white px-3 py-1 text-xs font-bold text-cocoa/60 dark:border-white/10 dark:bg-white/5 dark:text-cream/60" datetime="{{ $articleDate }}">{{ $post['date'] }}</time>
                         <span class="rounded-full border border-leaf/10 bg-white px-3 py-1 text-xs font-bold text-cocoa/60 dark:border-white/10 dark:bg-white/5 dark:text-cream/60">{{ $post['read_time'] }}</span>
                     </div>
 
@@ -34,7 +66,7 @@
 
         <section class="bg-white px-4 pb-12 dark:bg-ink sm:px-8 lg:pb-16">
             <div class="mx-auto max-w-5xl">
-                <img class="h-[280px] w-full rounded-[1.5rem] object-cover shadow-sm sm:h-[430px]" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" fetchpriority="high">
+                <img class="h-[280px] w-full rounded-[1.5rem] object-cover shadow-sm sm:h-[430px]" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" fetchpriority="high" decoding="async">
 
                 <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_280px] lg:items-start">
                     <div class="rounded-[1.5rem] border border-leaf/10 bg-linen p-5 dark:border-white/10 dark:bg-white/5 sm:p-8">
@@ -76,7 +108,7 @@
                     <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
                         @foreach ($relatedPosts as $related)
                             <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $related['slug']]) }}" class="group min-w-[260px] overflow-hidden rounded-[1.25rem] border border-leaf/10 bg-white transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0">
-                                <img class="h-40 w-full object-cover" src="{{ $related['image'] }}" alt="{{ $related['title'] }}" loading="lazy">
+                                <img class="h-40 w-full object-cover" src="{{ $related['image'] }}" alt="{{ $related['title'] }}" loading="lazy" decoding="async">
                                 <div class="p-4">
                                     <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $related['category'] }}</p>
                                     <h3 class="mt-2 line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream">{{ $related['title'] }}</h3>
