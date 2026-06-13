@@ -6,9 +6,11 @@
 @section('canonical', route('cart.show', ['locale' => $locale]))
 
 @section('content')
-    <section class="soft-grid px-4 py-10 dark:bg-ink sm:px-8 lg:py-16" x-init="loadCart(false)">
+    <section class="soft-grid px-4 py-8 dark:bg-ink sm:px-8 lg:py-12" x-init="loadCart(false)">
         <div class="mx-auto max-w-7xl">
-            <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60" aria-label="Breadcrumb">
+            @include('partials.checkout-progress', ['currentLocale' => $locale, 'currentStep' => 'cart'])
+
+            <nav class="mobile-scrollbarless mx-auto flex max-w-fit items-center justify-center gap-2 overflow-x-auto whitespace-nowrap rounded-full border border-leaf/10 bg-white/80 px-4 py-2 text-sm font-semibold text-cocoa/60 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-cream/60" aria-label="Breadcrumb">
                 <a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-leaf">{{ __('home.nav.home') }}</a>
                 <span>/</span>
                 <span class="text-leaf">{{ __('home.cart.title') }}</span>
@@ -18,8 +20,9 @@
                 <div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ $locale === 'fr' ? 'Votre sélection' : 'Your selection' }}</p>
-                            <h1 class="mt-2 text-3xl font-extrabold text-cocoa dark:text-cream sm:text-5xl">{{ $locale === 'fr' ? 'Panier' : 'Cart' }}</h1>
+                            <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ $locale === 'fr' ? 'Étape 1' : 'Step 1' }}</p>
+                            <h1 class="mt-2 text-3xl font-extrabold text-cocoa dark:text-cream sm:text-5xl">{{ $locale === 'fr' ? 'Vérifier le panier' : 'Review cart' }}</h1>
+                            <p class="mt-3 max-w-xl text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ $locale === 'fr' ? 'Gardez uniquement les produits souhaités, ajustez les quantités, puis passez directement à la livraison.' : 'Keep only the products you want, adjust quantities, then go straight to delivery.' }}</p>
                         </div>
                         <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-secondary w-full sm:w-auto">{{ $locale === 'fr' ? 'Continuer les achats' : 'Continue shopping' }}</a>
                     </div>
@@ -38,16 +41,15 @@
                         <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary mt-5 w-full sm:w-auto">{{ __('home.hero.primary_cta') }}</a>
                     </div>
 
-                    <div x-show="cartItems.length > 0" class="mt-6 space-y-4">
+                    <div x-show="cartItems.length > 0" class="mt-6 space-y-3">
                         <template x-for="item in cartItems" x-bind:key="item.id">
-                            <article class="grid gap-4 rounded-[1.25rem] border border-leaf/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:grid-cols-[110px_1fr] sm:p-5">
-                                <img class="h-32 w-full rounded-[1rem] object-cover sm:h-[110px] sm:w-[110px]" x-bind:src="item.product?.image?.url" x-bind:alt="item.product?.image?.alt_text || item.product?.name" width="110" height="110" loading="lazy" decoding="async">
+                            <article class="grid gap-4 rounded-[1.25rem] border border-leaf/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:grid-cols-[96px_1fr] sm:p-5">
+                                <img class="h-28 w-full rounded-[1rem] object-cover sm:h-24 sm:w-24" x-bind:src="item.product?.image?.url" x-bind:alt="item.product?.image?.alt_text || item.product?.name" width="96" height="96" loading="lazy" decoding="async">
                                 <div class="min-w-0">
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div class="min-w-0">
                                             <h2 class="text-lg font-extrabold text-cocoa dark:text-cream" x-text="item.product?.name"></h2>
                                             <p class="mt-1 text-sm text-cocoa/60 dark:text-cream/60" x-text="item.variant?.name || item.product?.origin"></p>
-                                            <p class="mt-2 text-xs font-bold uppercase tracking-wide text-leaf dark:text-meadow">{{ $locale === 'fr' ? 'Produit vérifié DEN & FILS' : 'Verified DEN & FILS product' }}</p>
                                         </div>
                                         <button type="button" class="inline-flex min-h-[40px] items-center justify-center rounded-full border border-leaf/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-cocoa/60 transition hover:bg-mint hover:text-leaf dark:border-white/10 dark:text-cream/60 dark:hover:bg-white/10" x-on:click="removeCartItem(item.id)" x-bind:disabled="cartMutating">
                                             {{ __('home.cart.remove') }}
@@ -70,7 +72,7 @@
 
                 <aside class="lg:sticky lg:top-36">
                     <div class="rounded-[1.5rem] border border-leaf/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-6">
-                        <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ $locale === 'fr' ? 'Résumé' : 'Summary' }}</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ $locale === 'fr' ? 'Résumé rapide' : 'Quick summary' }}</p>
                         <h2 class="mt-3 text-2xl font-extrabold text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Total panier' : 'Cart total' }}</h2>
 
                         <div class="mt-5 space-y-3 text-sm text-cocoa/70 dark:text-cream/70">
@@ -80,24 +82,17 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <span>{{ $locale === 'fr' ? 'Livraison' : 'Delivery' }}</span>
-                                <span>{{ $locale === 'fr' ? 'Calculée à la commande' : 'Calculated at checkout' }}</span>
+                                <span>{{ $locale === 'fr' ? 'Étape suivante' : 'Next step' }}</span>
                             </div>
                         </div>
 
                         <div class="mt-5 rounded-[1rem] bg-mint p-4 text-sm leading-6 text-leaf dark:bg-white/5 dark:text-meadow">
-                            {{ $locale === 'fr' ? 'Livraison gratuite à partir de 35€. Les frais exacts sont confirmés pendant la commande.' : 'Free delivery from €35. Exact fees are confirmed during checkout.' }}
+                            {{ $locale === 'fr' ? 'Objectif : passer du panier à la validation sans perdre du temps.' : 'Goal: go from cart to confirmation without wasting time.' }}
                         </div>
 
                         <a href="{{ route('checkout.show', ['locale' => $locale]) }}" class="btn-primary mt-5 w-full" x-bind:class="cartItems.length === 0 ? 'pointer-events-none opacity-50' : ''">
-                            {{ $locale === 'fr' ? 'Passer à la commande' : 'Proceed to checkout' }}
+                            {{ $locale === 'fr' ? 'Continuer vers livraison' : 'Continue to delivery' }}
                         </a>
-                        <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-secondary mt-3 w-full">{{ $locale === 'fr' ? 'Ajouter d’autres produits' : 'Add more products' }}</a>
-                    </div>
-
-                    <div class="mt-4 grid gap-3 rounded-[1.25rem] border border-leaf/10 bg-linen p-4 dark:border-white/10 dark:bg-white/5">
-                        <div class="flex items-start gap-3 text-sm leading-6 text-cocoa/70 dark:text-cream/70"><span class="text-leaf">✓</span><span>{{ $locale === 'fr' ? 'Paiement sécurisé préparé dans l’étape suivante.' : 'Secure payment prepared in the next step.' }}</span></div>
-                        <div class="flex items-start gap-3 text-sm leading-6 text-cocoa/70 dark:text-cream/70"><span class="text-leaf">✓</span><span>{{ $locale === 'fr' ? 'Support DEN & FILS disponible avant validation.' : 'DEN & FILS support available before validation.' }}</span></div>
-                        <div class="flex items-start gap-3 text-sm leading-6 text-cocoa/70 dark:text-cream/70"><span class="text-leaf">✓</span><span>{{ $locale === 'fr' ? 'Récapitulatif clair avant paiement.' : 'Clear summary before payment.' }}</span></div>
                     </div>
                 </aside>
             </div>
@@ -105,7 +100,7 @@
     </section>
 
     @if (! empty($recommendedProducts))
-        <section class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-14">
+        <section class="bg-white px-4 py-10 dark:bg-ink sm:px-8 lg:py-12">
             <div class="mx-auto max-w-7xl">
                 <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
