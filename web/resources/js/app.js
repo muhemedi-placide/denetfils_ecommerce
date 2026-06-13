@@ -9,6 +9,8 @@ Alpine.data('shopApp', (config) => ({
     locale: config.locale,
     labels: config.labels,
     theme: localStorage.getItem('theme') || 'light',
+    activeMenu: 'home',
+    alertIndex: 0,
     cartOpen: false,
     cartLoading: false,
     cartMutating: false,
@@ -18,6 +20,7 @@ Alpine.data('shopApp', (config) => ({
     init() {
         this.setTheme(this.theme);
         this.loadCart(false);
+        this.initNavigation();
     },
 
     setTheme(value) {
@@ -25,6 +28,30 @@ Alpine.data('shopApp', (config) => ({
         localStorage.setItem('theme', value);
         document.documentElement.classList.toggle('dark', value === 'dark');
         document.body.classList.toggle('dark', value === 'dark');
+    },
+
+    toggleTheme() {
+        this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
+    },
+
+    initNavigation() {
+        const sections = ['home', 'about', 'products', 'blog'];
+
+        const updateActiveMenu = () => {
+            const offset = window.innerHeight * 0.35;
+            const current = sections
+                .map((id) => ({ id, element: document.getElementById(id) }))
+                .filter((item) => item.element)
+                .findLast((item) => item.element.getBoundingClientRect().top <= offset);
+
+            this.activeMenu = current?.id || 'home';
+        };
+
+        updateActiveMenu();
+        window.addEventListener('scroll', updateActiveMenu, { passive: true });
+        window.addEventListener('hashchange', () => {
+            this.activeMenu = window.location.hash.replace('#', '') || 'home';
+        });
     },
 
     get itemCount() {
