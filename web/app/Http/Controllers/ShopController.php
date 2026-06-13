@@ -90,6 +90,28 @@ class ShopController extends Controller
         return $this->utilityPage($locale, 'payment');
     }
 
+    public function cart(ShopApiClient $api, string $locale): View
+    {
+        $locale = $this->setLocale($locale);
+        $products = $api->products($locale, ['sort' => 'latest']);
+
+        return view('cart.show', [
+            'locale' => $locale,
+            'recommendedProducts' => array_slice($products['data'], 0, 3),
+            'activeMenu' => 'products',
+        ]);
+    }
+
+    public function checkout(string $locale): View
+    {
+        $locale = $this->setLocale($locale);
+
+        return view('checkout.show', [
+            'locale' => $locale,
+            'activeMenu' => 'products',
+        ]);
+    }
+
     public function show(ShopApiClient $api, string $locale, string $slug): View
     {
         $locale = $this->setLocale($locale);
@@ -112,7 +134,7 @@ class ShopController extends Controller
         $baseUrl = $this->siteUrl();
 
         return response(
-            "User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: {$baseUrl}/sitemap.xml\n",
+            "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /fr/panier\nDisallow: /en/panier\nDisallow: /fr/commande\nDisallow: /en/commande\nSitemap: {$baseUrl}/sitemap.xml\n",
             200,
             ['Content-Type' => 'text/plain; charset=UTF-8']
         );
