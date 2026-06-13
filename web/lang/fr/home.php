@@ -72,6 +72,8 @@ return [
         'eyebrow' => 'À propos de Denetfils',
         'title' => 'Une boutique alimentaire pensée pour les clients en France et en Europe.',
         'body' => 'Denetfils met en avant une sélection claire de produits agroalimentaires, avec une expérience d’achat lisible, rassurante et adaptée aux habitudes du marché européen.',
+        'image_alt' => 'Sélection de produits alimentaires frais et d’épicerie pour une cuisine familiale.',
+        'image_caption' => 'Des produits choisis pour une boutique claire, sérieuse et orientée confiance client.',
         'points' => [
             ['eyebrow' => 'Sélection', 'title' => 'Produits utiles', 'body' => 'Des références choisies pour la cuisine du quotidien.'],
             ['eyebrow' => 'Clarté', 'title' => 'Achat simple', 'body' => 'Recherche, rayons et panier restent faciles à utiliser.'],
