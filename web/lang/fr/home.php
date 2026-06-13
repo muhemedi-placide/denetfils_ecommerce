@@ -6,9 +6,17 @@ return [
         'description' => 'Boutique e-commerce Denetfils pour les produits agroalimentaires, les saveurs lakay et une expérience d’achat simple en Europe.',
     ],
     'announcement' => 'Livraison gratuite dès 35€ · Produits sélectionnés · Commande simple et sécurisée',
+    'announcements' => [
+        'Livraison gratuite dès 35€ en France métropolitaine.',
+        'Produits sélectionnés pour une cuisine simple et authentique.',
+        'Commandez rapidement depuis mobile, tablette ou ordinateur.',
+    ],
     'nav' => [
         'promise' => 'Épicerie verte & premium',
+        'home' => 'Accueil',
+        'about' => 'À propos',
         'shop' => 'Boutique',
+        'blog' => 'Blog',
         'checkout' => 'Infos utiles',
     ],
     'locale' => [
@@ -60,6 +68,16 @@ return [
             ],
         ],
     ],
+    'about' => [
+        'eyebrow' => 'À propos de Denetfils',
+        'title' => 'Une boutique alimentaire pensée pour les clients en France et en Europe.',
+        'body' => 'Denetfils met en avant une sélection claire de produits agroalimentaires, avec une expérience d’achat lisible, rassurante et adaptée aux habitudes du marché européen.',
+        'points' => [
+            ['eyebrow' => 'Sélection', 'title' => 'Produits utiles', 'body' => 'Des références choisies pour la cuisine du quotidien.'],
+            ['eyebrow' => 'Clarté', 'title' => 'Achat simple', 'body' => 'Recherche, rayons et panier restent faciles à utiliser.'],
+            ['eyebrow' => 'Confiance', 'title' => 'Service lisible', 'body' => 'Informations livraison, stock et assistance mises en avant.'],
+        ],
+    ],
     'stats' => [
         ['value' => '35€', 'label' => 'Livraison gratuite à partir du panier minimum.'],
         ['value' => '24/7', 'label' => 'Boutique disponible en permanence.'],
@@ -86,6 +104,16 @@ return [
         'eyebrow' => 'Mise en avant',
         'title' => 'Produits recommandés',
         'cta' => 'Voir le catalogue',
+    ],
+    'blog' => [
+        'eyebrow' => 'Conseils & inspirations',
+        'title' => 'Des idées pour mieux choisir et cuisiner.',
+        'body' => 'Un espace éditorial pour accompagner les clients, expliquer les produits et renforcer la confiance autour de la boutique.',
+        'posts' => [
+            ['category' => 'Guide achat', 'title' => 'Bien composer son panier alimentaire', 'body' => 'Des conseils simples pour associer produits de base, sauces et épices.'],
+            ['category' => 'Cuisine', 'title' => 'Donner plus de goût aux plats du quotidien', 'body' => 'Quelques repères pour choisir les bons produits selon les recettes.'],
+            ['category' => 'Livraison', 'title' => 'Préparer une commande sans oubli', 'body' => 'Les points à vérifier avant de finaliser son panier.'],
+        ],
     ],
     'commitments' => [
         ['number' => '01', 'title' => 'Design rassurant', 'body' => 'Un style propre, sérieux et lisible pour inspirer confiance.'],
