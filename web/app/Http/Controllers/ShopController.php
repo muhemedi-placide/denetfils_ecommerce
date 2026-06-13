@@ -45,6 +45,26 @@ class ShopController extends Controller
         ]);
     }
 
+    public function delivery(string $locale): View
+    {
+        return $this->utilityPage($locale, 'delivery');
+    }
+
+    public function legalNotice(string $locale): View
+    {
+        return $this->utilityPage($locale, 'legal');
+    }
+
+    public function terms(string $locale): View
+    {
+        return $this->utilityPage($locale, 'terms');
+    }
+
+    public function securePayment(string $locale): View
+    {
+        return $this->utilityPage($locale, 'payment');
+    }
+
     public function show(ShopApiClient $api, string $locale, string $slug): View
     {
         $locale = $this->setLocale($locale);
@@ -59,6 +79,20 @@ class ShopController extends Controller
             'product' => $product,
             'relatedProducts' => $relatedProducts,
             'activeMenu' => 'products',
+        ]);
+    }
+
+    private function utilityPage(string $locale, string $page): View
+    {
+        $locale = $this->setLocale($locale);
+
+        abort_unless(array_key_exists($page, trans('home.utility_pages')), 404);
+
+        return view('pages.utility', [
+            'locale' => $locale,
+            'page' => $page,
+            'content' => trans('home.utility_pages.' . $page),
+            'activeMenu' => $page === 'legal' || $page === 'terms' ? 'about' : 'home',
         ]);
     }
 
