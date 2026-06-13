@@ -61,21 +61,38 @@
         </div>
     </section>
 
-    <section id="about" class="bg-white px-5 py-14 dark:bg-ink sm:px-8">
-        <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf">{{ __('home.about.eyebrow') }}</p>
-                <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.about.title') }}</h2>
-                <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.about.body') }}</p>
+    <section id="about" class="bg-white px-5 py-16 dark:bg-ink sm:px-8 lg:py-20">
+        <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <div class="relative overflow-hidden rounded-[1.75rem] bg-linen p-3 dark:bg-white/5">
+                <img
+                    class="aspect-[4/3] w-full rounded-[1.25rem] object-cover"
+                    src="https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1200&q=84"
+                    alt="{{ __('home.about.image_alt') }}"
+                    loading="lazy"
+                >
+                <div class="absolute bottom-6 left-6 right-6 rounded-[1.25rem] border border-white/20 bg-forest/85 p-5 text-white shadow-xl backdrop-blur">
+                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-meadow">Denetfils</p>
+                    <p class="mt-2 text-lg font-extrabold leading-snug">{{ __('home.about.image_caption') }}</p>
+                </div>
             </div>
-            <div class="grid gap-4 sm:grid-cols-3">
-                @foreach (trans('home.about.points') as $point)
-                    <article class="rounded-[1.25rem] border border-leaf/10 bg-linen p-5 dark:border-white/10 dark:bg-white/5">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $point['eyebrow'] }}</p>
-                        <h3 class="mt-3 font-extrabold text-cocoa dark:text-cream">{{ $point['title'] }}</h3>
-                        <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $point['body'] }}</p>
-                    </article>
-                @endforeach
+
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.about.eyebrow') }}</p>
+                <h2 class="mt-3 max-w-2xl text-3xl font-extrabold leading-tight text-cocoa dark:text-cream sm:text-4xl">{{ __('home.about.title') }}</h2>
+                <p class="mt-5 max-w-2xl text-base leading-8 text-cocoa/70 dark:text-cream/70">{{ __('home.about.body') }}</p>
+
+                <div class="mt-8 space-y-4">
+                    @foreach (trans('home.about.points') as $point)
+                        <article class="flex gap-4 rounded-[1.25rem] border border-leaf/10 bg-linen p-5 dark:border-white/10 dark:bg-white/5">
+                            <span class="mt-1 h-3 w-3 shrink-0 rounded-full bg-terracotta"></span>
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $point['eyebrow'] }}</p>
+                                <h3 class="mt-2 font-extrabold text-cocoa dark:text-cream">{{ $point['title'] }}</h3>
+                                <p class="mt-1 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $point['body'] }}</p>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
             </div>
         </div>
     </section>
