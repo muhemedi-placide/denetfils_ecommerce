@@ -22,7 +22,7 @@ Alpine.data('shopApp', (config) => ({
         this.setTheme(this.theme, false);
         this.watchSystemTheme();
         this.watchViewport();
-        this.loadCart(false);
+        this.deferCartRestore();
         this.initNavigation();
     },
 
@@ -54,6 +54,23 @@ Alpine.data('shopApp', (config) => ({
         this.loadCart(true);
     },
 
+    deferCartRestore() {
+        this.cart = this.emptyCart();
+
+        if (!localStorage.getItem('denetfils_cart_token')) {
+            return;
+        }
+
+        const restore = () => this.loadCart(false);
+
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(restore, { timeout: 2000 });
+            return;
+        }
+
+        window.setTimeout(restore, 1200);
+    },
+
     watchViewport() {
         const desktopQuery = window.matchMedia('(min-width: 1024px)');
         const closeOnDesktop = (event) => {
@@ -78,26 +95,39 @@ Alpine.data('shopApp', (config) => ({
 
     initNavigation() {
         const sections = ['home', 'about', 'products', 'blog'];
+        let ticking = false;
 
         const updateActiveMenu = () => {
-            const visibleSections = sections
-                .map((id) => ({ id, element: document.getElementById(id) }))
-                .filter((item) => item.element);
+            let current = null;
+            const offset = window.innerHeight * 0.35;
 
-            if (visibleSections.length === 0) {
-                return;
+            for (const id of sections) {
+                const element = document.getElementById(id);
+
+                if (element && element.getBoundingClientRect().top <= offset) {
+                    current = id;
+                }
             }
 
-            const offset = window.innerHeight * 0.35;
-            const current = visibleSections.findLast((item) => item.element.getBoundingClientRect().top <= offset);
-
             if (current) {
-                this.activeMenu = current.id;
+                this.activeMenu = current;
             }
         };
 
+        const requestUpdate = () => {
+            if (ticking) {
+                return;
+            }
+
+            ticking = true;
+            window.requestAnimationFrame(() => {
+                updateActiveMenu();
+                ticking = false;
+            });
+        };
+
         updateActiveMenu();
-        window.addEventListener('scroll', updateActiveMenu, { passive: true });
+        window.addEventListener('scroll', requestUpdate, { passive: true });
         window.addEventListener('hashchange', () => {
             this.activeMenu = window.location.hash.replace('#', '') || config.activeMenu || 'home';
             this.closeMobileMenu();
