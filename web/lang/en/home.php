@@ -6,9 +6,17 @@ return [
         'description' => 'Denetfils e-commerce shop for food products, everyday essentials and a simple buying experience in Europe.',
     ],
     'announcement' => 'Free delivery from €35 · Curated products · Simple and secure ordering',
+    'announcements' => [
+        'Free delivery from €35 in mainland France.',
+        'Selected products for simple and authentic cooking.',
+        'Order quickly from mobile, tablet or desktop.',
+    ],
     'nav' => [
         'promise' => 'Green premium grocery',
+        'home' => 'Home',
+        'about' => 'About',
         'shop' => 'Shop',
+        'blog' => 'Blog',
         'checkout' => 'Useful info',
     ],
     'locale' => [
@@ -60,6 +68,16 @@ return [
             ],
         ],
     ],
+    'about' => [
+        'eyebrow' => 'About Denetfils',
+        'title' => 'A food shop designed for customers in France and Europe.',
+        'body' => 'Denetfils highlights a clear selection of food products with a readable, reassuring shopping experience adapted to European market habits.',
+        'points' => [
+            ['eyebrow' => 'Selection', 'title' => 'Useful products', 'body' => 'References selected for everyday cooking.'],
+            ['eyebrow' => 'Clarity', 'title' => 'Simple shopping', 'body' => 'Search, aisles and cart stay easy to use.'],
+            ['eyebrow' => 'Trust', 'title' => 'Readable service', 'body' => 'Delivery, stock and support information are visible.'],
+        ],
+    ],
     'stats' => [
         ['value' => '€35', 'label' => 'Free delivery from the minimum basket value.'],
         ['value' => '24/7', 'label' => 'Shop available at all times.'],
@@ -86,6 +104,16 @@ return [
         'eyebrow' => 'Spotlight',
         'title' => 'Recommended products',
         'cta' => 'View catalog',
+    ],
+    'blog' => [
+        'eyebrow' => 'Tips & inspiration',
+        'title' => 'Ideas to choose and cook better.',
+        'body' => 'An editorial area to guide customers, explain products and strengthen trust around the shop.',
+        'posts' => [
+            ['category' => 'Buying guide', 'title' => 'Build a balanced food basket', 'body' => 'Simple tips to combine staples, sauces and spices.'],
+            ['category' => 'Cooking', 'title' => 'Bring more flavor to everyday meals', 'body' => 'Practical references to choose products for each recipe.'],
+            ['category' => 'Delivery', 'title' => 'Prepare an order without forgetting anything', 'body' => 'Useful points to check before finalizing the basket.'],
+        ],
     ],
     'commitments' => [
         ['number' => '01', 'title' => 'Trustworthy design', 'body' => 'A clean, serious and readable style to inspire confidence.'],
