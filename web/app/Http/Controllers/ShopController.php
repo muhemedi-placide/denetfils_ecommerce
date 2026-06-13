@@ -107,6 +107,26 @@ class ShopController extends Controller
         ]);
     }
 
+    public function robots()
+    {
+        $baseUrl = $this->siteUrl();
+
+        return response(
+            "User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: {$baseUrl}/sitemap.xml\n",
+            200,
+            ['Content-Type' => 'text/plain; charset=UTF-8']
+        );
+    }
+
+    public function sitemap(ShopApiClient $api)
+    {
+        return response(
+            view('seo.sitemap', ['urls' => $this->sitemapUrls($api)])->render(),
+            200,
+            ['Content-Type' => 'application/xml; charset=UTF-8']
+        );
+    }
+
     private function utilityPage(string $locale, string $page): View
     {
         $locale = $this->setLocale($locale);
@@ -155,6 +175,46 @@ class ShopController extends Controller
             ->take(3)
             ->values()
             ->all();
+    }
+
+    private function sitemapUrls(ShopApiClient $api): array
+    {
+        $urls = [];
+        $today = now()->toDateString();
+
+        foreach (['fr', 'en'] as $locale) {
+            $this->addSitemapUrl($urls, route('home.localized', ['locale' => $locale]), $today, 'daily', '1.0');
+            $this->addSitemapUrl($urls, route('pages.about', ['locale' => $locale]), $today, 'monthly', '0.8');
+            $this->addSitemapUrl($urls, route('blog.index', ['locale' => $locale]), $today, 'weekly', '0.8');
+            $this->addSitemapUrl($urls, route('pages.delivery', ['locale' => $locale]), $today, 'monthly', '0.6');
+            $this->addSitemapUrl($urls, route('pages.legal', ['locale' => $locale]), $today, 'yearly', '0.4');
+            $this->addSitemapUrl($urls, route('pages.terms', ['locale' => $locale]), $today, 'yearly', '0.4');
+            $this->addSitemapUrl($urls, route('pages.payment', ['locale' => $locale]), $today, 'monthly', '0.6');
+
+            foreach ($this->blogPosts($locale) as $post) {
+                $this->addSitemapUrl($urls, route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]), $today, 'monthly', '0.7');
+            }
+
+            $products = $api->products($locale, ['sort' => 'latest']);
+
+            foreach ($products['data'] as $product) {
+                if (! empty($product['slug'])) {
+                    $this->addSitemapUrl($urls, route('products.show', ['locale' => $locale, 'slug' => $product['slug']]), $today, 'weekly', '0.9');
+                }
+            }
+        }
+
+        return $urls;
+    }
+
+    private function addSitemapUrl(array &$urls, string $loc, string $lastmod, string $changefreq, string $priority): void
+    {
+        $urls[] = compact('loc', 'lastmod', 'changefreq', 'priority');
+    }
+
+    private function siteUrl(): string
+    {
+        return rtrim((string) config('app.url', 'https://www.denetfils.fr'), '/');
     }
 
     private function blogPosts(string $locale): array
