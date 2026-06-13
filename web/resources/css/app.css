@@ -6,12 +6,104 @@
     display: none !important;
 }
 
+:root {
+    color-scheme: light;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     @apply bg-cream text-cocoa antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+img {
+    content-visibility: auto;
+}
+
+::selection {
+    background: rgba(184, 92, 56, 0.22);
 }
 
 .surface-transition {
     @apply transition-colors duration-300;
+}
+
+.glass-panel {
+    background: rgba(255, 250, 242, 0.82);
+    border: 1px solid rgba(75, 53, 40, 0.10);
+    box-shadow: 0 22px 70px rgba(75, 53, 40, 0.10);
+    backdrop-filter: blur(18px);
+}
+
+.premium-card {
+    @apply rounded-[1.6rem] border border-cocoa/10 bg-white/80 shadow-sm transition duration-300;
+}
+
+.premium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 26px 70px rgba(75, 53, 40, 0.12);
+}
+
+.btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-terracotta px-5 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-clay disabled:cursor-wait disabled:opacity-70;
+}
+
+.btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-cocoa/15 bg-white/80 px-5 py-3 text-sm font-semibold text-cocoa transition duration-200 hover:border-terracotta/40 hover:text-terracotta;
+}
+
+.input-premium {
+    @apply rounded-2xl border border-cocoa/10 bg-white px-4 py-3 text-sm text-cocoa outline-none transition placeholder:text-cocoa/45 focus:border-terracotta focus:ring-4 focus:ring-terracotta/10;
+}
+
+.soft-grid {
+    background-image:
+        radial-gradient(circle at 20% 20%, rgba(184, 92, 56, 0.12), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(111, 143, 114, 0.16), transparent 32%),
+        linear-gradient(135deg, #fffaf2 0%, #f8f3ea 46%, #fff 100%);
+}
+
+.luxury-gradient {
+    background:
+        radial-gradient(circle at top left, rgba(248, 243, 234, 0.32), transparent 34%),
+        linear-gradient(135deg, rgba(29, 23, 19, 0.92), rgba(75, 53, 40, 0.88));
+}
+
+.product-image-overlay {
+    background: linear-gradient(180deg, transparent 45%, rgba(29, 23, 19, 0.64) 100%);
+}
+
+.animate-rise {
+    animation: rise 0.55s ease-out both;
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 html.dark body,
@@ -28,10 +120,13 @@ html.dark .theme-band-soft {
     background-color: #211914;
 }
 
-html.dark .theme-card {
+html.dark .theme-card,
+html.dark .premium-card,
+html.dark .glass-panel {
     background-color: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.12);
     color: #f8f3ea;
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
 }
 
 html.dark .theme-title {
@@ -53,4 +148,18 @@ html.dark .theme-invert-button {
 
 html.dark .theme-invert-button:hover {
     background-color: #ffffff;
+}
+
+html.dark .soft-grid {
+    background-image:
+        radial-gradient(circle at 20% 20%, rgba(184, 92, 56, 0.18), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(111, 143, 114, 0.18), transparent 32%),
+        linear-gradient(135deg, #1d1713 0%, #211914 52%, #2c211b 100%);
+}
+
+html.dark .btn-secondary,
+html.dark .input-premium {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #f8f3ea;
 }
