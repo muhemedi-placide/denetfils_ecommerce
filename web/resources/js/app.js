@@ -9,7 +9,7 @@ Alpine.data('shopApp', (config) => ({
     locale: config.locale,
     labels: config.labels,
     theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
-    activeMenu: 'home',
+    activeMenu: config.activeMenu || 'home',
     alertIndex: 0,
     cartOpen: false,
     cartLoading: false,
@@ -53,19 +53,26 @@ Alpine.data('shopApp', (config) => ({
         const sections = ['home', 'about', 'products', 'blog'];
 
         const updateActiveMenu = () => {
-            const offset = window.innerHeight * 0.35;
-            const current = sections
+            const visibleSections = sections
                 .map((id) => ({ id, element: document.getElementById(id) }))
-                .filter((item) => item.element)
-                .findLast((item) => item.element.getBoundingClientRect().top <= offset);
+                .filter((item) => item.element);
 
-            this.activeMenu = current?.id || 'home';
+            if (visibleSections.length === 0) {
+                return;
+            }
+
+            const offset = window.innerHeight * 0.35;
+            const current = visibleSections.findLast((item) => item.element.getBoundingClientRect().top <= offset);
+
+            if (current) {
+                this.activeMenu = current.id;
+            }
         };
 
         updateActiveMenu();
         window.addEventListener('scroll', updateActiveMenu, { passive: true });
         window.addEventListener('hashchange', () => {
-            this.activeMenu = window.location.hash.replace('#', '') || 'home';
+            this.activeMenu = window.location.hash.replace('#', '') || config.activeMenu || 'home';
         });
     },
 
