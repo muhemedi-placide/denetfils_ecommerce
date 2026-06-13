@@ -9,7 +9,7 @@ return [
     'nav' => [
         'promise' => 'Green premium grocery',
         'shop' => 'Shop',
-        'checkout' => 'Fast checkout',
+        'checkout' => 'Useful info',
     ],
     'locale' => [
         'fr' => 'French',
@@ -144,13 +144,13 @@ return [
         'shipping_note' => 'Delivery, VAT and secure payment are part of the order journey.',
     ],
     'checkout' => [
-        'eyebrow' => 'Purchase journey',
-        'title' => 'A clear order journey.',
-        'body' => 'Cart, address, delivery, payment and confirmation are organized for a simple experience.',
+        'eyebrow' => 'Useful information',
+        'title' => 'Before finalizing your basket.',
+        'body' => 'Find the details that help customers order with confidence: delivery, availability and customer support.',
         'steps' => [
-            ['number' => '01', 'title' => 'Cart', 'body' => 'Quick product add with quantities.'],
-            ['number' => '02', 'title' => 'Delivery', 'body' => 'Address, country, fees and free delivery threshold.'],
-            ['number' => '03', 'title' => 'Payment', 'body' => 'Clear summary and secure payment.'],
+            ['number' => '01', 'title' => 'Delivery', 'body' => 'Free delivery from €35 and key information visible before confirmation.'],
+            ['number' => '02', 'title' => 'Availability', 'body' => 'Products show stock levels to avoid surprises.'],
+            ['number' => '03', 'title' => 'Support', 'body' => 'A clear basket and quick access to important information.'],
         ],
     ],
     'footer' => [
