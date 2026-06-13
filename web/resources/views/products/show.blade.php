@@ -2,11 +2,52 @@
 
 @section('title', $product['name'] . ' | Denetfils')
 @section('description', $product['description'])
+@section('canonical', route('products.show', ['locale' => $locale, 'slug' => $product['slug']]))
+@section('og_type', 'product')
+@section('og_image', $product['primary_image']['url'] ?? '')
+
+@push('structured-data')
+    @php
+        $productUrl = route('products.show', ['locale' => $locale, 'slug' => $product['slug']]);
+        $rawPrice = $product['price'] ?? null;
+        $price = is_numeric($rawPrice) ? (float) $rawPrice : null;
+        $productSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $product['name'],
+            'description' => $product['description'],
+            'sku' => $product['sku'] ?? $product['slug'],
+            'image' => array_filter([$product['primary_image']['url'] ?? null]),
+            'brand' => ['@type' => 'Brand', 'name' => 'DEN & FILS'],
+            'category' => $product['category']['name'] ?? null,
+            'offers' => array_filter([
+                '@type' => 'Offer',
+                'url' => $productUrl,
+                'priceCurrency' => 'EUR',
+                'price' => $price,
+                'availability' => ((int) ($product['stock_quantity'] ?? 0)) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'itemCondition' => 'https://schema.org/NewCondition',
+                'seller' => ['@type' => 'Organization', 'name' => 'DEN & FILS'],
+            ]),
+        ];
+        $breadcrumbSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                ['@type' => 'ListItem', 'position' => 1, 'name' => __('home.nav.home'), 'item' => route('home.localized', ['locale' => $locale])],
+                ['@type' => 'ListItem', 'position' => 2, 'name' => __('home.nav.shop'), 'item' => route('home.localized', ['locale' => $locale]) . '#products'],
+                ['@type' => 'ListItem', 'position' => 3, 'name' => $product['name'], 'item' => $productUrl],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($productSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+    <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+@endpush
 
 @section('content')
     <section class="soft-grid px-4 py-10 dark:bg-ink sm:px-8 lg:py-18">
         <div class="mx-auto max-w-7xl">
-            <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60">
+            <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60" aria-label="Breadcrumb">
                 <a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-leaf">{{ __('home.nav.home') }}</a>
                 <span>/</span>
                 <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="transition hover:text-leaf">{{ __('home.nav.shop') }}</a>
@@ -17,7 +58,7 @@
             <div class="mt-6 grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
                 <div class="space-y-3 lg:space-y-4">
                     <div class="premium-card overflow-hidden bg-white p-2 dark:bg-white/5 sm:p-3">
-                        <img class="aspect-[4/3] w-full rounded-[1rem] object-cover sm:rounded-[1.25rem]" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" fetchpriority="high">
+                        <img class="aspect-[4/3] w-full rounded-[1rem] object-cover sm:rounded-[1.25rem]" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" fetchpriority="high" decoding="async">
                     </div>
 
                     <div class="grid grid-cols-3 gap-2 sm:gap-3">
@@ -111,7 +152,7 @@
                 <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
                     @foreach ($relatedProducts as $related)
                         <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $related['slug']]) }}" class="group min-w-[250px] rounded-[1.25rem] border border-leaf/10 bg-white p-4 transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0">
-                            <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $related['primary_image']['url'] ?? '' }}" alt="{{ $related['primary_image']['alt_text'] ?? $related['name'] }}" loading="lazy">
+                            <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $related['primary_image']['url'] ?? '' }}" alt="{{ $related['primary_image']['alt_text'] ?? $related['name'] }}" loading="lazy" decoding="async">
                             <div class="mt-4 flex items-start justify-between gap-4">
                                 <h3 class="line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream sm:text-lg">{{ $related['name'] }}</h3>
                                 <span class="shrink-0 font-extrabold text-leaf">{{ $related['formatted_price'] }}</span>
