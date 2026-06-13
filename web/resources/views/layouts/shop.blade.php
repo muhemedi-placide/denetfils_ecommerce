@@ -70,8 +70,8 @@
             </div>
 
             <div class="px-4 py-3 sm:px-8 lg:py-4">
-                <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 lg:grid lg:grid-cols-[220px_1fr_auto] lg:gap-4">
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex min-w-0 items-center gap-2 sm:gap-3" x-on:click="activeMenu = 'home'">
+                <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 lg:grid lg:grid-cols-[220px_1fr_auto] lg:gap-4">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex min-w-0 items-center gap-2 sm:gap-3" x-on:click="closeMobileMenu(); activeMenu = 'home'">
                         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forest text-xs font-black text-white dark:bg-meadow dark:text-ink sm:h-11 sm:w-11 sm:text-sm">DF</span>
                         <span class="min-w-0">
                             <span class="block truncate text-sm font-extrabold uppercase tracking-[0.16em] text-cocoa dark:text-cream sm:text-base">Denetfils</span>
@@ -79,14 +79,14 @@
                         </span>
                     </a>
 
-                    <form action="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" method="GET" class="order-3 flex w-full overflow-hidden rounded-full border border-leaf/20 bg-linen p-1 dark:border-white/10 dark:bg-white/5 md:order-none md:flex md:w-auto">
+                    <form action="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" method="GET" class="hidden overflow-hidden rounded-full border border-leaf/20 bg-linen p-1 dark:border-white/10 dark:bg-white/5 lg:flex">
                         <label class="sr-only" for="global-search">{{ __('home.filters.search') }}</label>
-                        <input id="global-search" name="q" placeholder="{{ __('home.filters.search_placeholder') }}" class="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm text-cocoa outline-none placeholder:text-cocoa/40 dark:text-cream dark:placeholder:text-cream/40 sm:px-5 sm:py-3">
-                        <button type="submit" class="min-h-[44px] rounded-full bg-terracotta px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-clay sm:px-6 sm:text-sm">{{ __('home.filters.search') }}</button>
+                        <input id="global-search" name="q" placeholder="{{ __('home.filters.search_placeholder') }}" class="min-w-0 flex-1 bg-transparent px-5 py-3 text-sm text-cocoa outline-none placeholder:text-cocoa/40 dark:text-cream dark:placeholder:text-cream/40">
+                        <button type="submit" class="min-h-[44px] rounded-full bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-clay">{{ __('home.filters.search') }}</button>
                     </form>
 
                     <div class="flex shrink-0 items-center justify-end gap-2">
-                        <button type="button" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-terracotta px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-clay sm:px-4 sm:py-2.5" x-on:click="loadCart(true)">
+                        <button type="button" class="hidden min-h-[44px] items-center justify-center rounded-full bg-terracotta px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-clay sm:inline-flex" x-on:click="openCart()">
                             {{ __('home.cart.title') }}
                             <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-leaf" x-text="itemCount"></span>
                         </button>
@@ -95,19 +95,59 @@
                             <svg x-show="theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
                             <svg x-cloak x-show="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.99 12.44A8.99 8.99 0 1 1 11.56 3a7 7 0 0 0 9.43 9.44Z"></path></svg>
                         </button>
+
+                        <button
+                            type="button"
+                            class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-leaf/10 bg-white text-cocoa transition hover:bg-mint hover:text-leaf dark:border-white/10 dark:bg-white/5 dark:text-cream dark:hover:bg-white/10 lg:hidden"
+                            x-on:click="toggleMobileMenu()"
+                            x-bind:aria-expanded="mobileMenuOpen.toString()"
+                            aria-controls="mobile-menu"
+                            aria-label="Menu"
+                        >
+                            <svg x-show="!mobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+                            <svg x-cloak x-show="mobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <nav class="border-t border-leaf/10 bg-linen px-4 py-2 text-sm font-bold text-cocoa/75 dark:border-white/10 dark:bg-[#172414] dark:text-cream/75 sm:px-8">
-                <div class="mobile-scrollbarless mx-auto flex max-w-7xl snap-x items-center gap-2 overflow-x-auto pb-0.5">
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" x-on:click="activeMenu = 'home'" x-bind:class="activeMenu === 'home' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] shrink-0 snap-start whitespace-nowrap rounded-full px-4 py-2.5 transition">{{ __('home.nav.home') }}</a>
-                    <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" x-on:click="activeMenu = 'about'" x-bind:class="activeMenu === 'about' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] shrink-0 snap-start whitespace-nowrap rounded-full px-4 py-2.5 transition">{{ __('home.nav.about') }}</a>
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" x-on:click="activeMenu = 'products'" x-bind:class="activeMenu === 'products' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] shrink-0 snap-start whitespace-nowrap rounded-full px-4 py-2.5 transition">{{ __('home.nav.shop') }}</a>
-                    <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" x-on:click="activeMenu = 'blog'" x-bind:class="activeMenu === 'blog' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] shrink-0 snap-start whitespace-nowrap rounded-full px-4 py-2.5 transition">{{ __('home.nav.blog') }}</a>
-                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="min-h-[44px] shrink-0 snap-start whitespace-nowrap rounded-full px-4 py-2.5 transition hover:bg-white hover:text-leaf dark:hover:bg-white/10">{{ __('home.nav.checkout') }}</a>
+            <nav class="hidden border-t border-leaf/10 bg-linen px-4 py-2 text-sm font-bold text-cocoa/75 dark:border-white/10 dark:bg-[#172414] dark:text-cream/75 sm:px-8 lg:block">
+                <div class="mx-auto flex max-w-7xl items-center gap-2">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" x-on:click="activeMenu = 'home'" x-bind:class="activeMenu === 'home' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] rounded-full px-4 py-2.5 transition">{{ __('home.nav.home') }}</a>
+                    <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" x-on:click="activeMenu = 'about'" x-bind:class="activeMenu === 'about' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] rounded-full px-4 py-2.5 transition">{{ __('home.nav.about') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" x-on:click="activeMenu = 'products'" x-bind:class="activeMenu === 'products' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] rounded-full px-4 py-2.5 transition">{{ __('home.nav.shop') }}</a>
+                    <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" x-on:click="activeMenu = 'blog'" x-bind:class="activeMenu === 'blog' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] rounded-full px-4 py-2.5 transition">{{ __('home.nav.blog') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="min-h-[44px] rounded-full px-4 py-2.5 transition hover:bg-white hover:text-leaf dark:hover:bg-white/10">{{ __('home.nav.checkout') }}</a>
                 </div>
             </nav>
+
+            <div
+                id="mobile-menu"
+                x-cloak
+                x-show="mobileMenuOpen"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="-translate-y-2 opacity-0"
+                x-transition:enter-end="translate-y-0 opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="translate-y-0 opacity-100"
+                x-transition:leave-end="-translate-y-2 opacity-0"
+                class="border-t border-leaf/10 bg-cream px-4 py-4 shadow-lg dark:border-white/10 dark:bg-ink lg:hidden"
+            >
+                <form action="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" method="GET" class="flex overflow-hidden rounded-full border border-leaf/20 bg-white p-1 dark:border-white/10 dark:bg-white/5" x-on:submit="closeMobileMenu()">
+                    <label class="sr-only" for="mobile-search">{{ __('home.filters.search') }}</label>
+                    <input id="mobile-search" name="q" placeholder="{{ __('home.filters.search_placeholder') }}" class="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm text-cocoa outline-none placeholder:text-cocoa/40 dark:text-cream dark:placeholder:text-cream/40">
+                    <button type="submit" class="min-h-[44px] rounded-full bg-terracotta px-4 py-2 text-xs font-bold uppercase tracking-wide text-white">{{ __('home.filters.search') }}</button>
+                </form>
+
+                <div class="mt-4 grid gap-2">
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'home'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.nav.home') }}<span class="text-leaf">→</span></a>
+                    <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" x-on:click="closeMobileMenu(); activeMenu = 'products'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-terracotta px-4 py-3 font-bold text-white shadow-sm">{{ __('home.nav.shop') }}<span>→</span></a>
+                    <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'about'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.nav.about') }}<span class="text-leaf">→</span></a>
+                    <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'blog'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.nav.blog') }}<span class="text-leaf">→</span></a>
+                    <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu()" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.footer.delivery') }}<span class="text-leaf">→</span></a>
+                    <a href="{{ $alternateUrl }}" x-on:click="closeMobileMenu()" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ strtoupper($alternateLocale) }}<span class="text-leaf">→</span></a>
+                </div>
+            </div>
         </header>
 
         <main>
@@ -165,7 +205,17 @@
             </aside>
         </div>
 
-        <footer class="border-t border-leaf/10 bg-cream px-4 pt-12 text-sm text-cocoa dark:border-white/10 dark:bg-ink dark:text-cream sm:px-8 sm:pt-14">
+        <div x-cloak x-show="!cartOpen" class="fixed inset-x-0 bottom-0 z-30 border-t border-leaf/10 bg-white/95 px-4 py-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] backdrop-blur dark:border-white/10 dark:bg-ink/95 lg:hidden">
+            <div class="mx-auto grid max-w-md grid-cols-2 gap-3">
+                <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" class="inline-flex min-h-[46px] items-center justify-center rounded-full bg-terracotta px-4 py-3 text-sm font-bold uppercase tracking-wide text-white" x-on:click="closeMobileMenu()">{{ __('home.nav.shop') }}</a>
+                <button type="button" class="inline-flex min-h-[46px] items-center justify-center rounded-full border border-leaf/20 bg-mint px-4 py-3 text-sm font-bold uppercase tracking-wide text-leaf dark:border-white/10 dark:bg-white/5 dark:text-cream" x-on:click="openCart()">
+                    {{ __('home.cart.title') }}
+                    <span class="ml-2 rounded-full bg-white px-2 py-0.5 text-xs text-leaf dark:bg-cream" x-text="itemCount"></span>
+                </button>
+            </div>
+        </div>
+
+        <footer class="border-t border-leaf/10 bg-cream px-4 pb-24 pt-12 text-sm text-cocoa dark:border-white/10 dark:bg-ink dark:text-cream sm:px-8 sm:pb-12 sm:pt-14 lg:pb-0">
             <div class="mx-auto grid max-w-7xl gap-8 pb-10 sm:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_0.95fr_1.1fr] lg:gap-10">
                 <div>
                     <div class="flex items-center gap-3">
