@@ -7,6 +7,7 @@
     $robots = trim($__env->yieldContent('robots')) ?: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
     $ogType = trim($__env->yieldContent('og_type')) ?: 'website';
     $ogImage = trim($__env->yieldContent('og_image')) ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=85';
+    $preloadImage = trim($__env->yieldContent('preload_image')) ?: $ogImage;
     $jsonLd = [
         '@context' => 'https://schema.org',
         '@graph' => [
@@ -62,6 +63,9 @@
 <link rel="alternate" hreflang="{{ $alternateLocale }}" href="{{ $alternateUrl }}">
 <link rel="alternate" hreflang="x-default" href="{{ route('home.localized', ['locale' => 'fr']) }}">
 <link rel="sitemap" type="application/xml" href="{{ url('/sitemap.xml') }}">
+@if ($preloadImage)
+    <link rel="preload" as="image" href="{{ $preloadImage }}" fetchpriority="high">
+@endif
 <meta property="og:locale" content="{{ $currentLocale === 'fr' ? 'fr_FR' : 'en_US' }}">
 <meta property="og:site_name" content="{{ $siteName }}">
 <meta property="og:type" content="{{ $ogType }}">
