@@ -93,12 +93,12 @@
         <div x-cloak x-show="cartOpen" class="fixed inset-0 z-40">
             <button
                 type="button"
-                class="absolute inset-0 bg-black/45"
+                class="absolute inset-0 bg-black/45 backdrop-blur-sm"
                 aria-label="{{ __('home.cart.close') }}"
                 x-on:click="cartOpen = false"
             ></button>
-            <aside class="theme-card absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-leaf/10 bg-linen shadow-2xl dark:border-white/10 dark:bg-ink">
-                <div class="flex items-center justify-between border-b border-leaf/10 px-5 py-4 dark:border-white/10">
+            <aside class="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-leaf/10 bg-cream shadow-2xl dark:border-white/10 dark:bg-ink">
+                <div class="flex items-center justify-between border-b border-leaf/10 bg-cream px-5 py-4 dark:border-white/10 dark:bg-ink">
                     <div>
                         <h2 class="theme-title text-lg font-semibold text-cocoa dark:text-cream">{{ __('home.cart.title') }}</h2>
                         <p class="theme-muted text-sm text-cocoa/65 dark:text-cream/65">{{ __('home.cart.subtitle') }}</p>
@@ -109,7 +109,7 @@
                     </button>
                 </div>
 
-                <div class="flex-1 overflow-y-auto px-5 py-5">
+                <div class="flex-1 overflow-y-auto bg-linen px-5 py-5 dark:bg-[#172414]">
                     <div x-show="cartLoading" class="theme-muted text-sm text-cocoa/70 dark:text-cream/70">
                         {{ __('home.cart.loading') }}
                     </div>
@@ -118,13 +118,13 @@
                         <span x-text="cartError"></span>
                     </div>
 
-                    <div x-show="!cartLoading && cartItems.length === 0" class="theme-card rounded-lg border border-leaf/10 bg-white p-5 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70">
+                    <div x-show="!cartLoading && cartItems.length === 0" class="rounded-lg border border-leaf/10 bg-white p-5 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70">
                         {{ __('home.cart.empty') }}
                     </div>
 
                     <div class="space-y-4">
                         <template x-for="item in cartItems" x-bind:key="item.id">
-                            <article class="theme-card grid grid-cols-[72px_1fr] gap-4 rounded-lg border border-leaf/10 bg-white p-3 dark:border-white/10 dark:bg-white/5">
+                            <article class="grid grid-cols-[72px_1fr] gap-4 rounded-lg border border-leaf/10 bg-white p-3 dark:border-white/10 dark:bg-white/5">
                                 <img
                                     class="h-[72px] w-[72px] rounded-md object-cover"
                                     x-bind:src="item.product?.image?.url"
@@ -147,7 +147,7 @@
                                         </button>
                                     </div>
                                     <div class="mt-3 flex items-center justify-between gap-3">
-                                        <div class="flex items-center rounded-full border border-leaf/15 dark:border-white/15">
+                                        <div class="flex items-center rounded-full border border-leaf/15 bg-mint/50 dark:border-white/15 dark:bg-white/5">
                                             <button type="button" class="px-3 py-1 text-sm" x-on:click="updateCartItem(item.id, item.quantity - 1)" x-bind:disabled="item.quantity <= 1 || cartMutating">&minus;</button>
                                             <input
                                                 class="w-12 bg-transparent text-center text-sm outline-none"
@@ -166,7 +166,7 @@
                     </div>
                 </div>
 
-                <div class="border-t border-leaf/10 p-5 dark:border-white/10">
+                <div class="border-t border-leaf/10 bg-cream p-5 dark:border-white/10 dark:bg-ink">
                     <div class="flex items-center justify-between text-sm">
                         <span class="theme-muted text-cocoa/70 dark:text-cream/70">{{ __('home.cart.total') }}</span>
                         <strong class="theme-title text-lg text-leaf dark:text-cream" x-text="formattedTotal"></strong>
