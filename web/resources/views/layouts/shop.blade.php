@@ -7,6 +7,14 @@
         $alternateUrl = route('pages.about', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('blog.index')) {
         $alternateUrl = route('blog.index', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.delivery')) {
+        $alternateUrl = route('pages.delivery', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.legal')) {
+        $alternateUrl = route('pages.legal', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.terms')) {
+        $alternateUrl = route('pages.terms', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.payment')) {
+        $alternateUrl = route('pages.payment', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('products.show')) {
         $alternateUrl = route('products.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     }
@@ -47,25 +55,11 @@
         x-init="init()"
     >
         <header class="sticky top-0 z-40 border-b border-leaf/10 bg-white/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-ink/95">
-            <div
-                class="bg-forest px-5 py-2 text-xs font-semibold text-white dark:bg-[#172414] sm:px-8"
-                x-data="{ alerts: @js(trans('home.announcements')) }"
-                x-init="setInterval(() => alertIndex = (alertIndex + 1) % alerts.length, 4200)"
-            >
+            <div class="bg-forest px-5 py-2 text-xs font-semibold text-white dark:bg-[#172414] sm:px-8" x-data="{ alerts: @js(trans('home.announcements')) }" x-init="setInterval(() => alertIndex = (alertIndex + 1) % alerts.length, 4200)">
                 <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
                     <div class="relative h-5 min-w-0 flex-1 overflow-hidden">
                         <template x-for="(alert, index) in alerts" x-bind:key="alert">
-                            <p
-                                x-show="alertIndex === index"
-                                x-transition:enter="transition ease-out duration-500"
-                                x-transition:enter-start="translate-y-3 opacity-0"
-                                x-transition:enter-end="translate-y-0 opacity-100"
-                                x-transition:leave="transition ease-in duration-300"
-                                x-transition:leave-start="translate-y-0 opacity-100"
-                                x-transition:leave-end="-translate-y-3 opacity-0"
-                                class="absolute inset-0 truncate"
-                                x-text="alert"
-                            ></p>
+                            <p x-show="alertIndex === index" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="translate-y-3 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="-translate-y-3 opacity-0" class="absolute inset-0 truncate" x-text="alert"></p>
                         </template>
                     </div>
                     <div class="hidden items-center gap-4 text-white/80 md:flex">
@@ -88,34 +82,18 @@
                     <form action="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" method="GET" class="hidden overflow-hidden rounded-full border border-leaf/15 bg-linen p-1 dark:border-white/10 dark:bg-white/5 md:flex">
                         <label class="sr-only" for="global-search">{{ __('home.filters.search') }}</label>
                         <input id="global-search" name="q" placeholder="{{ __('home.filters.search_placeholder') }}" class="min-w-0 flex-1 bg-transparent px-5 py-3 text-sm text-cocoa outline-none placeholder:text-cocoa/45 dark:text-cream dark:placeholder:text-cream/45">
-                        <button type="submit" class="rounded-full bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-clay">
-                            {{ __('home.filters.search') }}
-                        </button>
+                        <button type="submit" class="rounded-full bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-clay">{{ __('home.filters.search') }}</button>
                     </form>
 
                     <div class="flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            class="rounded-full bg-terracotta px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-clay"
-                            x-on:click="loadCart(true)"
-                        >
+                        <button type="button" class="rounded-full bg-terracotta px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-clay" x-on:click="loadCart(true)">
                             {{ __('home.cart.title') }}
                             <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-leaf" x-text="itemCount"></span>
                         </button>
 
-                        <button
-                            type="button"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-leaf/10 bg-white text-leaf transition hover:bg-mint dark:border-white/10 dark:bg-white/5 dark:text-meadow"
-                            x-on:click="toggleTheme()"
-                            aria-label="{{ __('home.theme.toggle') }}"
-                        >
-                            <svg x-show="theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="4"></circle>
-                                <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-                            </svg>
-                            <svg x-cloak x-show="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20.99 12.44A8.99 8.99 0 1 1 11.56 3a7 7 0 0 0 9.43 9.44Z"></path>
-                            </svg>
+                        <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-leaf/10 bg-white text-leaf transition hover:bg-mint dark:border-white/10 dark:bg-white/5 dark:text-meadow" x-on:click="toggleTheme()" aria-label="{{ __('home.theme.toggle') }}">
+                            <svg x-show="theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+                            <svg x-cloak x-show="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.99 12.44A8.99 8.99 0 1 1 11.56 3a7 7 0 0 0 9.43 9.44Z"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -144,17 +122,13 @@
                         <h2 class="theme-title text-lg font-semibold text-cocoa dark:text-cream">{{ __('home.cart.title') }}</h2>
                         <p class="theme-muted text-sm text-cocoa/65 dark:text-cream/65">{{ __('home.cart.subtitle') }}</p>
                     </div>
-                    <button type="button" class="rounded-full p-2 text-cocoa transition hover:bg-mint hover:text-leaf dark:text-cream dark:hover:bg-white/10" x-on:click="cartOpen = false">
-                        <span class="sr-only">{{ __('home.cart.close') }}</span>
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button type="button" class="rounded-full p-2 text-cocoa transition hover:bg-mint hover:text-leaf dark:text-cream dark:hover:bg-white/10" x-on:click="cartOpen = false"><span class="sr-only">{{ __('home.cart.close') }}</span><span aria-hidden="true">&times;</span></button>
                 </div>
 
                 <div class="flex-1 overflow-y-auto bg-linen px-5 py-5 dark:bg-[#172414]">
                     <div x-show="cartLoading" class="theme-muted text-sm text-cocoa/70 dark:text-cream/70">{{ __('home.cart.loading') }}</div>
                     <div x-show="cartError" class="mb-4 rounded-lg border border-leaf/25 bg-mint px-4 py-3 text-sm text-leaf dark:bg-white/5"><span x-text="cartError"></span></div>
                     <div x-show="!cartLoading && cartItems.length === 0" class="rounded-lg border border-leaf/10 bg-white p-5 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70">{{ __('home.cart.empty') }}</div>
-
                     <div class="space-y-4">
                         <template x-for="item in cartItems" x-bind:key="item.id">
                             <article class="grid grid-cols-[72px_1fr] gap-4 rounded-lg border border-leaf/10 bg-white p-3 dark:border-white/10 dark:bg-white/5">
@@ -191,10 +165,59 @@
             </aside>
         </div>
 
-        <footer class="theme-band-soft border-t border-leaf/10 bg-white px-5 py-10 text-sm text-cocoa/65 dark:border-white/10 dark:bg-ink dark:text-cream/65 sm:px-8">
-            <div class="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p class="font-semibold text-leaf dark:text-cream">Denetfils</p>
-                <p>{{ __('home.footer.line') }}</p>
+        <footer class="bg-forest px-5 pt-14 text-sm text-white dark:bg-[#0d160b] sm:px-8">
+            <div class="mx-auto grid max-w-7xl gap-10 pb-10 md:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_0.95fr_1.1fr]">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-meadow text-sm font-black text-ink">DF</span>
+                        <div>
+                            <p class="text-lg font-extrabold uppercase tracking-[0.18em]">DEN & FILS</p>
+                            <p class="text-white/68">{{ __('home.nav.promise') }}</p>
+                        </div>
+                    </div>
+                    <p class="mt-5 max-w-sm leading-7 text-white/72">{{ __('home.footer.line') }}</p>
+                    <p class="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-meadow">{{ __('home.contact.vat') }}</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-extrabold uppercase tracking-wide text-white">{{ __('home.footer.products_title') }}</h3>
+                    <ul class="mt-5 space-y-3 text-white/72">
+                        <li><a class="transition hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#offers">{{ __('home.footer.promotions') }}</a></li>
+                        <li><a class="transition hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products">{{ __('home.footer.new_products') }}</a></li>
+                        <li><a class="transition hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products">{{ __('home.footer.best_sellers') }}</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-extrabold uppercase tracking-wide text-white">{{ __('home.footer.useful_links_title') }}</h3>
+                    <ul class="mt-5 space-y-3 text-white/72">
+                        <li><a class="transition hover:text-meadow" href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}">{{ __('home.footer.delivery') }}</a></li>
+                        <li><a class="transition hover:text-meadow" href="{{ route('pages.legal', ['locale' => $currentLocale]) }}">{{ __('home.footer.legal') }}</a></li>
+                        <li><a class="transition hover:text-meadow" href="{{ route('pages.terms', ['locale' => $currentLocale]) }}">{{ __('home.footer.terms') }}</a></li>
+                        <li><a class="transition hover:text-meadow" href="{{ route('pages.about', ['locale' => $currentLocale]) }}">{{ __('home.nav.about') }}</a></li>
+                        <li><a class="transition hover:text-meadow" href="{{ route('pages.payment', ['locale' => $currentLocale]) }}">{{ __('home.footer.secure_payment') }}</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-extrabold uppercase tracking-wide text-white">{{ __('home.footer.information_title') }}</h3>
+                    <div class="mt-5 space-y-3 text-white/72">
+                        <p class="font-semibold text-white">{{ __('home.contact.company') }}</p>
+                        <p>{{ __('home.contact.address') }}</p>
+                        <p>{{ __('home.contact.phone') }}</p>
+                        <p>{{ __('home.contact.email') }}</p>
+                    </div>
+                    <div class="mt-6 flex flex-wrap gap-3">
+                        <a class="rounded-full border border-white/15 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/78 transition hover:border-meadow hover:text-meadow" href="https://www.facebook.com/denetfils" target="_blank" rel="noopener">Facebook</a>
+                        <a class="rounded-full border border-white/15 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/78 transition hover:border-meadow hover:text-meadow" href="https://www.instagram.com/denetfils" target="_blank" rel="noopener">Instagram</a>
+                        <a class="rounded-full border border-white/15 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/78 transition hover:border-meadow hover:text-meadow" href="https://www.tiktok.com/@denetfils" target="_blank" rel="noopener">TikTok</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mx-auto flex max-w-7xl flex-col gap-3 border-t border-white/10 py-5 text-xs text-white/58 sm:flex-row sm:items-center sm:justify-between">
+                <p>Copyright © 2025 denetfils.fr. All rights reserved.</p>
+                <p>{{ __('home.contact.email') }}</p>
             </div>
         </footer>
 
