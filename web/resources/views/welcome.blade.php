@@ -6,6 +6,7 @@
 @section('content')
     @php
         $spotlightProducts = array_slice($products, 0, 3);
+        $featuredBlogPosts = $blogPosts ?? [];
         $hasActiveFilters = ($filters['q'] ?? '') !== '' || ($filters['category'] ?? '') !== '' || ($filters['sort'] ?? 'default') !== 'default';
     @endphp
 
@@ -63,7 +64,7 @@
         </div>
     </section>
 
-    <section id="about" class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-18">
+    <section id="about" class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-16">
         <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div class="relative overflow-hidden rounded-[1.5rem] bg-linen p-2 dark:bg-white/5 sm:p-3">
                 <img class="aspect-[4/3] w-full rounded-[1.15rem] object-cover" src="https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1200&q=84" alt="{{ __('home.about.image_alt') }}" loading="lazy">
@@ -244,18 +245,21 @@
                     <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.blog.eyebrow') }}</p>
                     <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.blog.title') }}</h2>
                 </div>
-                <p class="max-w-lg text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ __('home.blog.body') }}</p>
+                <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit">{{ __('home.nav.blog') }}</a>
             </div>
-            <div class="grid gap-3 lg:grid-cols-3">
-                @foreach (array_slice(trans('home.blog.posts'), 0, 3) as $post)
-                    <article class="rounded-[1.15rem] border border-leaf/10 bg-white p-5 dark:border-white/10 dark:bg-white/5 sm:p-6">
-                        <div class="flex items-center justify-between gap-3">
-                            <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $post['category'] }}</p>
-                            <span class="text-xs font-semibold text-cocoa/50 dark:text-cream/50">{{ $post['date'] }}</span>
+            <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
+                @foreach ($featuredBlogPosts as $post)
+                    <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="group min-w-[260px] overflow-hidden rounded-[1.25rem] border border-leaf/10 bg-white transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0">
+                        <img class="h-40 w-full object-cover" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" loading="lazy">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $post['category'] }}</p>
+                                <span class="text-xs font-semibold text-cocoa/50 dark:text-cream/50">{{ $post['date'] }}</span>
+                            </div>
+                            <h3 class="mt-3 line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream sm:text-lg">{{ $post['title'] }}</h3>
+                            <p class="mt-2 line-clamp-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $post['description'] }}</p>
                         </div>
-                        <h3 class="mt-3 text-base font-extrabold text-cocoa dark:text-cream sm:text-lg">{{ $post['title'] }}</h3>
-                        <p class="mt-2 line-clamp-3 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $post['body'] }}</p>
-                    </article>
+                    </a>
                 @endforeach
             </div>
         </div>
