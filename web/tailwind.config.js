@@ -10,14 +10,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        cream: '#f8f3ea',
-        linen: '#fffaf2',
-        terracotta: '#b85c38',
-        clay: '#8f3f24',
-        sage: '#6f8f72',
-        leaf: '#2f5d3a',
-        cocoa: '#4b3528',
-        ink: '#1d1713',
+        cream: '#FFF7E6',
+        linen: '#FFFCF4',
+        terracotta: '#E73323',
+        clay: '#B51F16',
+        sage: '#F8B400',
+        leaf: '#166534',
+        cocoa: '#1F1712',
+        ink: '#120D0A',
+        chili: '#E73323',
+        gold: '#F8B400',
+        plantain: '#F6D35B',
+        lakay: '#166534',
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
