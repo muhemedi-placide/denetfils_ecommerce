@@ -1,0 +1,261 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Database\Seeder;
+
+class EcommerceSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $categories = collect([
+            [
+                'slug' => 'epicerie-fine',
+                'name' => ['fr' => 'Epicerie fine', 'en' => 'Fine groceries'],
+                'sort_order' => 1,
+            ],
+            [
+                'slug' => 'produits-frais',
+                'name' => ['fr' => 'Produits frais', 'en' => 'Fresh products'],
+                'sort_order' => 2,
+            ],
+            [
+                'slug' => 'boissons-naturelles',
+                'name' => ['fr' => 'Boissons naturelles', 'en' => 'Natural drinks'],
+                'sort_order' => 3,
+            ],
+        ])->mapWithKeys(function (array $category) {
+            return [
+                $category['slug'] => Category::updateOrCreate(
+                    ['slug' => $category['slug']],
+                    [
+                        'name' => $category['name'],
+                        'sort_order' => $category['sort_order'],
+                        'is_active' => true,
+                    ],
+                ),
+            ];
+        });
+
+        foreach ($this->products() as $productData) {
+            $images = $productData['images'];
+            $variants = $productData['variants'];
+            $categorySlug = $productData['category_slug'];
+            unset($productData['category_slug'], $productData['images'], $productData['variants']);
+
+            $product = Product::updateOrCreate(
+                ['slug' => $productData['slug']],
+                [
+                    ...$productData,
+                    'category_id' => $categories[$categorySlug]->id,
+                    'is_active' => true,
+                ],
+            );
+
+            $product->images()->delete();
+            $product->variants()->delete();
+
+            foreach ($images as $index => $image) {
+                $product->images()->create([
+                    ...$image,
+                    'sort_order' => $index + 1,
+                ]);
+            }
+
+            foreach ($variants as $variant) {
+                $product->variants()->create([
+                    ...$variant,
+                    'is_active' => true,
+                ]);
+            }
+        }
+    }
+
+    private function products(): array
+    {
+        return [
+            [
+                'category_slug' => 'epicerie-fine',
+                'name' => ['fr' => 'Miel de montagne', 'en' => 'Mountain honey'],
+                'slug' => 'miel-de-montagne',
+                'description' => [
+                    'fr' => 'Un miel floral et dense, prepare pour les petits-dejeuners, les desserts et les coffrets cadeaux.',
+                    'en' => 'A dense floral honey prepared for breakfasts, desserts and gift boxes.',
+                ],
+                'origin' => ['fr' => 'Origine France', 'en' => 'French origin'],
+                'sku' => 'DEN-MIEL-250',
+                'price_cents' => 890,
+                'currency' => 'EUR',
+                'weight_grams' => 250,
+                'stock_quantity' => 35,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1587049352851-8d4e89133924?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Pot de miel artisanal.', 'en' => 'Jar of artisanal honey.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Pot 250 g', 'en' => '250 g jar'], 'sku' => 'DEN-MIEL-250-A', 'price_adjustment_cents' => 0, 'stock_quantity' => 35],
+                    ['name' => ['fr' => 'Pot 500 g', 'en' => '500 g jar'], 'sku' => 'DEN-MIEL-500-A', 'price_adjustment_cents' => 650, 'stock_quantity' => 20],
+                ],
+            ],
+            [
+                'category_slug' => 'epicerie-fine',
+                'name' => ['fr' => 'Epices maison', 'en' => 'House spices'],
+                'slug' => 'epices-maison',
+                'description' => [
+                    'fr' => 'Un melange aromatique equilibre pour relever legumes, viandes et plats mijotes.',
+                    'en' => 'A balanced aromatic blend for vegetables, meats and slow-cooked dishes.',
+                ],
+                'origin' => ['fr' => 'Recette Denetfils', 'en' => 'Denetfils recipe'],
+                'sku' => 'DEN-EPICES-120',
+                'price_cents' => 1250,
+                'currency' => 'EUR',
+                'weight_grams' => 120,
+                'stock_quantity' => 48,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Epices colorees en vrac.', 'en' => 'Colorful loose spices.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Doux', 'en' => 'Mild'], 'sku' => 'DEN-EPICES-DOUX', 'price_adjustment_cents' => 0, 'stock_quantity' => 24],
+                    ['name' => ['fr' => 'Piquant', 'en' => 'Spicy'], 'sku' => 'DEN-EPICES-PIQ', 'price_adjustment_cents' => 100, 'stock_quantity' => 24],
+                ],
+            ],
+            [
+                'category_slug' => 'epicerie-fine',
+                'name' => ['fr' => 'Huile d olive vierge', 'en' => 'Virgin olive oil'],
+                'slug' => 'huile-olive-vierge',
+                'description' => [
+                    'fr' => 'Une huile souple et fruitée pour assaisonnements, marinades et cuisine quotidienne.',
+                    'en' => 'A smooth fruity oil for dressings, marinades and everyday cooking.',
+                ],
+                'origin' => ['fr' => 'Origine Espagne', 'en' => 'Spanish origin'],
+                'sku' => 'DEN-HUILE-500',
+                'price_cents' => 1490,
+                'currency' => 'EUR',
+                'weight_grams' => 500,
+                'stock_quantity' => 30,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Bouteille d huile d olive.', 'en' => 'Bottle of olive oil.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Bouteille 500 ml', 'en' => '500 ml bottle'], 'sku' => 'DEN-HUILE-500-A', 'price_adjustment_cents' => 0, 'stock_quantity' => 30],
+                ],
+            ],
+            [
+                'category_slug' => 'produits-frais',
+                'name' => ['fr' => 'Assortiment bio', 'en' => 'Organic assortment'],
+                'slug' => 'assortiment-bio',
+                'description' => [
+                    'fr' => 'Une selection de produits frais et secs pour composer un panier decouverte complet.',
+                    'en' => 'A selection of fresh and dry products for a complete discovery basket.',
+                ],
+                'origin' => ['fr' => 'Origine Europe', 'en' => 'European origin'],
+                'sku' => 'DEN-BIO-BOX',
+                'price_cents' => 2990,
+                'currency' => 'EUR',
+                'weight_grams' => 1800,
+                'stock_quantity' => 18,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Assortiment de legumes frais.', 'en' => 'Assorted fresh vegetables.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Panier standard', 'en' => 'Standard basket'], 'sku' => 'DEN-BIO-STD', 'price_adjustment_cents' => 0, 'stock_quantity' => 18],
+                    ['name' => ['fr' => 'Panier familial', 'en' => 'Family basket'], 'sku' => 'DEN-BIO-FAM', 'price_adjustment_cents' => 1600, 'stock_quantity' => 10],
+                ],
+            ],
+            [
+                'category_slug' => 'produits-frais',
+                'name' => ['fr' => 'Panier premium', 'en' => 'Premium basket'],
+                'slug' => 'panier-premium',
+                'description' => [
+                    'fr' => 'Un format cadeau avec produits soignes, emballage propre et preparation prioritaire.',
+                    'en' => 'A gift format with curated products, clean packaging and priority preparation.',
+                ],
+                'origin' => ['fr' => 'Origine Europe', 'en' => 'European origin'],
+                'sku' => 'DEN-PREMIUM-BOX',
+                'price_cents' => 4900,
+                'currency' => 'EUR',
+                'weight_grams' => 2500,
+                'stock_quantity' => 12,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Panier de produits alimentaires premium.', 'en' => 'Basket of premium food products.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Classique', 'en' => 'Classic'], 'sku' => 'DEN-PREMIUM-CLS', 'price_adjustment_cents' => 0, 'stock_quantity' => 12],
+                    ['name' => ['fr' => 'Avec carte cadeau', 'en' => 'With gift card'], 'sku' => 'DEN-PREMIUM-GFT', 'price_adjustment_cents' => 500, 'stock_quantity' => 12],
+                ],
+            ],
+            [
+                'category_slug' => 'produits-frais',
+                'name' => ['fr' => 'Fromage affine', 'en' => 'Aged cheese'],
+                'slug' => 'fromage-affine',
+                'description' => [
+                    'fr' => 'Un fromage de caractere pour plateaux, degustations et paniers gourmands.',
+                    'en' => 'A characterful cheese for boards, tastings and gourmet baskets.',
+                ],
+                'origin' => ['fr' => 'Origine France', 'en' => 'French origin'],
+                'sku' => 'DEN-FROMAGE-300',
+                'price_cents' => 1690,
+                'currency' => 'EUR',
+                'weight_grams' => 300,
+                'stock_quantity' => 16,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Plateau de fromages affines.', 'en' => 'Board of aged cheeses.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Piece 300 g', 'en' => '300 g piece'], 'sku' => 'DEN-FROMAGE-300-A', 'price_adjustment_cents' => 0, 'stock_quantity' => 16],
+                ],
+            ],
+            [
+                'category_slug' => 'boissons-naturelles',
+                'name' => ['fr' => 'Jus pomme gingembre', 'en' => 'Apple ginger juice'],
+                'slug' => 'jus-pomme-gingembre',
+                'description' => [
+                    'fr' => 'Une boisson naturelle, vive et peu sucree, adaptee aux pauses et coffrets.',
+                    'en' => 'A natural, bright and lightly sweet drink for breaks and boxes.',
+                ],
+                'origin' => ['fr' => 'Origine Belgique', 'en' => 'Belgian origin'],
+                'sku' => 'DEN-JUS-PG-750',
+                'price_cents' => 690,
+                'currency' => 'EUR',
+                'weight_grams' => 750,
+                'stock_quantity' => 42,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Verres de jus naturel.', 'en' => 'Glasses of natural juice.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Bouteille 750 ml', 'en' => '750 ml bottle'], 'sku' => 'DEN-JUS-PG-750-A', 'price_adjustment_cents' => 0, 'stock_quantity' => 42],
+                ],
+            ],
+            [
+                'category_slug' => 'boissons-naturelles',
+                'name' => ['fr' => 'Infusion hibiscus', 'en' => 'Hibiscus infusion'],
+                'slug' => 'infusion-hibiscus',
+                'description' => [
+                    'fr' => 'Une infusion rouge intense, parfumee et simple a servir chaude ou froide.',
+                    'en' => 'A deep red, fragrant infusion that is easy to serve hot or cold.',
+                ],
+                'origin' => ['fr' => 'Origine Senegal', 'en' => 'Senegalese origin'],
+                'sku' => 'DEN-INF-HIB-80',
+                'price_cents' => 790,
+                'currency' => 'EUR',
+                'weight_grams' => 80,
+                'stock_quantity' => 40,
+                'images' => [[
+                    'url' => 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1200&q=80',
+                    'alt_text' => ['fr' => 'Tasse d infusion rouge.', 'en' => 'Cup of red infusion.'],
+                ]],
+                'variants' => [
+                    ['name' => ['fr' => 'Sachet 80 g', 'en' => '80 g pouch'], 'sku' => 'DEN-INF-HIB-80-A', 'price_adjustment_cents' => 0, 'stock_quantity' => 40],
+                ],
+            ],
+        ];
+    }
+}

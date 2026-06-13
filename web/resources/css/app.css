@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+body {
+    @apply bg-cream text-cocoa antialiased;
+}
+
+.surface-transition {
+    @apply transition-colors duration-300;
+}
+
+html.dark body,
+html.dark .theme-page {
+    background-color: #1d1713;
+    color: #f8f3ea;
+}
+
+html.dark .theme-band {
+    background-color: #1d1713;
+}
+
+html.dark .theme-band-soft {
+    background-color: #211914;
+}
+
+html.dark .theme-card {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #f8f3ea;
+}
+
+html.dark .theme-title {
+    color: #f8f3ea;
+}
+
+html.dark .theme-muted {
+    color: rgba(248, 243, 234, 0.72);
+}
+
+html.dark .theme-subtle {
+    color: rgba(248, 243, 234, 0.62);
+}
+
+html.dark .theme-invert-button {
+    background-color: #f8f3ea;
+    color: #1d1713;
+}
+
+html.dark .theme-invert-button:hover {
+    background-color: #ffffff;
+}

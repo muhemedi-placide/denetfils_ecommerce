@@ -1,0 +1,423 @@
+
+# CAHIER DES CHARGES - Platform E-Commerce Agroalimentaire Denetfils
+
+**Version:** 1.0  
+**Date:** 2026-06-13  
+**Statut:** Analyse & Spécification  
+**Timeline:** 1-2 mois (MVP)  
+
+---
+
+## 1. CONTEXTE & OBJECTIFS
+
+### 1.1 Contexte Actuel
+- **Domaine:** Produits agroalimentaires (DenetFils)
+- **Site existant:** denetfils.fr (à migrer/intégrer)
+- **Objectif:** Moderniser l'e-commerce avec plateforme SaaS multilingue EU
+
+### 1.2 Objectifs Stratégiques
+1. Lancer en Europe (15+ pays UE) en 1-2 mois
+2. Maximiser conversion prospect → client via design premium
+3. Garantir conformité TVA/données (RGPD, directive TVA numérique)
+4. Architecture scalable: API séparée + Frontend Livewire
+
+### 1.3 Priorités Conversions
+- ⚡ Vitesse de chargement (Core Web Vitals optimisés)
+- 🎨 UX/Design premium (animations fines, micro-interactions)
+- 🔒 Confiance & sécurité (SSL, certifications, avis)
+
+---
+
+## 2. ARCHITECTURE TECHNIQUE
+
+### 2.1 Stack Technologique
+
+```
+┌─────────────────────────────────────────────────┐
+│           FRONTEND - Client Layer               │
+│  Laravel + Livewire + Tailwind + Alpine.js      │
+│  (Real-time interactions, animations)           │
+└────────────────────┬────────────────────────────┘
+                     │ HTTP/REST API
+                     ↓
+┌─────────────────────────────────────────────────┐
+│      API Backend - Données & Logique Métier    │
+│  Laravel (API Platform + Sanctum Auth)          │
+│  (Stateless, cache Redis, queues)               │
+└─────────────────────────────────────────────────┘
+                     │
+         ┌───────────┼───────────┐
+         ↓           ↓           ↓
+    [Database]  [Cache]    [Queue Jobs]
+     MySQL 8    Redis      Horizon/Pulse
+```
+
+### 2.2 Structure des Répertoires
+
+```
+denetfils-ecommerce/
+├── api/                          # Backend API (Laravel)
+│   ├── app/
+│   │   ├── Http/Controllers/
+│   │   │   ├── ProductController.php
+│   │   │   ├── OrderController.php
+│   │   │   ├── PaymentController.php
+│   │   │   └── TaxController.php
+│   │   ├── Models/
+│   │   │   ├── Product.php
+│   │   │   ├── Order.php
+│   │   │   ├── Customer.php
+│   │   │   └── TaxRate.php
+│   │   ├── Services/
+│   │   │   ├── PaymentService.php
+│   │   │   ├── TaxCalculationService.php
+│   │   │   ├── InventoryService.php
+│   │   │   └── NotificationService.php
+│   │   └── Jobs/
+│   ├── routes/api.php
+│   ├── database/migrations/
+│   └── tests/Feature/
+│
+├── web/                          # Frontend (Laravel + Livewire)
+│   ├── app/Livewire/
+│   │   ├── Components/
+│   │   │   ├── ProductCard.php
+│   │   │   ├── Cart.php
+│   │   │   ├── Checkout.php
+│   │   │   └── ProductFilter.php
+│   │   └── Pages/
+│   │       ├── Shop.php
+│   │       ├── ProductDetail.php
+│   │       └── Account.php
+│   ├── resources/views/
+│   │   ├── layouts/app.blade.php
+│   │   ├── components/
+│   │   │   ├── navbar.blade.php
+│   │   │   ├── footer.blade.php
+│   │   │   └── animations/
+│   │   └── livewire/
+│   ├── resources/css/
+│   │   └── app.css (Tailwind + animations)
+│   ├── resources/js/
+│   │   └── app.js (Alpine.js interactions)
+│   └── routes/web.php
+│
+├── shared/                       # Code partagé (si monorepo)
+│   ├── DTOs/                     # Data Transfer Objects
+│   ├── Enums/
+│   └── Constants/
+│
+└── docs/
+    ├── API_SPECIFICATION.md
+    ├── DATABASE_SCHEMA.md
+    └── DEPLOYMENT.md
+```
+
+---
+
+## 3. FONCTIONNALITÉS MVP (1-2 MOIS)
+
+### 3.1 E-Commerce Core
+**Panier & Commande:**
+- ✅ Panier persistant (session + DB optionnelle)
+- ✅ Ajout/suppression articles avec quantités
+- ✅ Affichage prix TTC dynamic par pays
+- ✅ Stock temps réel
+- ✅ Checkout 3 étapes (adresse → paiement → confirmation)
+
+**Produits:**
+- ✅ Catalogue avec filtres (catégorie, prix, origine)
+- ✅ Recherche full-text
+- ✅ Fiche produit riche (images, description, certifications, avis)
+- ✅ Variants (taille, quantité packaging)
+
+**Paiement:**
+- ✅ Stripe / PayPal intégration
+- ✅ Support devises multiples (EUR, GBP, PLN, etc.)
+- ✅ Webhooks paiement sécurisés
+- ✅ Gestion remboursements
+
+### 3.2 Conformité Réglementaire EU
+**TVA Multi-Pays:**
+- ✅ Détection pays via IP + formulaire
+- ✅ Calcul TVA dynamique par destination
+- ✅ Taux standard + réduits (alimentation)
+- ✅ Exemptions petits colis (<150€)
+- ✅ Rapports de conformité TVA
+
+**RGPD & Données:**
+- ✅ Consentement cookies (Cookiebot ou similaire)
+- ✅ Politique confidentialité multilingue
+- ✅ Droit à l'oubli (soft delete + GDPR compliance)
+- ✅ Chiffrement données sensibles
+
+**Livraison:**
+- ✅ Calcul frais par pays/poids
+- ✅ Intégration transporteurs (DPD, GLS, UPS)
+- ✅ Tracking en temps réel
+
+### 3.3 Gestion des Comptes Utilisateurs
+**Authentification:**
+- ✅ Inscription/connexion (email + sociaux: Google, Apple)
+- ✅ 2FA optionnel (authenticator app)
+- ✅ Récupération mot de passe sécurisée
+
+**Profil Client:**
+- ✅ Gestion adresses (livraison/facturation multiples)
+- ✅ Historique commandes avec réanalyse
+- ✅ Liste de souhaits (wishlist)
+- ✅ Paramètres préférences (langue, newsletter)
+
+### 3.4 Intégrations Externes
+**APIs à intégrer:**
+- ✅ Stripe/PayPal (paiement)
+- ✅ Google Analytics 4 (tracking)
+- ✅ SendGrid/Mailgun (emails)
+- ✅ Sentry (error tracking)
+
+---
+
+## 4. CONCEPTION UX/UI & ANIMATIONS
+
+### 4.1 Principes de Conversion
+**Vitesse:** 
+- LCP < 2.5s, FID < 100ms, CLS < 0.1
+- Images optimisées (WebP, lazy loading)
+- Cache navigateur + CDN
+
+**Design Premium:**
+- Palette couleurs naturelles (terracotta, vert sage, crème)
+- Typographie généreuse (Inter ou Poppins)
+- Espacements généreux (Tailwind spacing 6+)
+
+**Animations Stratégiques:**
+- Entrance fade-in staggered (produits en grille)
+- Hover card lift + shadow (hover effects)
+- Panier counter pulse animation
+- Skeleton screens au lieu de spinners
+- Toast notifications top-right (ordres confirmées)
+
+### 4.2 Pages & Flows
+
+| Page | Approche UX | Animations |
+|------|-----------|-----------|
+| **Home** | Hero video/parallax | Fade-in staggered sections |
+| **Shop** | Grille responsive + sidebar filtres | Filter fade transitions |
+| **Product Detail** | Image carousel, zoom, specs comparables | Image fade transitions |
+| **Panier** | Drawer/modal, récapitulatif side | Slide-in animations |
+| **Checkout** | Multi-step form, progress bar | Step slide-right |
+
+---
+
+## 5. BASE DE DONNÉES SCHEMA (Aperçu)
+
+### 5.1 Tables Principales
+
+```sql
+-- Produits
+products: id, name, slug, description, price_cents, weight, sku, category_id
+product_variants: id, product_id, name, price_adjustment_cents
+product_images: id, product_id, url, alt_text, order
+
+-- Clients
+customers: id, email, name, phone, preferred_language, created_at
+customer_addresses: id, customer_id, type (billing|shipping), address, city, postal_code, country
+
+-- Commandes
+orders: id, customer_id, status, total_cents, tax_cents, subtotal_cents, currency, created_at
+order_items: id, order_id, product_id, variant_id, quantity, unit_price_cents
+order_payments: id, order_id, stripe_intent_id, status, amount_cents
+
+-- Taxes & Localisation
+tax_rates: id, country_code, tax_rate_percent, product_category
+currencies: code, symbol, exchange_rate, country_codes
+
+-- Systèmes
+wishlists: id, customer_id, product_id
+notifications: id, customer_id, type, read_at
+```
+
+---
+
+## 6. ENDPOINTS API PRINCIPAUX
+
+### 6.1 Structure REST
+
+```
+GET    /api/v1/products              # Catalogue (avec filtres)
+GET    /api/v1/products/{id}         # Détail produit
+POST   /api/v1/cart                  # Créer panier
+PUT    /api/v1/cart/{id}             # Ajouter article
+DELETE /api/v1/cart/items/{itemId}   # Retirer article
+
+POST   /api/v1/orders                # Créer commande
+GET    /api/v1/orders/{id}           # Détail commande
+GET    /api/v1/customers/me          # Profil actuel
+PUT    /api/v1/customers/me          # Mettre à jour profil
+
+POST   /api/v1/payments/intent       # Créer Stripe intent
+POST   /api/v1/webhooks/stripe       # Webhook paiement
+
+GET    /api/v1/tax/calculate         # Calculer TVA pour adresse
+GET    /api/v1/shipping/quote        # Tarif livraison
+```
+
+### 6.2 Authentification
+- Sanctum tokens pour clients
+- API key pour intégrations backend
+- Rate limiting: 100 req/min par IP
+
+---
+
+## 7. FRONTEND LIVEWIRE COMPONENTS
+
+### 7.1 Composants Clés
+
+```php
+// app/Livewire/Components/ProductCard.php
+class ProductCard extends Component {
+    public Product $product;
+    public function addToCart() { ... }
+}
+
+// app/Livewire/Pages/Shop.php
+class Shop extends Component {
+    public $filters = [];
+    public $products;
+    #[On('filterChanged')]
+    public function updateFilters() { ... }
+}
+
+// app/Livewire/Pages/Checkout.php
+class Checkout extends Component {
+    public $step = 1; // address, shipping, payment, confirm
+    public function processPayment() { ... }
+}
+```
+
+---
+
+## 8. PLAN DE MIGRATION & DÉPLOIEMENT
+
+### 8.1 Phase 1: Préparation (Semaine 1)
+- [ ] Setup infrastructure (Laravel Forge/Vapor)
+- [ ] Créer DB schema + migrations
+- [ ] Configurer Stripe/PayPal sandbox
+- [ ] Setup CI/CD (GitHub Actions)
+
+### 8.2 Phase 2: Backend API (Semaines 1-2)
+- [ ] Controllers & routes API
+- [ ] Services métier (paiement, TVA, inventory)
+- [ ] Tests unitaires & d'intégration
+- [ ] Documentation API (OpenAPI/Swagger)
+
+### 8.3 Phase 3: Frontend (Semaines 2-3)
+- [ ] Layouts & composants Livewire
+- [ ] Pages principales (shop, produit, cart, checkout)
+- [ ] Animations Tailwind + Alpine.js
+- [ ] Localisation (i18n multilingue)
+
+### 8.4 Phase 4: QA & Optimisations (Semaine 4)
+- [ ] Tests E2E (Dusk ou Playwright)
+- [ ] Audit Core Web Vitals
+- [ ] Tests sécurité (OWASP, PCI-DSS payment)
+- [ ] Staging deployment
+
+### 8.5 Phase 5: Go-Live (Semaine 4-5)
+- [ ] Migration données denetfils.fr
+- [ ] Redirects 301 SEO
+- [ ] Production deployment
+- [ ] Monitoring (Sentry, New Relic)
+
+---
+
+## 9. STACK DÉTAILLÉ
+
+### 9.1 Dépendances Backend (api/)
+```json
+{
+  "laravel/framework": "^11.0",
+  "laravel/sanctum": "^4.0",
+  "stripe/stripe-php": "^13.0",
+  "predis/predis": "^2.2",
+  "laravel/horizon": "^5.0"
+}
+```
+
+### 9.2 Dépendances Frontend (web/)
+```json
+{
+  "laravel/framework": "^11.0",
+  "livewire/livewire": "^3.0",
+  "tailwindlabs/tailwindcss": "^3.4",
+  "alpinejs": "^3.0"
+}
+```
+
+### 9.3 Infrastructure
+- **Hosting:** Laravel Forge (ou Hetzner cloud)
+- **Database:** MySQL 8.0 (ou PostgreSQL)
+- **Cache:** Redis (DigitalOcean Managed ou local)
+- **CDN:** CloudFlare (free tier OK)
+- **Storage:** AWS S3 ou similaire
+- **CI/CD:** GitHub Actions
+- **Monitoring:** Sentry + Laravel Pulse
+
+---
+
+## 10. SUCCESS METRICS & KPIs
+
+| Métrique | Target | Tool |
+|----------|--------|------|
+| LCP (Largest Contentful Paint) | < 2.5s | Google PageSpeed |
+| Conversion Rate | +2% Y/Y | GA4 |
+| Cart Abandonment | < 70% | Custom tracking |
+| Payment Success | > 98% | Stripe dashboard |
+| Uptime | 99.9% | Uptime Robot |
+| Error Rate | < 0.1% | Sentry |
+
+---
+
+## 11. RISQUES & MITIGATIONS
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|------------|--------|-----------|
+| Complexité TVA multi-pays | Haute | Haute | Library TaxJar/Vertex ou calcul maison + tests |
+| Intégration paiement lente | Moyenne | Moyenne | Sandbox testing précoce, fallback manuel |
+| Performance lente (CWV) | Moyenne | Haute | Audit preformance W3 + optimisations images |
+| RGPD non-conformité | Moyenne | Très haute | Audit légal, DPO consultation |
+| Churn utilisateurs | Moyenne | Moyenne | A/B testing, feedback loop |
+
+---
+
+## 12. RESSOURCES REQUISES
+
+### 12.1 Équipe Minimale (1-2 mois)
+- 1 x Backend Laravel (full-time)
+- 1 x Frontend Livewire + Tailwind (full-time)
+- 0.5 x DevOps/Infrastructure (part-time)
+- 0.5 x QA/Testing (part-time)
+
+### 12.2 Budget Infrastructure (mensuel)
+- Hosting (Forge): €50
+- Database (managed): €20
+- Redis cache: €10
+- CDN/Storage: €20
+- Monitoring/Logs: €30
+- **Total:** ~€130/mois
+
+---
+
+## 13. PROCHAINES ÉTAPES
+
+### Validation & Kickoff
+1. **Validation cahier:** Revue avec stakeholders
+2. **Affinage specs:** Questions techniques détaillées
+3. **Setup repo:** Structure initiale + CI/CD
+4. **Kickoff dev:** Sprint Planning semaine 1
+
+---
+
+**Approuvé par:** [À remplir]  
+**Date approbation:** [À remplir]  
+**Dernier update:** 2026-06-13

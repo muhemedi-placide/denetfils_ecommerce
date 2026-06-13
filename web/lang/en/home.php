@@ -1,0 +1,88 @@
+<?php
+
+return [
+    'meta' => [
+        'title' => 'Denetfils: premium food commerce',
+        'description' => 'Denetfils e-commerce catalog for food products delivered across Europe.',
+    ],
+    'locale' => [
+        'fr' => 'French',
+        'en' => 'English',
+        'switch_to' => 'Switch to :language.',
+    ],
+    'theme' => [
+        'label' => 'Theme choice.',
+        'toggle' => 'Change theme.',
+        'light' => 'Light',
+        'dark' => 'Dark',
+    ],
+    'hero' => [
+        'eyebrow' => 'European food products',
+        'title' => 'Reliable flavors, delivered with precision.',
+        'body' => 'Denetfils is preparing a premium shop for curated products, secure payments, country-based VAT and a clear purchase journey.',
+        'primary_cta' => 'Explore the shop',
+        'secondary_cta' => 'View cart',
+        'image_alt' => 'Market display with fruit, vegetables and fresh products.',
+    ],
+    'stats' => [
+        ['value' => '15+', 'label' => 'European countries planned for the MVP launch.'],
+        ['value' => '3', 'label' => 'Checkout steps: address, payment, confirmation.'],
+        ['value' => '24 h', 'label' => 'Fast preparation target for priority orders.'],
+    ],
+    'products' => [
+        'eyebrow' => 'Shop selection',
+        'title' => 'A clear showcase for high-value products.',
+        'body' => 'The first version displays products from the API, with price, origin, description and quick cart actions.',
+        'cta' => 'Add',
+        'api_error' => 'The catalog is temporarily unavailable. Check that the Laravel API is running.',
+        'empty' => 'No products are available right now.',
+    ],
+    'filters' => [
+        'search' => 'Search',
+        'search_placeholder' => 'Search a product, origin or SKU.',
+        'category' => 'Category',
+        'all_categories' => 'All categories',
+        'sort' => 'Sort',
+        'sort_options' => [
+            'default' => 'Denetfils selection',
+            'latest' => 'Latest',
+            'price_asc' => 'Price: low to high',
+            'price_desc' => 'Price: high to low',
+        ],
+        'apply' => 'Filter',
+        'reset' => 'Reset',
+    ],
+    'cart' => [
+        'title' => 'Cart',
+        'subtitle' => 'Guest cart saved on this device.',
+        'close' => 'Close cart',
+        'loading' => 'Loading cart...',
+        'empty' => 'Your cart is empty.',
+        'remove' => 'Remove this item',
+        'total' => 'Total',
+        'checkout_later' => 'Checkout coming soon',
+        'api_error' => 'Unable to update the cart.',
+        'expired' => 'This cart is no longer available. A new cart will be created on the next add.',
+        'empty_total' => 'EUR 0.00',
+    ],
+    'product' => [
+        'back' => 'Back to catalog',
+        'details' => 'Product details',
+        'category' => 'Category',
+        'sku' => 'SKU',
+        'stock' => 'Stock',
+        'weight' => 'Weight',
+        'price' => 'Price',
+        'variant' => 'Variant',
+    ],
+    'checkout' => [
+        'eyebrow' => 'Purchase journey',
+        'title' => 'A simple, reassuring and compliant checkout.',
+        'body' => 'The design prepares the future flow: address, delivery fees, VAT, payment and confirmation.',
+        'steps' => [
+            ['number' => '01', 'title' => 'Address', 'body' => 'Country, contact details and delivery preference.'],
+            ['number' => '02', 'title' => 'Payment', 'body' => 'Stripe, PayPal and currency adapted to the customer.'],
+            ['number' => '03', 'title' => 'Confirmation', 'body' => 'Clear summary, receipt and order tracking.'],
+        ],
+    ],
+];

@@ -1,0 +1,88 @@
+<?php
+
+return [
+    'meta' => [
+        'title' => 'Denetfils : épicerie agroalimentaire premium',
+        'description' => 'Catalogue e-commerce Denetfils pour des produits agroalimentaires livrés en Europe.',
+    ],
+    'locale' => [
+        'fr' => 'Français',
+        'en' => 'Anglais',
+        'switch_to' => 'Passer en :language.',
+    ],
+    'theme' => [
+        'label' => 'Choix du thème.',
+        'toggle' => 'Changer le thème.',
+        'light' => 'Clair',
+        'dark' => 'Sombre',
+    ],
+    'hero' => [
+        'eyebrow' => 'Produits agroalimentaires européens',
+        'title' => 'Des saveurs fiables, livrées avec précision.',
+        'body' => 'Denetfils prépare une boutique premium pour vendre des produits sélectionnés, avec paiement sécurisé, TVA par pays et parcours d’achat clair.',
+        'primary_cta' => 'Découvrir la boutique',
+        'secondary_cta' => 'Voir le panier',
+        'image_alt' => 'Étal de fruits, légumes et produits frais.',
+    ],
+    'stats' => [
+        ['value' => '15+', 'label' => 'Pays européens prévus pour le lancement MVP.'],
+        ['value' => '3', 'label' => 'Étapes de checkout : adresse, paiement, confirmation.'],
+        ['value' => '24 h', 'label' => 'Objectif de préparation rapide pour les commandes prioritaires.'],
+    ],
+    'products' => [
+        'eyebrow' => 'Sélection boutique',
+        'title' => 'Une vitrine claire pour les produits à forte valeur.',
+        'body' => 'La première version affiche les produits venant de l’API, avec prix, origine, description et ajout rapide au panier.',
+        'cta' => 'Ajouter',
+        'api_error' => 'Le catalogue est temporairement indisponible. Vérifiez que l’API Laravel est démarrée.',
+        'empty' => 'Aucun produit n’est disponible pour le moment.',
+    ],
+    'filters' => [
+        'search' => 'Recherche',
+        'search_placeholder' => 'Rechercher un produit, une origine ou une référence.',
+        'category' => 'Catégorie',
+        'all_categories' => 'Toutes les catégories',
+        'sort' => 'Tri',
+        'sort_options' => [
+            'default' => 'Sélection Denetfils',
+            'latest' => 'Plus récents',
+            'price_asc' => 'Prix croissant',
+            'price_desc' => 'Prix décroissant',
+        ],
+        'apply' => 'Filtrer',
+        'reset' => 'Réinitialiser',
+    ],
+    'cart' => [
+        'title' => 'Panier',
+        'subtitle' => 'Panier invité sauvegardé sur cet appareil.',
+        'close' => 'Fermer le panier',
+        'loading' => 'Chargement du panier...',
+        'empty' => 'Votre panier est vide.',
+        'remove' => 'Retirer cet article',
+        'total' => 'Total',
+        'checkout_later' => 'Checkout bientôt disponible',
+        'api_error' => 'Impossible de mettre à jour le panier.',
+        'expired' => 'Ce panier n’est plus disponible. Un nouveau panier sera créé au prochain ajout.',
+        'empty_total' => '0,00 EUR',
+    ],
+    'product' => [
+        'back' => 'Retour au catalogue',
+        'details' => 'Détails produit',
+        'category' => 'Catégorie',
+        'sku' => 'Référence',
+        'stock' => 'Stock',
+        'weight' => 'Poids',
+        'price' => 'Prix',
+        'variant' => 'Variante',
+    ],
+    'checkout' => [
+        'eyebrow' => 'Parcours d’achat',
+        'title' => 'Un checkout simple, rassurant et conforme.',
+        'body' => 'Le design prépare les bases du futur tunnel : adresse, frais de livraison, TVA, paiement et confirmation.',
+        'steps' => [
+            ['number' => '01', 'title' => 'Adresse', 'body' => 'Pays, coordonnées et préférence de livraison.'],
+            ['number' => '02', 'title' => 'Paiement', 'body' => 'Stripe, PayPal et devise adaptée au client.'],
+            ['number' => '03', 'title' => 'Confirmation', 'body' => 'Résumé clair, reçu et suivi de commande.'],
+        ],
+    ],
+];
