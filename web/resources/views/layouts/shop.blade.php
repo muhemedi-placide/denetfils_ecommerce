@@ -55,16 +55,16 @@
         x-init="init()"
     >
         <header class="sticky top-0 z-40 border-b border-leaf/10 bg-white/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-ink/95">
-            <div class="bg-forest px-4 py-2 text-xs font-semibold text-white dark:bg-[#172414] sm:px-8" x-data="{ alerts: @js(trans('home.announcements')) }" x-init="setInterval(() => alertIndex = (alertIndex + 1) % alerts.length, 4200)">
+            <div class="border-b border-leaf/10 bg-cream px-4 py-2 text-xs font-semibold text-leaf dark:border-white/10 dark:bg-[#172414] dark:text-meadow sm:px-8" x-data="{ alerts: @js(trans('home.announcements')) }" x-init="setInterval(() => alertIndex = (alertIndex + 1) % alerts.length, 4200)">
                 <div class="mx-auto flex max-w-7xl items-center justify-between gap-3">
                     <div class="relative h-5 min-w-0 flex-1 overflow-hidden">
                         <template x-for="(alert, index) in alerts" x-bind:key="alert">
                             <p x-show="alertIndex === index" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="translate-y-3 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="-translate-y-3 opacity-0" class="absolute inset-0 truncate" x-text="alert"></p>
                         </template>
                     </div>
-                    <div class="hidden shrink-0 items-center gap-4 text-white/80 md:flex">
-                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="transition hover:text-white">{{ __('home.nav.checkout') }}</a>
-                        <a href="{{ $alternateUrl }}" class="transition hover:text-white">{{ strtoupper($alternateLocale) }}</a>
+                    <div class="hidden shrink-0 items-center gap-4 text-leaf/75 dark:text-meadow/80 md:flex">
+                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="transition hover:text-forest dark:hover:text-meadow">{{ __('home.nav.checkout') }}</a>
+                        <a href="{{ $alternateUrl }}" class="transition hover:text-forest dark:hover:text-meadow">{{ strtoupper($alternateLocale) }}</a>
                     </div>
                 </div>
             </div>
@@ -165,59 +165,59 @@
             </aside>
         </div>
 
-        <footer class="bg-forest px-4 pt-12 text-sm text-white dark:bg-[#0d160b] sm:px-8 sm:pt-14">
+        <footer class="border-t border-leaf/10 bg-cream px-4 pt-12 text-sm text-cocoa dark:border-white/10 dark:bg-ink dark:text-cream sm:px-8 sm:pt-14">
             <div class="mx-auto grid max-w-7xl gap-8 pb-10 sm:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_0.95fr_1.1fr] lg:gap-10">
                 <div>
                     <div class="flex items-center gap-3">
-                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-meadow text-sm font-black text-ink">DF</span>
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-forest text-sm font-black text-white dark:bg-meadow dark:text-ink">DF</span>
                         <div class="min-w-0">
-                            <p class="text-lg font-extrabold uppercase tracking-[0.18em]">DEN & FILS</p>
-                            <p class="text-white/70">{{ __('home.nav.promise') }}</p>
+                            <p class="text-lg font-extrabold uppercase tracking-[0.18em] text-cocoa dark:text-cream">DEN & FILS</p>
+                            <p class="text-cocoa/60 dark:text-cream/60">{{ __('home.nav.promise') }}</p>
                         </div>
                     </div>
-                    <p class="mt-5 max-w-sm leading-7 text-white/70">{{ __('home.footer.line') }}</p>
-                    <p class="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-meadow">{{ __('home.contact.vat') }}</p>
+                    <p class="mt-5 max-w-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.footer.line') }}</p>
+                    <p class="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ __('home.contact.vat') }}</p>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-extrabold uppercase tracking-wide text-white">{{ __('home.footer.products_title') }}</h3>
-                    <ul class="mt-4 space-y-1 text-white/70">
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#offers">{{ __('home.footer.promotions') }}</a></li>
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products">{{ __('home.footer.new_products') }}</a></li>
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products">{{ __('home.footer.best_sellers') }}</a></li>
+                    <h3 class="text-base font-extrabold uppercase tracking-wide text-cocoa dark:text-cream">{{ __('home.footer.products_title') }}</h3>
+                    <ul class="mt-4 space-y-1 text-cocoa/70 dark:text-cream/70">
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#offers">{{ __('home.footer.promotions') }}</a></li>
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products">{{ __('home.footer.new_products') }}</a></li>
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products">{{ __('home.footer.best_sellers') }}</a></li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-extrabold uppercase tracking-wide text-white">{{ __('home.footer.useful_links_title') }}</h3>
-                    <ul class="mt-4 space-y-1 text-white/70">
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}">{{ __('home.footer.delivery') }}</a></li>
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('pages.legal', ['locale' => $currentLocale]) }}">{{ __('home.footer.legal') }}</a></li>
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('pages.terms', ['locale' => $currentLocale]) }}">{{ __('home.footer.terms') }}</a></li>
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('pages.about', ['locale' => $currentLocale]) }}">{{ __('home.nav.about') }}</a></li>
-                        <li><a class="block rounded-lg py-2 transition hover:text-meadow" href="{{ route('pages.payment', ['locale' => $currentLocale]) }}">{{ __('home.footer.secure_payment') }}</a></li>
+                    <h3 class="text-base font-extrabold uppercase tracking-wide text-cocoa dark:text-cream">{{ __('home.footer.useful_links_title') }}</h3>
+                    <ul class="mt-4 space-y-1 text-cocoa/70 dark:text-cream/70">
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}">{{ __('home.footer.delivery') }}</a></li>
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.legal', ['locale' => $currentLocale]) }}">{{ __('home.footer.legal') }}</a></li>
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.terms', ['locale' => $currentLocale]) }}">{{ __('home.footer.terms') }}</a></li>
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.about', ['locale' => $currentLocale]) }}">{{ __('home.nav.about') }}</a></li>
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.payment', ['locale' => $currentLocale]) }}">{{ __('home.footer.secure_payment') }}</a></li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-extrabold uppercase tracking-wide text-white">{{ __('home.footer.information_title') }}</h3>
-                    <div class="mt-5 space-y-3 text-white/70">
-                        <p class="font-semibold text-white">{{ __('home.contact.company') }}</p>
+                    <h3 class="text-base font-extrabold uppercase tracking-wide text-cocoa dark:text-cream">{{ __('home.footer.information_title') }}</h3>
+                    <div class="mt-5 space-y-3 text-cocoa/70 dark:text-cream/70">
+                        <p class="font-semibold text-cocoa dark:text-cream">{{ __('home.contact.company') }}</p>
                         <p>{{ __('home.contact.address') }}</p>
-                        <p><a class="transition hover:text-meadow" href="tel:+33695737390">{{ __('home.contact.phone') }}</a></p>
-                        <p><a class="break-all transition hover:text-meadow" href="mailto:{{ __('home.contact.email') }}">{{ __('home.contact.email') }}</a></p>
+                        <p><a class="transition hover:text-leaf dark:hover:text-meadow" href="tel:+33695737390">{{ __('home.contact.phone') }}</a></p>
+                        <p><a class="break-all transition hover:text-leaf dark:hover:text-meadow" href="mailto:{{ __('home.contact.email') }}">{{ __('home.contact.email') }}</a></p>
                     </div>
                     <div class="mt-6 flex flex-wrap gap-3">
-                        <a class="min-h-[40px] rounded-full border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/80 transition hover:border-meadow hover:text-meadow" href="https://www.facebook.com/denetfils" target="_blank" rel="noopener">Facebook</a>
-                        <a class="min-h-[40px] rounded-full border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/80 transition hover:border-meadow hover:text-meadow" href="https://www.instagram.com/denetfils" target="_blank" rel="noopener">Instagram</a>
-                        <a class="min-h-[40px] rounded-full border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/80 transition hover:border-meadow hover:text-meadow" href="https://www.tiktok.com/@denetfils" target="_blank" rel="noopener">TikTok</a>
+                        <a class="min-h-[40px] rounded-full border border-leaf/20 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-cocoa/80 transition hover:border-leaf hover:text-leaf dark:border-white/15 dark:bg-white/5 dark:text-cream/80 dark:hover:border-meadow dark:hover:text-meadow" href="https://www.facebook.com/denetfils" target="_blank" rel="noopener">Facebook</a>
+                        <a class="min-h-[40px] rounded-full border border-leaf/20 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-cocoa/80 transition hover:border-leaf hover:text-leaf dark:border-white/15 dark:bg-white/5 dark:text-cream/80 dark:hover:border-meadow dark:hover:text-meadow" href="https://www.instagram.com/denetfils" target="_blank" rel="noopener">Instagram</a>
+                        <a class="min-h-[40px] rounded-full border border-leaf/20 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-cocoa/80 transition hover:border-leaf hover:text-leaf dark:border-white/15 dark:bg-white/5 dark:text-cream/80 dark:hover:border-meadow dark:hover:text-meadow" href="https://www.tiktok.com/@denetfils" target="_blank" rel="noopener">TikTok</a>
                     </div>
                 </div>
             </div>
 
-            <div class="mx-auto flex max-w-7xl flex-col gap-2 border-t border-white/10 py-5 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
+            <div class="mx-auto flex max-w-7xl flex-col gap-2 border-t border-leaf/10 py-5 text-xs text-cocoa/55 dark:border-white/10 dark:text-cream/55 sm:flex-row sm:items-center sm:justify-between">
                 <p>Copyright © 2025 denetfils.fr. All rights reserved.</p>
-                <p><a class="transition hover:text-meadow" href="mailto:{{ __('home.contact.email') }}">{{ __('home.contact.email') }}</a></p>
+                <p><a class="transition hover:text-leaf dark:hover:text-meadow" href="mailto:{{ __('home.contact.email') }}">{{ __('home.contact.email') }}</a></p>
             </div>
         </footer>
 
