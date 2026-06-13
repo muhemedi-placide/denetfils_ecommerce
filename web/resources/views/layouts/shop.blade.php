@@ -7,6 +7,8 @@
         $alternateUrl = route('pages.about', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('blog.index')) {
         $alternateUrl = route('blog.index', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('blog.show')) {
+        $alternateUrl = route('blog.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     } elseif (request()->routeIs('pages.delivery')) {
         $alternateUrl = route('pages.delivery', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('pages.legal')) {
@@ -25,8 +27,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>@yield('title', __('home.meta.title'))</title>
-        <meta name="description" content="@yield('description', __('home.meta.description'))">
+        @include('partials.seo')
         <script>
             const storedTheme = localStorage.getItem('theme');
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -35,7 +36,9 @@
                 document.documentElement.classList.add('dark');
             }
         </script>
-        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+        <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+        <link rel="dns-prefetch" href="https://images.unsplash.com">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
@@ -172,7 +175,7 @@
                     <div class="space-y-4">
                         <template x-for="item in cartItems" x-bind:key="item.id">
                             <article class="grid grid-cols-[72px_1fr] gap-3 rounded-lg border border-leaf/10 bg-white p-3 dark:border-white/10 dark:bg-white/5 sm:gap-4">
-                                <img class="h-[72px] w-[72px] rounded-md object-cover" x-bind:src="item.product?.image?.url" x-bind:alt="item.product?.image?.alt_text || item.product?.name">
+                                <img class="h-[72px] w-[72px] rounded-md object-cover" x-bind:src="item.product?.image?.url" x-bind:alt="item.product?.image?.alt_text || item.product?.name" loading="lazy" decoding="async">
                                 <div class="min-w-0">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
