@@ -17,7 +17,7 @@
                     {{ __('home.hero.title') }}
                 </h1>
 
-                <p class="mt-6 max-w-2xl text-base leading-8 text-cocoa/72 dark:text-cream/72 sm:text-lg">
+                <p class="mt-6 max-w-2xl text-base leading-8 text-cocoa/70 dark:text-cream/70 sm:text-lg">
                     {{ __('home.hero.body') }}
                 </p>
 
@@ -59,7 +59,7 @@
                         @foreach (trans('home.stats') as $stat)
                             <div class="rounded-2xl bg-linen p-4 dark:bg-white/5">
                                 <p class="text-2xl font-extrabold text-cocoa dark:text-cream">{{ $stat['value'] }}</p>
-                                <p class="mt-1 text-xs leading-5 text-cocoa/62 dark:text-cream/62">{{ $stat['label'] }}</p>
+                                <p class="mt-1 text-xs leading-5 text-cocoa/60 dark:text-cream/60">{{ $stat['label'] }}</p>
                             </div>
                         @endforeach
                     </div>
@@ -199,7 +199,7 @@
                 </div>
                 <div class="grid gap-4 md:grid-cols-3">
                     @foreach (trans('home.checkout.steps') as $step)
-                        <div class="rounded-[1.4rem] border border-white/12 bg-white/8 p-5 backdrop-blur">
+                        <div class="rounded-[1.4rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
                             <span class="text-xs font-extrabold uppercase tracking-[0.18em] text-cream/60">{{ $step['number'] }}</span>
                             <h3 class="mt-4 font-extrabold text-white">{{ $step['title'] }}</h3>
                             <p class="mt-2 text-sm leading-6 text-cream/70">{{ $step['body'] }}</p>
