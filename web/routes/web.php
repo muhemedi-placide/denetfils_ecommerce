@@ -3,6 +3,9 @@
 use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/robots.txt', [ShopController::class, 'robots'])->name('seo.robots');
+Route::get('/sitemap.xml', [ShopController::class, 'sitemap'])->name('seo.sitemap');
+
 Route::get('/', [ShopController::class, 'home'])->name('home');
 
 Route::get('/{locale}/about', [ShopController::class, 'about'])
