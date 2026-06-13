@@ -9,7 +9,7 @@ return [
     'nav' => [
         'promise' => 'Épicerie verte & premium',
         'shop' => 'Boutique',
-        'checkout' => 'Achat rapide',
+        'checkout' => 'Infos utiles',
     ],
     'locale' => [
         'fr' => 'Français',
@@ -144,13 +144,13 @@ return [
         'shipping_note' => 'Livraison, TVA et paiement sécurisé intégrés au parcours de commande.',
     ],
     'checkout' => [
-        'eyebrow' => 'Parcours d’achat',
-        'title' => 'Un parcours de commande clair.',
-        'body' => 'Panier, adresse, livraison, paiement et confirmation sont organisés pour une expérience simple.',
+        'eyebrow' => 'Infos utiles',
+        'title' => 'Avant de finaliser votre panier.',
+        'body' => 'Retrouvez les informations qui aident à commander sereinement : livraison, disponibilité et accompagnement client.',
         'steps' => [
-            ['number' => '01', 'title' => 'Panier', 'body' => 'Ajout rapide des produits avec quantités.'],
-            ['number' => '02', 'title' => 'Livraison', 'body' => 'Adresse, pays, frais et seuil de gratuité.'],
-            ['number' => '03', 'title' => 'Paiement', 'body' => 'Résumé clair et paiement sécurisé.'],
+            ['number' => '01', 'title' => 'Livraison', 'body' => 'Livraison offerte dès 35€ et informations visibles avant validation.'],
+            ['number' => '02', 'title' => 'Disponibilité', 'body' => 'Les produits indiquent leur stock pour éviter les mauvaises surprises.'],
+            ['number' => '03', 'title' => 'Assistance', 'body' => 'Un panier clair et un accès rapide aux informations importantes.'],
         ],
     ],
     'footer' => [
