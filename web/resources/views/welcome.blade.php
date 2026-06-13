@@ -9,7 +9,7 @@
     @endphp
 
     <section
-        class="relative min-h-screen overflow-hidden bg-forest text-white"
+        class="relative min-h-[calc(100vh-132px)] overflow-hidden bg-forest text-white"
         x-data="{ active: 0, slides: @js(trans('home.slider.items')) }"
         x-init="setInterval(() => active = (active + 1) % slides.length, 5600)"
     >
@@ -21,11 +21,7 @@
             </div>
         </template>
 
-        <div class="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col justify-end px-5 pb-10 pt-32 sm:px-8 lg:pb-14">
-            <div class="mb-6 inline-flex w-fit rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-meadow backdrop-blur">
-                {{ __('home.announcement') }}
-            </div>
-
+        <div class="relative z-10 mx-auto flex min-h-[calc(100vh-132px)] max-w-7xl flex-col justify-end px-5 pb-10 pt-24 sm:px-8 lg:pb-14">
             <div class="max-w-3xl">
                 <p class="text-sm font-bold uppercase tracking-[0.22em] text-meadow" x-text="slides[active].label"></p>
                 <h1 class="mt-4 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl" x-text="slides[active].title"></h1>
