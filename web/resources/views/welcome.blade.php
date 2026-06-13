@@ -210,22 +210,22 @@
     </section>
 
     <section id="checkout" class="theme-band surface-transition bg-linen px-5 py-14 dark:bg-[#172414] sm:px-8 lg:py-16">
-        <div class="mx-auto max-w-7xl rounded-[1.75rem] bg-forest p-6 text-white shadow-2xl shadow-leaf/20 sm:p-8 lg:p-10">
-            <div class="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-meadow">{{ __('home.checkout.eyebrow') }}</p>
-                    <h2 class="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{{ __('home.checkout.title') }}</h2>
-                    <p class="mt-4 text-sm leading-7 text-white/75">{{ __('home.checkout.body') }}</p>
-                </div>
-                <div class="grid gap-4 md:grid-cols-3">
-                    @foreach (trans('home.checkout.steps') as $step)
-                        <div class="rounded-[1.25rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
-                            <span class="text-xs font-extrabold uppercase tracking-[0.18em] text-meadow">{{ $step['number'] }}</span>
-                            <h3 class="mt-4 font-extrabold text-white">{{ $step['title'] }}</h3>
-                            <p class="mt-2 text-sm leading-6 text-white/70">{{ $step['body'] }}</p>
-                        </div>
-                    @endforeach
-                </div>
+        <div class="mx-auto grid max-w-7xl gap-8 rounded-[1.75rem] border border-leaf/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:p-10">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.checkout.eyebrow') }}</p>
+                <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-cocoa dark:text-cream sm:text-3xl">{{ __('home.checkout.title') }}</h2>
+                <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.checkout.body') }}</p>
+                <button type="button" x-on:click="loadCart(true)" class="btn-primary mt-6">{{ __('home.cart.title') }}</button>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-3">
+                @foreach (trans('home.checkout.steps') as $item)
+                    <div class="rounded-[1.25rem] border border-leaf/10 bg-mint/70 p-5 dark:border-white/10 dark:bg-white/5">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $item['number'] }}</p>
+                        <h3 class="mt-4 font-extrabold text-cocoa dark:text-cream">{{ $item['title'] }}</h3>
+                        <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $item['body'] }}</p>
+                    </div>
+                @endforeach
             </div>
         </div>
     </section>
