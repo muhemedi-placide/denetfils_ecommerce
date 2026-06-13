@@ -171,6 +171,7 @@ return [
         'price' => 'Price',
         'variant' => 'Variant',
         'available' => ':count available',
+        'related_title' => 'Related products',
         'shipping_note' => 'Delivery, VAT and secure payment are part of the order journey.',
     ],
     'checkout' => [
