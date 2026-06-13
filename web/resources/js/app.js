@@ -51,6 +51,11 @@ Alpine.data('shopApp', (config) => ({
 
     openCart() {
         this.closeMobileMenu();
+        window.location.href = `/${this.locale}/panier`;
+    },
+
+    openCartDrawer() {
+        this.closeMobileMenu();
         this.loadCart(true);
     },
 
