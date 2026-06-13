@@ -8,7 +8,7 @@ Alpine.data('shopApp', (config) => ({
     apiBaseUrl: config.apiBaseUrl.replace(/\/$/, ''),
     locale: config.locale,
     labels: config.labels,
-    theme: localStorage.getItem('theme') || 'light',
+    theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
     activeMenu: 'home',
     alertIndex: 0,
     cartOpen: false,
@@ -18,20 +18,35 @@ Alpine.data('shopApp', (config) => ({
     cart: null,
 
     init() {
-        this.setTheme(this.theme);
+        this.setTheme(this.theme, false);
+        this.watchSystemTheme();
         this.loadCart(false);
         this.initNavigation();
     },
 
-    setTheme(value) {
+    setTheme(value, persist = true) {
         this.theme = value;
-        localStorage.setItem('theme', value);
+
+        if (persist) {
+            localStorage.setItem('theme', value);
+        }
+
         document.documentElement.classList.toggle('dark', value === 'dark');
         document.body.classList.toggle('dark', value === 'dark');
     },
 
     toggleTheme() {
         this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
+    },
+
+    watchSystemTheme() {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        mediaQuery.addEventListener('change', (event) => {
+            if (!localStorage.getItem('theme')) {
+                this.setTheme(event.matches ? 'dark' : 'light', false);
+            }
+        });
     },
 
     initNavigation() {
