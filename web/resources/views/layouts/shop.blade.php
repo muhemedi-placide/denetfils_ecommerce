@@ -87,8 +87,7 @@
 
                     <div class="flex shrink-0 items-center justify-end gap-2">
                         <button type="button" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-terracotta px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-clay sm:px-4 sm:py-2.5" x-on:click="loadCart(true)">
-                            <span class="hidden xs:inline">{{ __('home.cart.title') }}</span>
-                            <span class="xs:hidden">{{ __('home.cart.title') }}</span>
+                            {{ __('home.cart.title') }}
                             <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-leaf" x-text="itemCount"></span>
                         </button>
 
