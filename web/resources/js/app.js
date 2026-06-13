@@ -10,6 +10,7 @@ Alpine.data('shopApp', (config) => ({
     labels: config.labels,
     theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
     activeMenu: config.activeMenu || 'home',
+    mobileMenuOpen: false,
     alertIndex: 0,
     cartOpen: false,
     cartLoading: false,
@@ -20,6 +21,7 @@ Alpine.data('shopApp', (config) => ({
     init() {
         this.setTheme(this.theme, false);
         this.watchSystemTheme();
+        this.watchViewport();
         this.loadCart(false);
         this.initNavigation();
     },
@@ -37,6 +39,31 @@ Alpine.data('shopApp', (config) => ({
 
     toggleTheme() {
         this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
+    },
+
+    toggleMobileMenu() {
+        this.mobileMenuOpen = !this.mobileMenuOpen;
+    },
+
+    closeMobileMenu() {
+        this.mobileMenuOpen = false;
+    },
+
+    openCart() {
+        this.closeMobileMenu();
+        this.loadCart(true);
+    },
+
+    watchViewport() {
+        const desktopQuery = window.matchMedia('(min-width: 1024px)');
+        const closeOnDesktop = (event) => {
+            if (event.matches) {
+                this.closeMobileMenu();
+            }
+        };
+
+        closeOnDesktop(desktopQuery);
+        desktopQuery.addEventListener('change', closeOnDesktop);
     },
 
     watchSystemTheme() {
@@ -73,6 +100,7 @@ Alpine.data('shopApp', (config) => ({
         window.addEventListener('scroll', updateActiveMenu, { passive: true });
         window.addEventListener('hashchange', () => {
             this.activeMenu = window.location.hash.replace('#', '') || config.activeMenu || 'home';
+            this.closeMobileMenu();
         });
     },
 
@@ -194,6 +222,7 @@ Alpine.data('shopApp', (config) => ({
                 body: JSON.stringify(body),
             });
             this.cartOpen = true;
+            this.closeMobileMenu();
         } catch (error) {
             this.cartError = error.message || this.labels.apiError;
             this.cartOpen = true;
