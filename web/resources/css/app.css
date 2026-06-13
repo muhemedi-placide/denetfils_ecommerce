@@ -28,12 +28,17 @@ select {
     -webkit-tap-highlight-color: transparent;
 }
 
+button,
+a {
+    touch-action: manipulation;
+}
+
 img {
     content-visibility: auto;
 }
 
 ::selection {
-    background: rgba(79, 176, 0, 0.22);
+    background: rgba(79, 176, 0, 0.18);
 }
 
 .surface-transition {
@@ -58,7 +63,7 @@ img {
 
 .btn-primary {
     @apply inline-flex min-h-[44px] items-center justify-center rounded-full bg-terracotta px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-white transition duration-200 hover:bg-clay disabled:cursor-wait disabled:opacity-70 sm:px-5;
-    box-shadow: 0 12px 28px rgba(79, 176, 0, 0.24);
+    box-shadow: 0 12px 28px rgba(79, 176, 0, 0.18);
 }
 
 .btn-secondary {
@@ -84,15 +89,14 @@ img {
 
 .soft-grid {
     background-image:
-        radial-gradient(circle at 18% 18%, rgba(79, 176, 0, 0.12), transparent 28%),
-        radial-gradient(circle at 82% 10%, rgba(142, 217, 87, 0.22), transparent 30%),
-        radial-gradient(circle at 72% 82%, rgba(47, 125, 27, 0.08), transparent 30%),
-        linear-gradient(135deg, #ffffff 0%, #f7fbf4 52%, #ffffff 100%);
+        radial-gradient(circle at 18% 18%, rgba(79, 176, 0, 0.055), transparent 28%),
+        radial-gradient(circle at 82% 10%, rgba(142, 217, 87, 0.08), transparent 30%),
+        linear-gradient(135deg, #ffffff 0%, #fffaf0 54%, #ffffff 100%);
 }
 
 .luxury-gradient {
     background:
-        radial-gradient(circle at top left, rgba(142, 217, 87, 0.20), transparent 34%),
+        radial-gradient(circle at top left, rgba(142, 217, 87, 0.18), transparent 34%),
         linear-gradient(135deg, rgba(18, 26, 16, 0.96), rgba(37, 51, 34, 0.92));
 }
 
@@ -115,14 +119,24 @@ img {
     }
 }
 
+@media (max-width: 1023px) {
+    html {
+        scroll-padding-top: 8.75rem;
+    }
+
+    main {
+        padding-bottom: 5.5rem;
+    }
+}
+
 @media (max-width: 767px) {
     html {
-        scroll-padding-top: 12rem;
+        scroll-padding-top: 8.25rem;
     }
 
     #home,
     #home > div {
-        min-height: 72svh;
+        min-height: 68svh;
     }
 
     .premium-card:hover {
@@ -191,8 +205,8 @@ html.dark .theme-invert-button:hover {
 
 html.dark .soft-grid {
     background-image:
-        radial-gradient(circle at 18% 18%, rgba(79, 176, 0, 0.18), transparent 30%),
-        radial-gradient(circle at 82% 10%, rgba(142, 217, 87, 0.16), transparent 32%),
+        radial-gradient(circle at 18% 18%, rgba(79, 176, 0, 0.14), transparent 30%),
+        radial-gradient(circle at 82% 10%, rgba(142, 217, 87, 0.10), transparent 32%),
         linear-gradient(135deg, #121a10 0%, #172414 52%, #121a10 100%);
 }
 
