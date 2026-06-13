@@ -2,6 +2,30 @@
 
 @section('title', __('home.blog.title') . ' | Denetfils')
 @section('description', __('home.blog.body'))
+@section('canonical', route('blog.index', ['locale' => $locale]))
+@section('og_type', 'website')
+@section('og_image', $posts[0]['image'] ?? '')
+
+@push('structured-data')
+    @php
+        $blogSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Blog',
+            'name' => __('home.blog.title'),
+            'description' => __('home.blog.body'),
+            'url' => route('blog.index', ['locale' => $locale]),
+            'inLanguage' => $locale,
+            'blogPost' => collect($posts)->map(fn (array $post) => [
+                '@type' => 'BlogPosting',
+                'headline' => $post['title'],
+                'description' => $post['description'],
+                'image' => $post['image'],
+                'url' => route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]),
+            ])->values()->all(),
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($blogSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+@endpush
 
 @section('content')
     <section class="soft-grid px-4 py-12 dark:bg-ink sm:px-8 lg:py-20">
@@ -19,7 +43,7 @@
 
                 @if (! empty($posts))
                     <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $posts[0]['slug']]) }}" class="group relative overflow-hidden rounded-[1.6rem] bg-ink text-white shadow-sm">
-                        <img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.03]" src="{{ $posts[0]['image'] }}" alt="{{ $posts[0]['title'] }}" fetchpriority="high">
+                        <img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.03]" src="{{ $posts[0]['image'] }}" alt="{{ $posts[0]['title'] }}" fetchpriority="high" decoding="async">
                         <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/65 to-transparent"></div>
                         <div class="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
                             <div class="flex flex-wrap items-center gap-2">
@@ -38,7 +62,7 @@
                 @foreach (array_slice($posts, 1) as $post)
                     <article class="group overflow-hidden rounded-[1.35rem] border border-leaf/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/5">
                         <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="block overflow-hidden">
-                            <img class="h-48 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" loading="lazy">
+                            <img class="h-48 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" loading="lazy" decoding="async">
                         </a>
                         <div class="p-5">
                             <div class="flex flex-wrap items-center gap-2">
