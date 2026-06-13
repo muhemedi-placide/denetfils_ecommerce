@@ -155,6 +155,14 @@
             @yield('content')
         </main>
 
+        @if (request()->routeIs('home') || request()->routeIs('home.localized'))
+            @include('partials.testimonials', ['currentLocale' => $currentLocale])
+        @endif
+
+        @if (request()->routeIs('products.show') && isset($product))
+            @include('partials.product-reviews', ['product' => $product, 'currentLocale' => $currentLocale])
+        @endif
+
         <div x-cloak x-show="cartOpen" class="fixed inset-0 z-50">
             <button type="button" class="absolute inset-0 bg-black/45 backdrop-blur-sm" aria-label="{{ __('home.cart.close') }}" x-on:click="cartOpen = false"></button>
             <aside class="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-leaf/10 bg-cream shadow-2xl dark:border-white/10 dark:bg-ink sm:w-[28rem]">
