@@ -29,7 +29,7 @@ class ShopFrontendTest extends TestCase
 
         $this->get('/en')
             ->assertOk()
-            ->assertSee('Reliable flavors, delivered with precision.')
+            ->assertSee('A family house bringing Haitian flavors across borders.')
             ->assertSee('Mountain honey')
             ->assertSee('French origin');
     }
@@ -65,12 +65,18 @@ class ShopFrontendTest extends TestCase
             ->assertSee('A dense floral honey')
             ->assertSee('EUR 8.90')
             ->assertSee('https://example.test/honey.jpg')
+            ->assertSee('Premium selection')
+            ->assertSee('Prepared within 24 to 48 business hours.')
+            ->assertSee('application/ld+json', false)
             ->assertSee('addToCart(10, variantId)', false);
     }
 
     private function fakeCatalog(string $name, string $origin, string $categoryName): void
     {
         Http::fake([
+            '*/seo/site*' => Http::response([
+                'data' => $this->siteSeo(),
+            ]),
             '*/categories*' => Http::response([
                 'data' => [
                     [
@@ -115,10 +121,71 @@ class ShopFrontendTest extends TestCase
             'weight_grams' => 250,
             'stock_quantity' => 35,
             'is_active' => true,
+            'short_description' => 'A dense floral honey selected for breakfast and dessert.',
+            'rich_content' => [
+                'badges' => ['Best seller', 'EU delivery'],
+                'highlights' => ['Premium selection', 'Careful preparation'],
+                'tags' => ['honey', 'premium'],
+                'ingredients' => 'Honey.',
+                'allergens' => ['May contain traces of nuts.'],
+                'nutrition_facts' => ['serving_basis' => 'per_100g'],
+                'certifications' => ['Verified supplier'],
+                'storage_instructions' => 'Store in a cool, dry place.',
+                'usage_instructions' => 'Use with breakfast or dessert.',
+            ],
+            'commerce' => [
+                'brand' => 'Denetfils',
+                'availability' => 'in_stock',
+                'is_available' => true,
+                'max_order_quantity' => 12,
+                'rating' => ['average' => 4.8, 'count' => 38],
+                'sales_count' => 240,
+                'shipping' => [
+                    'dispatch_time' => 'Prepared within 24 to 48 business hours.',
+                    'delivery_zone' => 'France and supported European countries.',
+                ],
+                'return_policy' => 'Food products cannot be returned after opening.',
+                'guarantee' => 'Quality check before dispatch.',
+            ],
+            'seo' => [
+                'meta' => [
+                    'title' => $name . ' | Denetfils',
+                    'description' => 'Shop ' . $name . ' with structured product data.',
+                    'robots' => 'index,follow',
+                ],
+                'canonical' => 'http://127.0.0.1:8001/en/products/miel-de-montagne',
+                'hreflang' => [
+                    ['locale' => 'fr', 'hreflang' => 'fr-FR', 'url' => 'http://127.0.0.1:8001/fr/products/miel-de-montagne'],
+                    ['locale' => 'en', 'hreflang' => 'en', 'url' => 'http://127.0.0.1:8001/en/products/miel-de-montagne'],
+                ],
+                'open_graph' => [
+                    'type' => 'product',
+                    'title' => $name,
+                    'description' => 'Shop ' . $name,
+                    'image' => 'https://example.test/honey.jpg',
+                ],
+                'twitter_card' => [
+                    'card' => 'summary_large_image',
+                    'title' => $name,
+                    'description' => 'Shop ' . $name,
+                    'image' => 'https://example.test/honey.jpg',
+                ],
+                'json_ld' => [
+                    'product' => [
+                        '@context' => 'https://schema.org',
+                        '@type' => 'Product',
+                        'name' => $name,
+                    ],
+                ],
+            ],
             'primary_image' => [
                 'id' => 1,
                 'url' => 'https://example.test/honey.jpg',
                 'alt_text' => 'Jar of honey.',
+                'width' => 1200,
+                'height' => 900,
+                'loading' => 'eager',
+                'fetch_priority' => 'high',
             ],
             'images' => [],
             'variants' => [
@@ -133,6 +200,27 @@ class ShopFrontendTest extends TestCase
                     'stock_quantity' => 35,
                     'is_active' => true,
                 ],
+            ],
+        ];
+    }
+
+    private function siteSeo(): array
+    {
+        return [
+            'meta' => [
+                'title' => 'Denetfils - Premium food shop',
+                'description' => 'Discover curated grocery products, natural drinks and premium food boxes for Europe.',
+                'robots' => 'index,follow',
+            ],
+            'canonical' => 'http://127.0.0.1:8001/en',
+            'hreflang' => [
+                ['locale' => 'fr', 'hreflang' => 'fr-FR', 'url' => 'http://127.0.0.1:8001/fr'],
+                ['locale' => 'en', 'hreflang' => 'en', 'url' => 'http://127.0.0.1:8001/en'],
+            ],
+            'open_graph' => ['type' => 'website', 'title' => 'Denetfils'],
+            'twitter_card' => ['card' => 'summary'],
+            'json_ld' => [
+                'organization' => ['@context' => 'https://schema.org', '@type' => 'Organization', 'name' => 'Denetfils'],
             ],
         ];
     }

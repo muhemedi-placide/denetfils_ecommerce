@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ShopApiClient;
+use App\Services\AccountApiClient;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -13,6 +14,7 @@ class ShopController extends Controller
     {
         $locale = $this->setLocale($locale);
         $filters = $this->filters($request);
+        $siteSeo = $api->siteSeo($locale);
         $categories = $api->categories($locale);
         $products = $api->products($locale, $filters);
 
@@ -23,6 +25,7 @@ class ShopController extends Controller
             'blogPosts' => array_slice($this->blogPosts($locale), 0, 3),
             'apiError' => $products['error'],
             'filters' => $filters,
+            'seoPayload' => $siteSeo['data'],
             'activeMenu' => 'home',
         ]);
     }
@@ -102,12 +105,30 @@ class ShopController extends Controller
         ]);
     }
 
-    public function checkout(string $locale): View
+    public function checkout(Request $request, AccountApiClient $accountApi, string $locale): View
     {
         $locale = $this->setLocale($locale);
+        $token = $request->session()->get('customer_api_token');
+        $user = null;
+        $addresses = [];
+
+        if ($token) {
+            $profile = $accountApi->me($token);
+
+            if ($profile['ok']) {
+                $user = $profile['data'];
+                $request->session()->put('customer_user', $user);
+                $addresses = $accountApi->addresses($token)['data'];
+            } else {
+                $request->session()->forget(['customer_api_token', 'customer_user']);
+            }
+        }
 
         return view('checkout.show', [
             'locale' => $locale,
+            'user' => $user,
+            'addresses' => $addresses,
+            'countries' => $accountApi->supportedCountries($locale)['data'],
             'activeMenu' => 'products',
         ]);
     }
@@ -125,6 +146,7 @@ class ShopController extends Controller
             'locale' => $locale,
             'product' => $product,
             'relatedProducts' => $relatedProducts,
+            'seoPayload' => $product['seo'] ?? [],
             'activeMenu' => 'products',
         ]);
     }
@@ -142,6 +164,12 @@ class ShopController extends Controller
 
     public function sitemap(ShopApiClient $api)
     {
+        $apiSitemap = $api->sitemapXml();
+
+        if ($apiSitemap) {
+            return response($apiSitemap, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        }
+
         return response(
             view('seo.sitemap', ['urls' => $this->sitemapUrls($api)])->render(),
             200,
@@ -193,6 +221,8 @@ class ShopController extends Controller
         ]);
 
         return collect($response['data'])
+            ->filter(fn (mixed $item) => is_array($item)
+                && isset($item['id'], $item['slug'], $item['name'], $item['formatted_price']))
             ->reject(fn (array $item) => (int) ($item['id'] ?? 0) === (int) ($product['id'] ?? 0))
             ->take(3)
             ->values()

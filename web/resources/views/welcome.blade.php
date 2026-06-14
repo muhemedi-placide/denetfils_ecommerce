@@ -1,7 +1,8 @@
 @extends('layouts.shop')
 
-@section('title', __('home.meta.title'))
-@section('description', __('home.meta.description'))
+@section('title', data_get($seoPayload ?? [], 'meta.title', __('home.meta.title')))
+@section('description', data_get($seoPayload ?? [], 'meta.description', __('home.meta.description')))
+@section('canonical', data_get($seoPayload ?? [], 'canonical', route('home.localized', ['locale' => $locale])))
 
 @section('content')
     @php
@@ -187,12 +188,13 @@
             <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @forelse ($products as $product)
                     @php
-                        $ratingValue = number_format(4.6 + (($product['id'] ?? 0) % 4) / 10, 1, ',', ' ');
-                        $reviewCount = 18 + (($product['id'] ?? 0) % 37);
+                        $ratingValue = number_format((float) data_get($product, 'commerce.rating.average', 0), 1, ',', ' ');
+                        $reviewCount = (int) data_get($product, 'commerce.rating.count', 0);
+                        $primaryImage = $product['primary_image'] ?? [];
                     @endphp
                     <article class="premium-card group overflow-hidden bg-white dark:bg-white/5" itemscope itemtype="https://schema.org/Product">
                         <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="relative block overflow-hidden bg-white dark:bg-white/5">
-                            <img class="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.04] sm:h-56 lg:h-64" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" loading="lazy" decoding="async" itemprop="image">
+                            <img class="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.04] sm:h-56 lg:h-64" src="{{ $primaryImage['url'] ?? '' }}" alt="{{ $primaryImage['alt_text'] ?? $product['name'] }}" width="{{ $primaryImage['width'] ?? 600 }}" height="{{ $primaryImage['height'] ?? 450 }}" loading="{{ $primaryImage['loading'] ?? 'lazy' }}" decoding="async" itemprop="image">
                             <div class="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-extrabold text-leaf shadow-sm backdrop-blur dark:bg-ink/80 dark:text-cream">{{ $product['origin'] }}</div>
                             <div class="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1.5 text-xs font-extrabold text-cocoa shadow-sm backdrop-blur dark:bg-ink/85 dark:text-cream" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
                                 <span class="text-leaf dark:text-meadow" aria-hidden="true">★★★★★</span>
@@ -242,11 +244,12 @@
             <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
                 @forelse ($spotlightProducts as $product)
                     @php
-                        $ratingValue = number_format(4.6 + (($product['id'] ?? 0) % 4) / 10, 1, ',', ' ');
-                        $reviewCount = 18 + (($product['id'] ?? 0) % 37);
+                        $ratingValue = number_format((float) data_get($product, 'commerce.rating.average', 0), 1, ',', ' ');
+                        $reviewCount = (int) data_get($product, 'commerce.rating.count', 0);
+                        $primaryImage = $product['primary_image'] ?? [];
                     @endphp
                     <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="group min-w-[250px] rounded-[1.25rem] border border-leaf/10 bg-linen p-4 transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" itemscope itemtype="https://schema.org/Product">
-                        <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" loading="lazy" decoding="async" itemprop="image">
+                        <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $primaryImage['url'] ?? '' }}" alt="{{ $primaryImage['alt_text'] ?? $product['name'] }}" width="{{ $primaryImage['width'] ?? 600 }}" height="{{ $primaryImage['height'] ?? 450 }}" loading="{{ $primaryImage['loading'] ?? 'lazy' }}" decoding="async" itemprop="image">
                         <div class="mt-4 flex items-start justify-between gap-4">
                             <h3 class="line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream sm:text-lg" itemprop="name">{{ $product['name'] }}</h3>
                             <span class="shrink-0 font-extrabold text-leaf">{{ $product['formatted_price'] }}</span>

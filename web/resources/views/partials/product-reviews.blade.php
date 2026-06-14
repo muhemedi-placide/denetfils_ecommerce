@@ -47,7 +47,8 @@
                 'date' => '2025-12-28',
             ],
         ];
-    $average = collect($reviews)->avg('rating');
+    $average = (float) data_get($product, 'commerce.rating.average', collect($reviews)->avg('rating'));
+    $reviewCount = (int) data_get($product, 'commerce.rating.count', count($reviews));
 @endphp
 
 <section class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-16" aria-labelledby="product-reviews-title">
@@ -67,7 +68,7 @@
                             ★★★★★
                         </div>
                         <p class="mt-1 text-xs font-bold uppercase tracking-wide text-cocoa/55 dark:text-cream/55">
-                            {{ count($reviews) }} {{ $currentLocale === 'fr' ? 'avis' : 'reviews' }}
+                            {{ $reviewCount }} {{ $currentLocale === 'fr' ? 'avis' : 'reviews' }}
                         </p>
                     </div>
                 </div>

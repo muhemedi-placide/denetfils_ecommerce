@@ -2,6 +2,9 @@
     $currentLocale = $locale ?? app()->getLocale();
     $alternateLocale = $currentLocale === 'fr' ? 'en' : 'fr';
     $alternateUrl = route('home.localized', ['locale' => $alternateLocale]);
+    $accountUrl = session()->has('customer_api_token')
+        ? route('account.show', ['locale' => $currentLocale])
+        : route('account.login', ['locale' => $currentLocale]);
 
     if (request()->routeIs('pages.about')) {
         $alternateUrl = route('pages.about', ['locale' => $alternateLocale]);
@@ -17,6 +20,12 @@
         $alternateUrl = route('pages.terms', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('pages.payment')) {
         $alternateUrl = route('pages.payment', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('account.login')) {
+        $alternateUrl = route('account.login', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('account.register')) {
+        $alternateUrl = route('account.register', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('account.show')) {
+        $alternateUrl = route('account.show', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('products.show')) {
         $alternateUrl = route('products.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     }
@@ -92,6 +101,10 @@
                             <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-xs text-leaf" x-text="itemCount"></span>
                         </button>
 
+                        <a href="{{ $accountUrl }}" class="hidden min-h-[44px] items-center justify-center rounded-full border border-leaf/15 bg-white px-4 py-2.5 text-sm font-bold text-cocoa transition hover:border-leaf hover:text-leaf dark:border-white/10 dark:bg-white/5 dark:text-cream dark:hover:border-meadow dark:hover:text-meadow sm:inline-flex">
+                            {{ __('home.account.nav') }}
+                        </a>
+
                         <button type="button" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-leaf/10 bg-white text-leaf transition hover:bg-mint dark:border-white/10 dark:bg-white/5 dark:text-meadow" x-on:click="toggleTheme()" aria-label="{{ __('home.theme.toggle') }}">
                             <svg x-show="theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
                             <svg x-cloak x-show="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.99 12.44A8.99 8.99 0 1 1 11.56 3a7 7 0 0 0 9.43 9.44Z"></path></svg>
@@ -119,6 +132,7 @@
                     <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" x-on:click="activeMenu = 'products'" x-bind:class="activeMenu === 'products' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] rounded-full px-4 py-2.5 transition">{{ __('home.nav.shop') }}</a>
                     <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" x-on:click="activeMenu = 'blog'" x-bind:class="activeMenu === 'blog' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] rounded-full px-4 py-2.5 transition">{{ __('home.nav.blog') }}</a>
                     <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#checkout" class="min-h-[44px] rounded-full px-4 py-2.5 transition hover:bg-white hover:text-leaf dark:hover:bg-white/10">{{ __('home.nav.checkout') }}</a>
+                    <a href="{{ $accountUrl }}" x-on:click="activeMenu = 'account'" x-bind:class="activeMenu === 'account' ? 'bg-white text-leaf shadow-sm dark:bg-white/10 dark:text-meadow' : 'hover:bg-white hover:text-leaf dark:hover:bg-white/10'" class="min-h-[44px] rounded-full px-4 py-2.5 transition">{{ __('home.account.nav') }}</a>
                 </div>
             </nav>
 
@@ -145,6 +159,7 @@
                     <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products" x-on:click="closeMobileMenu(); activeMenu = 'products'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-terracotta px-4 py-3 font-bold text-white shadow-sm">{{ __('home.nav.shop') }}<span>→</span></a>
                     <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'about'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.nav.about') }}<span class="text-leaf">→</span></a>
                     <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'blog'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.nav.blog') }}<span class="text-leaf">→</span></a>
+                    <a href="{{ $accountUrl }}" x-on:click="closeMobileMenu(); activeMenu = 'account'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.account.nav') }}<span class="text-leaf">→</span></a>
                     <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu()" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ __('home.footer.delivery') }}<span class="text-leaf">→</span></a>
                     <a href="{{ $alternateUrl }}" x-on:click="closeMobileMenu()" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-bold text-cocoa shadow-sm dark:bg-white/5 dark:text-cream">{{ strtoupper($alternateLocale) }}<span class="text-leaf">→</span></a>
                 </div>
@@ -255,6 +270,7 @@
                         <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.terms', ['locale' => $currentLocale]) }}">{{ __('home.footer.terms') }}</a></li>
                         <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.about', ['locale' => $currentLocale]) }}">{{ __('home.nav.about') }}</a></li>
                         <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ route('pages.payment', ['locale' => $currentLocale]) }}">{{ __('home.footer.secure_payment') }}</a></li>
+                        <li><a class="block rounded-lg py-2 transition hover:text-leaf dark:hover:text-meadow" href="{{ $accountUrl }}">{{ __('home.account.nav') }}</a></li>
                     </ul>
                 </div>
 

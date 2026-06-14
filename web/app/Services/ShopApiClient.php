@@ -8,6 +8,27 @@ use Illuminate\Support\Facades\Http;
 
 class ShopApiClient
 {
+    public function siteSeo(string $locale): array
+    {
+        try {
+            $response = Http::baseUrl($this->baseUrl())
+                ->acceptJson()
+                ->timeout(5)
+                ->get('seo/site', ['locale' => $this->locale($locale)])
+                ->throw();
+
+            return [
+                'data' => $response->json('data', []),
+                'error' => null,
+            ];
+        } catch (ConnectionException|RequestException) {
+            return [
+                'data' => [],
+                'error' => __('home.products.api_error'),
+            ];
+        }
+    }
+
     public function categories(string $locale): array
     {
         try {
@@ -72,6 +93,21 @@ class ShopApiClient
             $response->throw();
 
             return $response->json('data');
+        } catch (ConnectionException|RequestException) {
+            return null;
+        }
+    }
+
+    public function sitemapXml(): ?string
+    {
+        try {
+            $response = Http::baseUrl($this->baseUrl())
+                ->accept('application/xml')
+                ->timeout(5)
+                ->get('sitemap.xml')
+                ->throw();
+
+            return $response->body();
         } catch (ConnectionException|RequestException) {
             return null;
         }

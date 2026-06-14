@@ -1,12 +1,24 @@
 @php
     $siteName = 'DEN & FILS';
     $siteUrl = rtrim((string) config('app.url', 'https://www.denetfils.fr'), '/');
-    $metaTitle = trim($__env->yieldContent('title', __('home.meta.title')));
-    $metaDescription = \Illuminate\Support\Str::limit(strip_tags(trim($__env->yieldContent('description', __('home.meta.description')))), 160, '');
-    $canonicalUrl = trim($__env->yieldContent('canonical')) ?: url()->current();
-    $robots = trim($__env->yieldContent('robots')) ?: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
-    $ogType = trim($__env->yieldContent('og_type')) ?: 'website';
-    $ogImage = trim($__env->yieldContent('og_image')) ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=85';
+    $seoPayload = $seoPayload ?? [];
+    $seoMeta = data_get($seoPayload, 'meta', []);
+    $openGraph = data_get($seoPayload, 'open_graph', []);
+    $twitterCard = data_get($seoPayload, 'twitter_card', []);
+    $hreflangLinks = data_get($seoPayload, 'hreflang', []);
+    $apiJsonLd = collect(data_get($seoPayload, 'json_ld', []))
+        ->flatMap(fn ($item) => is_array($item) && array_is_list($item) ? $item : [$item])
+        ->filter()
+        ->values()
+        ->all();
+    $metaTitle = trim($__env->yieldContent('title', data_get($seoMeta, 'title', __('home.meta.title'))));
+    $metaDescription = \Illuminate\Support\Str::limit(strip_tags(trim($__env->yieldContent('description', data_get($seoMeta, 'description', __('home.meta.description'))))), 160, '');
+    $canonicalUrl = trim($__env->yieldContent('canonical')) ?: data_get($seoPayload, 'canonical') ?: url()->current();
+    $robots = trim($__env->yieldContent('robots')) ?: data_get($seoMeta, 'robots') ?: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
+    $ogType = trim($__env->yieldContent('og_type')) ?: data_get($openGraph, 'type', 'website');
+    $ogImage = trim($__env->yieldContent('og_image')) ?: data_get($openGraph, 'image') ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=85';
+    $twitterImage = data_get($twitterCard, 'image') ?: $ogImage;
+    $twitterCardType = data_get($twitterCard, 'card', 'summary_large_image');
     $preloadImage = trim($__env->yieldContent('preload_image'));
     $jsonLd = [
         '@context' => 'https://schema.org',
@@ -59,9 +71,15 @@
 <meta name="theme-color" content="#121a10" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <link rel="canonical" href="{{ $canonicalUrl }}">
-<link rel="alternate" hreflang="{{ $currentLocale }}" href="{{ $canonicalUrl }}">
-<link rel="alternate" hreflang="{{ $alternateLocale }}" href="{{ $alternateUrl }}">
-<link rel="alternate" hreflang="x-default" href="{{ route('home.localized', ['locale' => 'fr']) }}">
+@if (! empty($hreflangLinks))
+    @foreach ($hreflangLinks as $link)
+        <link rel="alternate" hreflang="{{ $link['hreflang'] ?? $link['locale'] ?? $currentLocale }}" href="{{ $link['url'] ?? $canonicalUrl }}">
+    @endforeach
+@else
+    <link rel="alternate" hreflang="{{ $currentLocale }}" href="{{ $canonicalUrl }}">
+    <link rel="alternate" hreflang="{{ $alternateLocale }}" href="{{ $alternateUrl }}">
+    <link rel="alternate" hreflang="x-default" href="{{ route('home.localized', ['locale' => 'fr']) }}">
+@endif
 <link rel="sitemap" type="application/xml" href="{{ url('/sitemap.xml') }}">
 @if ($preloadImage)
     <link rel="preload" as="image" href="{{ $preloadImage }}" fetchpriority="high">
@@ -69,14 +87,20 @@
 <meta property="og:locale" content="{{ $currentLocale === 'fr' ? 'fr_FR' : 'en_US' }}">
 <meta property="og:site_name" content="{{ $siteName }}">
 <meta property="og:type" content="{{ $ogType }}">
-<meta property="og:title" content="{{ $metaTitle }}">
-<meta property="og:description" content="{{ $metaDescription }}">
+<meta property="og:title" content="{{ data_get($openGraph, 'title', $metaTitle) }}">
+<meta property="og:description" content="{{ data_get($openGraph, 'description', $metaDescription) }}">
 <meta property="og:url" content="{{ $canonicalUrl }}">
 <meta property="og:image" content="{{ $ogImage }}">
 <meta property="og:image:alt" content="{{ $metaTitle }}">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ $metaTitle }}">
-<meta name="twitter:description" content="{{ $metaDescription }}">
-<meta name="twitter:image" content="{{ $ogImage }}">
-<script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+<meta name="twitter:card" content="{{ $twitterCardType }}">
+<meta name="twitter:title" content="{{ data_get($twitterCard, 'title', $metaTitle) }}">
+<meta name="twitter:description" content="{{ data_get($twitterCard, 'description', $metaDescription) }}">
+<meta name="twitter:image" content="{{ $twitterImage }}">
+@if (! empty($apiJsonLd))
+    @foreach ($apiJsonLd as $jsonLdItem)
+        <script type="application/ld+json">{!! json_encode($jsonLdItem, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+    @endforeach
+@else
+    <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+@endif
 @stack('structured-data')
