@@ -12,6 +12,321 @@
         }
     ],
     "paths": {
+        "/api/v1/admin/dashboard": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "operationId": "adminDashboard",
+                "parameters": [
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "fr",
+                                "en"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "threshold",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 0
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Back-office dashboard KPIs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminDashboard"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/inventory": {
+            "get": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminInventoryIndex",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "inactive",
+                                "out_of_stock",
+                                "low_stock",
+                                "in_stock"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "threshold",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "stock_asc",
+                                "stock_desc",
+                                "updated_asc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated inventory products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AdminInventoryProduct"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/products/{product}/publish": {
+            "post": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogProductsPublish",
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product published",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminProduct"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/products/{product}/unpublish": {
+            "post": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogProductsUnpublish",
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product unpublished",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminProduct"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/categories/{category}/activate": {
+            "post": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogCategoriesActivate",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category activated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminCategory"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/categories/{category}/deactivate": {
+            "post": {
+                "tags": [
+                    "Admin Catalog"
+                ],
+                "operationId": "adminCatalogCategoriesDeactivate",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category deactivated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AdminCategory"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/health": {
             "get": {
                 "tags": [
@@ -1702,6 +2017,106 @@
     },
     "components": {
         "schemas": {
+            "AdminDashboard": {
+                "properties": {
+                    "generated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "example": "Europe/Paris"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "EUR"
+                    },
+                    "low_stock_threshold": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "kpis": {
+                        "type": "object"
+                    },
+                    "catalog_health": {
+                        "type": "object"
+                    },
+                    "stock_alerts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "recent_activity": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AdminInventoryProduct": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "DEN-MIEL-250"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "miel-de-montagne"
+                    },
+                    "name": {
+                        "$ref": "#/components/schemas/LocalizedText"
+                    },
+                    "preview_name": {
+                        "type": "object"
+                    },
+                    "category": {
+                        "type": "object"
+                    },
+                    "stock_quantity": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "stock_status": {
+                        "type": "string",
+                        "enum": [
+                            "inactive",
+                            "out_of_stock",
+                            "low_stock",
+                            "in_stock"
+                        ]
+                    },
+                    "low_stock_threshold": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "price_cents": {
+                        "type": "integer",
+                        "example": 890
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "EUR"
+                    },
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "ApiMessage": {
                 "properties": {
                     "message": {

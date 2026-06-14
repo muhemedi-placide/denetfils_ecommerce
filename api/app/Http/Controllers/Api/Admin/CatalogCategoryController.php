@@ -35,7 +35,9 @@ class CatalogCategoryController extends Controller
             });
         }
 
-        return CategoryAdminResource::collection($query->paginate(25));
+        $perPage = max(5, min(100, $request->integer('per_page', 25)));
+
+        return CategoryAdminResource::collection($query->paginate($perPage));
     }
 
     public function store(StoreCategoryRequest $request, CatalogManagementService $catalog): JsonResponse
@@ -56,6 +58,20 @@ class CatalogCategoryController extends Controller
     {
         return new CategoryAdminResource(
             $catalog->updateCategory($category, $request->validated(), $request->user(), $request),
+        );
+    }
+
+    public function activate(Request $request, Category $category, CatalogManagementService $catalog): CategoryAdminResource
+    {
+        return new CategoryAdminResource(
+            $catalog->setCategoryActivation($category, true, $request->user(), $request),
+        );
+    }
+
+    public function deactivate(Request $request, Category $category, CatalogManagementService $catalog): CategoryAdminResource
+    {
+        return new CategoryAdminResource(
+            $catalog->setCategoryActivation($category, false, $request->user(), $request),
         );
     }
 }

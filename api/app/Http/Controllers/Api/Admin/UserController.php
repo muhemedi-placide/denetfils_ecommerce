@@ -14,13 +14,41 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = User::query()
+            ->with(['roles', 'permissions', 'customerProfile', 'staffProfile'])
+            ->latest('id');
+
+        if ($request->filled('q')) {
+            $search = '%' . trim((string) $request->query('q')) . '%';
+
+            $query->where(function ($query) use ($search) {
+                $query
+                    ->where('name', 'like', $search)
+                    ->orWhere('first_name', 'like', $search)
+                    ->orWhere('last_name', 'like', $search)
+                    ->orWhere('email', 'like', $search)
+                    ->orWhere('phone', 'like', $search);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        if ($request->filled('role')) {
+            $query->role((string) $request->query('role'));
+        }
+
+        if ($request->filled('country_code')) {
+            $query->where('country_code', strtoupper((string) $request->query('country_code')));
+        }
+
+        $perPage = max(5, min(100, $request->integer('per_page', 25)));
+
         return UserResource::collection(
-            User::query()
-                ->with(['roles', 'permissions', 'customerProfile', 'staffProfile'])
-                ->latest('id')
-                ->paginate(25),
+            $query->paginate($perPage),
         );
     }
 
