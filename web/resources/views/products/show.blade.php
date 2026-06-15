@@ -20,9 +20,9 @@
     <section class="soft-grid px-4 py-10 dark:bg-ink sm:px-8 lg:py-18">
         <div class="mx-auto max-w-7xl">
             <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60" aria-label="Breadcrumb">
-                <a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-leaf">{{ __('home.nav.home') }}</a>
+                <a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-leaf" wire:navigate.hover>{{ __('home.nav.home') }}</a>
                 <span>/</span>
-                <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="transition hover:text-leaf">{{ __('home.nav.shop') }}</a>
+                <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="transition hover:text-leaf" wire:navigate.hover>{{ __('home.nav.shop') }}</a>
                 <span>/</span>
                 <span class="text-leaf">{{ $product['name'] }}</span>
             </nav>
@@ -77,37 +77,7 @@
                         </div>
                     @endif
 
-                    <aside class="glass-panel mt-6 rounded-[1.35rem] p-4 sm:rounded-[1.6rem] sm:p-5" x-data="{ variantId: @js($product['variants'][0]['id'] ?? null) }">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="theme-subtle text-xs font-bold uppercase tracking-[0.2em] text-leaf dark:text-cream/60">{{ __('home.product.price') }}</p>
-                                <p class="theme-title mt-2 text-3xl font-extrabold text-forest dark:text-cream sm:text-4xl">{{ $product['formatted_price'] }}</p>
-                                <p class="mt-2 text-xs font-bold text-cocoa/55 dark:text-cream/55">
-                                    <span class="text-leaf dark:text-meadow">★★★★★</span>
-                                    <span class="ml-1">{{ $ratingLabel }} · {{ $ratingCount }} {{ $locale === 'fr' ? 'avis' : 'reviews' }}</span>
-                                </p>
-                            </div>
-                            <span class="rounded-full bg-mint px-3 py-2 text-xs font-bold text-leaf dark:bg-white/10 dark:text-cream">
-                                {{ $isAvailable ? __('home.product.available', ['count' => $product['stock_quantity']]) : ($locale === 'fr' ? 'Rupture de stock' : 'Out of stock') }}
-                            </span>
-                        </div>
-
-                        @if (! empty($product['variants']))
-                            <label class="theme-title mt-5 block text-sm font-bold text-cocoa dark:text-cream" for="variant">{{ __('home.product.variant') }}</label>
-                            <select id="variant" class="input-premium mt-2 w-full" x-model="variantId">
-                                @foreach ($product['variants'] as $variant)
-                                    <option value="{{ $variant['id'] }}">{{ $variant['name'] }} - {{ $variant['formatted_price'] }}</option>
-                                @endforeach
-                            </select>
-                        @endif
-
-                        <button type="button" class="btn-primary mt-5 w-full py-4 text-base" x-on:click="addToCart({{ $product['id'] }}, variantId)" x-bind:disabled="cartMutating || @js(! $isAvailable)">{{ __('home.products.cta') }}</button>
-                        <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-secondary mt-3 w-full">{{ __('home.product.back') }}</a>
-
-                        <p class="theme-muted mt-4 text-center text-xs leading-5 text-cocoa/60 dark:text-cream/60">
-                            {{ data_get($shipping, 'dispatch_time', __('home.product.shipping_note')) }}
-                        </p>
-                    </aside>
+                    <livewire:shop.product-purchase-panel :locale="$locale" :product="$product" />
                 </div>
             </div>
         </div>
@@ -233,7 +203,7 @@
                             $relatedRating = number_format((float) data_get($related, 'commerce.rating.average', 0), 1, ',', ' ');
                             $relatedReviewCount = (int) data_get($related, 'commerce.rating.count', 0);
                         @endphp
-                        <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $related['slug']]) }}" class="group min-w-[250px] rounded-[1.25rem] border border-leaf/10 bg-white p-4 transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" itemscope itemtype="https://schema.org/Product">
+                    <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $related['slug']]) }}" class="group min-w-[250px] rounded-[1.25rem] border border-leaf/10 bg-white p-4 transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" itemscope itemtype="https://schema.org/Product" wire:navigate.hover>
                             <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $related['primary_image']['url'] ?? '' }}" alt="{{ $related['primary_image']['alt_text'] ?? $related['name'] }}" loading="lazy" decoding="async" itemprop="image">
                             <div class="mt-4 flex items-start justify-between gap-4">
                                 <h3 class="line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream sm:text-lg" itemprop="name">{{ $related['name'] }}</h3>

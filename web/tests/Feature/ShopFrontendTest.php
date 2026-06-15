@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Shop\CartManager;
 use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ShopFrontendTest extends TestCase
@@ -17,9 +19,22 @@ class ShopFrontendTest extends TestCase
             ->assertSee('Miel de montagne')
             ->assertSee('Origine France')
             ->assertSee('Epicerie fine')
-            ->assertSee('addToCart(10)', false);
-
-        $this->assertStringContainsString('denetfils_cart_token', file_get_contents(resource_path('js/app.js')));
+            ->assertSee('cart:add', false)
+            ->assertSee('data-theme-toggle', false)
+            ->assertSee('id="mobile-menu-state"', false)
+            ->assertSee('data-mobile-menu-toggle', false)
+            ->assertSee('data-testid="mobile-cart-open-button"', false)
+            ->assertSee('pointer-events-none fixed', false)
+            ->assertSee('Paiement sécurisé : carte, Visa, Mastercard, PayPal.')
+            ->assertDontSee(__('home.cart.subtitle'))
+            ->assertDontSee('TVA UE')
+            ->assertDontSee('Securise')
+            ->assertDontSee('Moyens de paiement acceptés')
+            ->assertDontSee('Etape suivante')
+            ->assertDontSee('x-trap.noscroll', false)
+            ->assertDontSee('bg-black/45 backdrop-blur-sm', false)
+            ->assertDontSee("classList.toggle('overflow-hidden'", false)
+            ->assertSee('livewire', false);
     }
 
     public function test_english_catalog_displays_products_from_api(): void
@@ -42,9 +57,10 @@ class ShopFrontendTest extends TestCase
         $this->get('/en?category=boissons-naturelles&q=hibiscus&sort=price_desc')
             ->assertOk()
             ->assertSee('Hibiscus infusion')
-            ->assertSee('value="hibiscus"', false)
-            ->assertSee('value="boissons-naturelles" selected', false)
-            ->assertSee('value="price_desc" selected', false);
+            ->assertSee('wire:submit.prevent="applyFilters"', false)
+            ->assertSee('wire:model="category"', false)
+            ->assertSee('value="boissons-naturelles"', false)
+            ->assertSee('value="price_desc"', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/products')
             && $request['category'] === 'boissons-naturelles'
@@ -68,7 +84,34 @@ class ShopFrontendTest extends TestCase
             ->assertSee('Premium selection')
             ->assertSee('Prepared within 24 to 48 business hours.')
             ->assertSee('application/ld+json', false)
-            ->assertSee('addToCart(10, variantId)', false);
+            ->assertSee('wire:click="addToCart"', false);
+    }
+
+    public function test_livewire_cart_manager_creates_guest_cart_and_adds_product(): void
+    {
+        Http::fake([
+            '*/carts/cart-token-123/items' => Http::response([
+                'data' => $this->cart([
+                    $this->cartItem(),
+                ]),
+            ]),
+            '*/carts' => Http::response([
+                'data' => $this->cart(),
+            ], 201),
+        ]);
+
+        Livewire::test(CartManager::class, ['locale' => 'en'])
+            ->call('addToCart', 10)
+            ->assertSet('cartToken', 'cart-token-123')
+            ->assertSet('isOpen', true);
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/carts')
+            && $request->method() === 'POST');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/carts/cart-token-123/items')
+            && $request->method() === 'POST'
+            && $request['product_id'] === 10
+            && $request['quantity'] === 1);
     }
 
     private function fakeCatalog(string $name, string $origin, string $categoryName): void
@@ -222,6 +265,38 @@ class ShopFrontendTest extends TestCase
             'json_ld' => [
                 'organization' => ['@context' => 'https://schema.org', '@type' => 'Organization', 'name' => 'Denetfils'],
             ],
+        ];
+    }
+
+    private function cart(array $items = []): array
+    {
+        return [
+            'cart_token' => 'cart-token-123',
+            'subtotal_cents' => 890,
+            'tax_cents' => 0,
+            'total_cents' => 890,
+            'formatted_total' => 'EUR 8.90',
+            'items' => $items,
+        ];
+    }
+
+    private function cartItem(): array
+    {
+        return [
+            'id' => 55,
+            'quantity' => 1,
+            'line_total_cents' => 890,
+            'formatted_line_total' => 'EUR 8.90',
+            'product' => [
+                'id' => 10,
+                'name' => 'Mountain honey',
+                'origin' => 'French origin',
+                'image' => [
+                    'url' => 'https://example.test/honey.jpg',
+                    'alt_text' => 'Jar of honey.',
+                ],
+            ],
+            'variant' => null,
         ];
     }
 }

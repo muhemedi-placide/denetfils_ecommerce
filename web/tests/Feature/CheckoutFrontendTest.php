@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Shop\CheckoutReview;
 use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class CheckoutFrontendTest extends TestCase
@@ -16,8 +18,10 @@ class CheckoutFrontendTest extends TestCase
 
         $this->get('/fr/commande')
             ->assertOk()
-            ->assertSee('Vérifier avant paiement.')
+            ->assertDontSee('Vérifier avant paiement.')
+            ->assertDontSee('Le panier vient')
             ->assertSee('Connectez-vous pour continuer.')
+            ->assertSee('wire:submit.prevent="confirm"', false)
             ->assertSee('noindex,nofollow', false);
     }
 
@@ -32,7 +36,13 @@ class CheckoutFrontendTest extends TestCase
             ->assertSee('Jean Martin')
             ->assertSee('12 Rue du Test')
             ->assertSee('France')
-            ->assertSee('Confirmer sans paiement');
+            ->assertSee('Confirmer sans paiement')
+            ->assertSee('Checkout progress', false)
+            ->assertSee('Transporteur')
+            ->assertSee('Chronopost domicile')
+            ->assertSee('Mondial Relay')
+            ->assertSee('Récapitulatif')
+            ->assertSee('wire:model="selectedAddressId"', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/me')
             && $request->hasHeader('Authorization', 'Bearer checkout-token'));
@@ -54,6 +64,25 @@ class CheckoutFrontendTest extends TestCase
             ->assertOk()
             ->assertSessionMissing('customer_api_token')
             ->assertSee('Sign in to continue.');
+    }
+
+    public function test_checkout_confirmation_clears_guest_cart_token(): void
+    {
+        Livewire::test(CheckoutReview::class, [
+            'locale' => 'fr',
+            'user' => $this->user(),
+            'addresses' => [$this->address()],
+            'countries' => $this->countries(),
+        ])
+            ->set('cartToken', 'cart-token-123')
+            ->set('cart', $this->cart([$this->cartItem()]))
+            ->call('confirm')
+            ->assertSet('orderConfirmed', true)
+            ->assertSet('cartToken', null)
+            ->assertSet('cart.items', [])
+            ->assertDispatched('cart-token-cleared')
+            ->assertDispatched('cart:cleared')
+            ->assertDispatched('checkout-confirmed');
     }
 
     private function fakeAuthenticatedCheckout(): void
@@ -106,6 +135,35 @@ class CheckoutFrontendTest extends TestCase
         return [
             ['code' => 'FR', 'name' => 'France', 'currency' => 'EUR', 'default_locale' => 'fr', 'timezone' => 'Europe/Paris', 'is_eu' => true, 'is_active' => true],
             ['code' => 'BE', 'name' => 'Belgique', 'currency' => 'EUR', 'default_locale' => 'fr', 'timezone' => 'Europe/Brussels', 'is_eu' => true, 'is_active' => true],
+        ];
+    }
+
+    private function cart(array $items = []): array
+    {
+        return [
+            'cart_token' => 'cart-token-123',
+            'subtotal_cents' => 890,
+            'tax_cents' => 0,
+            'total_cents' => 890,
+            'formatted_total' => 'EUR 8.90',
+            'items' => $items,
+        ];
+    }
+
+    private function cartItem(): array
+    {
+        return [
+            'id' => 55,
+            'quantity' => 1,
+            'line_total_cents' => 890,
+            'formatted_line_total' => 'EUR 8.90',
+            'product' => [
+                'id' => 10,
+                'name' => 'Miel de montagne',
+                'origin' => 'Origine France',
+                'image' => null,
+            ],
+            'variant' => null,
         ];
     }
 }

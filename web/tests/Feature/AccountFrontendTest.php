@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Account\LoginForm;
 use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AccountFrontendTest extends TestCase
@@ -14,6 +16,7 @@ class AccountFrontendTest extends TestCase
         $this->get('/fr/connexion')
             ->assertOk()
             ->assertSee('Connectez-vous')
+            ->assertSee('wire:submit.prevent="login"', false)
             ->assertSee('noindex,nofollow', false);
     }
 
@@ -25,6 +28,7 @@ class AccountFrontendTest extends TestCase
         $this->get('/en/inscription')
             ->assertOk()
             ->assertSee('Create your customer account.')
+            ->assertSee('wire:submit.prevent="register"', false)
             ->assertSee('France')
             ->assertSee('Belgium');
     }
@@ -64,9 +68,38 @@ class AccountFrontendTest extends TestCase
             ->get('/fr/mon-compte')
             ->assertOk()
             ->assertSee('Mon compte')
+            ->assertSee('wire:submit.prevent="updateProfile"', false)
+            ->assertSee('wire:submit.prevent="createAddress"', false)
+            ->assertSee('wire:click="logout"', false)
             ->assertSee('Jean Martin')
             ->assertSee('12 Rue du Test')
             ->assertSee('France');
+    }
+
+    public function test_livewire_login_posts_to_api_and_stores_token(): void
+    {
+        Http::fake([
+            '*/auth/login' => Http::response([
+                'data' => [
+                    'token' => 'api-token-123',
+                    'token_type' => 'Bearer',
+                    'user' => $this->user(),
+                ],
+            ]),
+        ]);
+
+        Livewire::test(LoginForm::class, ['locale' => 'en'])
+            ->set('email', 'jean@example.test')
+            ->set('password', 'password-secret')
+            ->call('login')
+            ->assertRedirect(route('account.show', ['locale' => 'en']));
+
+        $this->assertSame('api-token-123', session('customer_api_token'));
+        $this->assertSame('jean@example.test', session('customer_user.email'));
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/auth/login')
+            && $request['email'] === 'jean@example.test'
+            && $request['device_name'] === 'denetfils-web');
     }
 
     public function test_profile_update_is_sent_to_authenticated_api(): void

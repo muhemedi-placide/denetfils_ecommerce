@@ -42,7 +42,7 @@
                 </div>
 
                 @if (! empty($posts))
-                    <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $posts[0]['slug']]) }}" class="group relative overflow-hidden rounded-[1.6rem] bg-ink text-white shadow-sm">
+                    <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $posts[0]['slug']]) }}" class="group relative overflow-hidden rounded-[1.6rem] bg-ink text-white shadow-sm" wire:navigate.hover>
                         <img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.03]" src="{{ $posts[0]['image'] }}" alt="{{ $posts[0]['title'] }}" fetchpriority="high" decoding="async">
                         <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/65 to-transparent"></div>
                         <div class="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
@@ -61,7 +61,7 @@
             <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach (array_slice($posts, 1) as $post)
                     <article class="group overflow-hidden rounded-[1.35rem] border border-leaf/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/5">
-                        <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="block overflow-hidden">
+                        <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="block overflow-hidden" wire:navigate.hover>
                             <img class="h-48 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" loading="lazy" decoding="async">
                         </a>
                         <div class="p-5">
@@ -70,10 +70,10 @@
                                 <time class="text-xs font-bold text-cocoa/50 dark:text-cream/50">{{ $post['date'] }}</time>
                             </div>
                             <h2 class="mt-4 text-xl font-extrabold leading-snug text-cocoa transition group-hover:text-leaf dark:text-cream">
-                                <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}">{{ $post['title'] }}</a>
+                                <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" wire:navigate.hover>{{ $post['title'] }}</a>
                             </h2>
                             <p class="mt-3 line-clamp-3 text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ $post['description'] }}</p>
-                            <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="mt-5 inline-flex min-h-[42px] items-center justify-center rounded-full border border-leaf/15 px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-leaf transition hover:bg-mint dark:border-white/10 dark:text-meadow dark:hover:bg-white/10">
+                            <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="mt-5 inline-flex min-h-[42px] items-center justify-center rounded-full border border-leaf/15 px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-leaf transition hover:bg-mint dark:border-white/10 dark:text-meadow dark:hover:bg-white/10" wire:navigate.hover>
                                 {{ $locale === 'fr' ? 'Lire l’article' : 'Read article' }}
                             </a>
                         </div>
@@ -91,8 +91,8 @@
                 <p class="mt-3 text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ __('home.products.body') }}</p>
             </div>
             <div class="flex flex-col justify-center gap-3 sm:flex-row lg:justify-end">
-                <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary w-full sm:w-auto">{{ __('home.hero.primary_cta') }}</a>
-                <button type="button" x-on:click="openCart()" class="btn-secondary w-full sm:w-auto">{{ __('home.cart.title') }}</button>
+                <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary w-full sm:w-auto" wire:navigate.hover>{{ __('home.hero.primary_cta') }}</a>
+                <livewire:shop.cart-open-button button-class="btn-secondary w-full sm:w-auto" />
             </div>
         </div>
     </section>
