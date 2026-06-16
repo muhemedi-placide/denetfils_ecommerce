@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\PaymentMethodController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\Admin\ShippingCarrierController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
@@ -96,6 +97,15 @@ Route::prefix('v1')->group(function () {
             Route::post('/payment-methods/{paymentMethod}/activate', [PaymentMethodController::class, 'activate'])->middleware('permission:payments.manage');
             Route::post('/payment-methods/{paymentMethod}/deactivate', [PaymentMethodController::class, 'deactivate'])->middleware('permission:payments.manage');
             Route::post('/payment-methods/{paymentMethod}/test-connection', [PaymentMethodController::class, 'testConnection'])->middleware('permission:payments.manage');
+
+            Route::get('/shipping-carriers/schemas', [ShippingCarrierController::class, 'schemas'])->middleware('permission:payments.view');
+            Route::get('/shipping-carriers', [ShippingCarrierController::class, 'index'])->middleware('permission:payments.view');
+            Route::post('/shipping-carriers', [ShippingCarrierController::class, 'store'])->middleware('permission:payments.manage');
+            Route::get('/shipping-carriers/{shippingCarrier}', [ShippingCarrierController::class, 'show'])->middleware('permission:payments.view');
+            Route::patch('/shipping-carriers/{shippingCarrier}', [ShippingCarrierController::class, 'update'])->middleware('permission:payments.manage');
+            Route::post('/shipping-carriers/{shippingCarrier}/activate', [ShippingCarrierController::class, 'activate'])->middleware('permission:payments.manage');
+            Route::post('/shipping-carriers/{shippingCarrier}/deactivate', [ShippingCarrierController::class, 'deactivate'])->middleware('permission:payments.manage');
+            Route::post('/shipping-carriers/{shippingCarrier}/test-connection', [ShippingCarrierController::class, 'testConnection'])->middleware('permission:payments.manage');
 
             Route::get('/categories', [CatalogCategoryController::class, 'index'])->middleware('permission:catalog.view');
             Route::post('/categories', [CatalogCategoryController::class, 'store'])->middleware('permission:catalog.manage');
