@@ -11,7 +11,7 @@ class ShippingCarrierRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('shipping.manage') ?? false;
+        return $this->user()?->can('payments.manage') ?? false;
     }
 
     public function rules(): array
