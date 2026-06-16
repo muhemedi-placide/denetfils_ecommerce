@@ -1,7 +1,8 @@
 @extends('layouts.admin')
 
-@section('title', 'Catalogue')
-@section('page_title', 'Catalogue produits')
+@section('title', 'Produits')
+@section('page_title', 'Produits')
+@section('page_subtitle', 'Catalogue produit, publication, prix et stock de vente.')
 
 @php
     $productRows = $products['data'] ?? [];
@@ -10,112 +11,248 @@
 
 @section('content')
     @if (! ($products['ok'] ?? false))
-        <div class="mb-5 rounded-3xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">{{ $products['message'] ?? 'Catalogue indisponible.' }}</div>
+        <div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{{ $products['message'] ?? 'Catalogue indisponible.' }}</div>
     @endif
 
-    <section class="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+    <section class="admin-card p-5 sm:p-6">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <p class="text-xs font-black uppercase tracking-[0.18em] text-[#2f7d1b]">Catalogue</p>
-                <h2 class="mt-2 text-2xl font-black text-[#12210f]">Produits et categories</h2>
-                <p class="mt-2 max-w-2xl text-sm leading-6 text-[#1f2a1c]/60">Vue back-office consommee depuis l API admin. Elle permet de verifier rapidement publication, stock, categorie, prix et qualite de presentation.</p>
+                <p class="admin-kicker">Catalogue</p>
+                <h2 class="mt-2 admin-heading">Gestion des produits</h2>
+                <p class="mt-2 max-w-2xl admin-muted">Une page dediee aux produits: recherche, publication, prix et stock rapide.</p>
             </div>
-            <div class="grid gap-2 sm:grid-cols-2">
-                <button type="button" class="rounded-2xl bg-[#12210f] px-5 py-3 text-sm font-black text-white opacity-70" title="Action API a brancher ensuite">Nouveau produit</button>
-                <button type="button" class="rounded-2xl border border-black/10 px-5 py-3 text-sm font-black text-[#12210f] opacity-70" title="Action API a brancher ensuite">Nouvelle categorie</button>
-            </div>
+            <button type="button" data-dialog-target="product-create-modal" class="admin-btn">Nouveau produit</button>
         </div>
 
-        <form method="GET" class="mt-5 grid gap-3 md:grid-cols-5">
-            <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Rechercher produit, SKU..." class="min-h-[46px] rounded-2xl border border-black/10 bg-[#f7f5ef] px-4 text-sm font-semibold outline-none focus:border-[#2f7d1b] md:col-span-2">
-            <select name="publication_status" class="min-h-[46px] rounded-2xl border border-black/10 bg-[#f7f5ef] px-4 text-sm font-semibold outline-none focus:border-[#2f7d1b]">
+        <form method="GET" class="mt-5 grid gap-3 md:grid-cols-6">
+            <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Rechercher produit, SKU..." class="admin-input md:col-span-2">
+            <select name="category_id" class="admin-select">
+                <option value="">Toutes categories</option>
+                @foreach ($categoryRows as $category)
+                    @php $name = data_get($category, 'name.fr') ?: data_get($category, 'name.en') ?: $category['slug'] ?? 'Categorie'; @endphp
+                    <option value="{{ $category['id'] }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category['id'])>{{ $name }}</option>
+                @endforeach
+            </select>
+            <select name="publication_status" class="admin-select">
                 <option value="">Publication</option>
                 <option value="published" @selected(($filters['publication_status'] ?? '') === 'published')>Publies</option>
                 <option value="draft" @selected(($filters['publication_status'] ?? '') === 'draft')>Brouillons</option>
             </select>
-            <select name="stock_status" class="min-h-[46px] rounded-2xl border border-black/10 bg-[#f7f5ef] px-4 text-sm font-semibold outline-none focus:border-[#2f7d1b]">
+            <select name="stock_status" class="admin-select">
                 <option value="">Stock</option>
                 <option value="in_stock" @selected(($filters['stock_status'] ?? '') === 'in_stock')>En stock</option>
                 <option value="low_stock" @selected(($filters['stock_status'] ?? '') === 'low_stock')>Stock faible</option>
                 <option value="out_of_stock" @selected(($filters['stock_status'] ?? '') === 'out_of_stock')>Rupture</option>
             </select>
-            <button class="min-h-[46px] rounded-2xl bg-[#f15b2a] px-5 text-sm font-black uppercase tracking-wide text-white">Filtrer</button>
+            <button class="admin-btn">Filtrer</button>
         </form>
     </section>
 
-    <section class="mt-6 grid gap-5 xl:grid-cols-[1fr_360px]">
-        <div class="rounded-3xl border border-black/5 bg-white p-4 shadow-sm sm:p-5">
-            <div class="mb-4 flex items-center justify-between gap-3">
-                <h3 class="text-xl font-black text-[#12210f]">Produits</h3>
-                <span class="rounded-full bg-[#e8f6dd] px-3 py-1 text-xs font-black text-[#2f7d1b]">{{ data_get($products, 'meta.total', count($productRows)) }} items</span>
-            </div>
-            <div class="overflow-hidden rounded-2xl border border-black/5">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-black/5 text-left text-sm">
-                        <thead class="bg-[#f7f5ef] text-xs font-black uppercase tracking-wide text-[#1f2a1c]/55">
-                            <tr>
-                                <th class="px-4 py-3">Produit</th>
-                                <th class="px-4 py-3">Categorie</th>
-                                <th class="px-4 py-3">Prix</th>
-                                <th class="px-4 py-3">Stock</th>
-                                <th class="px-4 py-3">Statut</th>
+    <section class="mt-6 admin-card p-4 sm:p-5">
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <h3 class="text-xl font-black text-ink dark:text-cream">Liste produits</h3>
+            <span class="admin-pill">{{ data_get($products, 'meta.total', count($productRows)) }} items</span>
+        </div>
+        <div class="overflow-hidden rounded-xl border border-leaf/10 dark:border-white/10">
+            <div class="overflow-x-auto">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-3">Produit</th>
+                            <th class="px-4 py-3">Categorie</th>
+                            <th class="px-4 py-3">Prix</th>
+                            <th class="px-4 py-3">Stock</th>
+                            <th class="px-4 py-3">Statut</th>
+                            <th class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($productRows as $product)
+                            @php
+                                $name = data_get($product, 'name.fr') ?: data_get($product, 'name.en') ?: $product['slug'] ?? 'Produit';
+                                $category = data_get($product, 'category.name.fr') ?: data_get($product, 'category.name.en') ?: data_get($product, 'category.slug', '-');
+                                $isActive = (bool) ($product['is_active'] ?? false);
+                                $productId = $product['id'] ?? null;
+                            @endphp
+                            <tr class="align-top transition hover:bg-linen dark:hover:bg-white/5">
+                                <td class="px-4 py-4">
+                                    <p class="font-black text-ink dark:text-cream">{{ $name }}</p>
+                                    <p class="mt-1 text-xs font-semibold text-cocoa/55 dark:text-cream/55">{{ $product['sku'] ?? '-' }} - {{ $product['slug'] ?? '-' }}</p>
+                                </td>
+                                <td class="px-4 py-4 text-cocoa/65 dark:text-cream/65">{{ $category }}</td>
+                                <td class="px-4 py-4 font-bold text-ink dark:text-cream">{{ number_format((int) ($product['price_cents'] ?? 0) / 100, 2, ',', ' ') }} {{ $product['currency'] ?? 'EUR' }}</td>
+                                <td class="px-4 py-4">
+                                    <span class="rounded-full bg-linen px-3 py-1 text-xs font-black text-ink ring-1 ring-leaf/10 dark:bg-white/10 dark:text-cream dark:ring-white/10">{{ $product['stock_quantity'] ?? 0 }}</span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="rounded-full px-3 py-1 text-xs font-black {{ $isActive ? 'bg-mint text-leaf dark:bg-meadow/15 dark:text-meadow' : 'bg-amber-100 text-amber-700 dark:bg-amber-300/15 dark:text-amber-200' }}">
+                                        {{ $isActive ? 'Publie' : 'Brouillon' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="flex justify-end gap-2">
+                                        @if ($productId)
+                                            <button type="button" data-dialog-target="product-show-{{ $productId }}" class="admin-btn-secondary min-h-0 px-3 py-2 text-xs">Voir</button>
+                                            <button type="button" data-dialog-target="product-stock-{{ $productId }}" class="admin-btn-secondary min-h-0 px-3 py-2 text-xs">Stock</button>
+                                            <button type="button" data-dialog-target="product-publication-{{ $productId }}" class="admin-btn min-h-0 px-3 py-2 text-xs">{{ $isActive ? 'Retirer' : 'Publier' }}</button>
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-black/5">
-                            @forelse ($productRows as $product)
-                                @php
-                                    $name = data_get($product, 'name.fr') ?: data_get($product, 'name.en') ?: $product['slug'] ?? 'Produit';
-                                    $category = data_get($product, 'category.name.fr') ?: data_get($product, 'category.name.en') ?: data_get($product, 'category.slug', '-');
-                                @endphp
-                                <tr class="align-top">
-                                    <td class="px-4 py-4">
-                                        <p class="font-black text-[#12210f]">{{ $name }}</p>
-                                        <p class="mt-1 text-xs font-semibold text-[#1f2a1c]/55">{{ $product['sku'] ?? '-' }} - {{ $product['slug'] ?? '-' }}</p>
-                                    </td>
-                                    <td class="px-4 py-4 text-[#1f2a1c]/65">{{ $category }}</td>
-                                    <td class="px-4 py-4 font-bold text-[#12210f]">{{ number_format((int) ($product['price_cents'] ?? 0) / 100, 2, ',', ' ') }} {{ $product['currency'] ?? 'EUR' }}</td>
-                                    <td class="px-4 py-4">
-                                        <span class="rounded-full bg-[#f7f5ef] px-3 py-1 text-xs font-black text-[#12210f]">{{ $product['stock_quantity'] ?? 0 }}</span>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <span class="rounded-full px-3 py-1 text-xs font-black {{ ($product['is_active'] ?? false) ? 'bg-[#e8f6dd] text-[#2f7d1b]' : 'bg-[#fff0e8] text-[#f15b2a]' }}">
-                                            {{ ($product['is_active'] ?? false) ? 'Publie' : 'Brouillon' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="5" class="px-4 py-8 text-center text-[#1f2a1c]/55">Aucun produit trouve.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr><td colspan="6" class="px-4 py-8 text-center text-cocoa/55 dark:text-cream/55">Aucun produit trouve.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <aside class="rounded-3xl border border-black/5 bg-[#12210f] p-5 text-white shadow-sm">
-            <div class="flex items-center justify-between gap-3">
-                <div>
-                    <p class="text-xs font-black uppercase tracking-[0.18em] text-[#8ed957]">Categories</p>
-                    <h3 class="mt-2 text-xl font-black">Organisation</h3>
-                </div>
-                <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-black">{{ data_get($categories, 'meta.total', count($categoryRows)) }}</span>
-            </div>
-            <div class="mt-5 space-y-3">
-                @forelse ($categoryRows as $category)
-                    @php $name = data_get($category, 'name.fr') ?: data_get($category, 'name.en') ?: $category['slug'] ?? 'Categorie'; @endphp
-                    <div class="rounded-2xl bg-white/10 p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="truncate font-black">{{ $name }}</p>
-                                <p class="mt-1 text-xs text-white/55">/{{ $category['slug'] ?? '-' }}</p>
-                            </div>
-                            <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-[#12210f]">{{ $category['products_count'] ?? 0 }}</span>
-                        </div>
-                    </div>
-                @empty
-                    <div class="rounded-2xl bg-white/10 p-4 text-sm text-white/65">Aucune categorie disponible.</div>
-                @endforelse
-            </div>
-        </aside>
     </section>
 @endsection
+
+@push('admin_modals')
+    <dialog id="product-create-modal" class="admin-dialog admin-dialog-wide" @if(session('admin_modal') === 'product-create') data-open-on-load @endif>
+        <form method="POST" action="{{ route('admin.catalog.products.store', ['locale' => $locale]) }}" class="admin-modal-card">
+            @csrf
+            <div class="flex items-start justify-between border-b border-leaf/10 p-5 dark:border-white/10 sm:p-6">
+                <div>
+                    <p class="admin-kicker">Produit</p>
+                    <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">Nouveau produit</h2>
+                </div>
+                <button type="button" data-dialog-close class="admin-icon-btn" aria-label="Fermer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                </button>
+            </div>
+            <div class="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
+                @if(session('admin_modal') === 'product-create' && $errors->any())
+                    <div class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700 sm:col-span-2">{{ $errors->first() }}</div>
+                @endif
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">Nom FR</span>
+                    <input name="name_fr" value="{{ old('name_fr') }}" class="admin-input" required>
+                </label>
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">Nom EN</span>
+                    <input name="name_en" value="{{ old('name_en') }}" class="admin-input" required>
+                </label>
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">Slug</span>
+                    <input name="slug" value="{{ old('slug') }}" class="admin-input" required>
+                </label>
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">SKU</span>
+                    <input name="sku" value="{{ old('sku') }}" class="admin-input" required>
+                </label>
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">Categorie</span>
+                    <select name="category_id" class="admin-select" required>
+                        <option value="">Choisir</option>
+                        @foreach ($categoryRows as $category)
+                            @php $name = data_get($category, 'name.fr') ?: data_get($category, 'name.en') ?: $category['slug'] ?? 'Categorie'; @endphp
+                            <option value="{{ $category['id'] }}" @selected((string) old('category_id') === (string) $category['id'])>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">Prix EUR</span>
+                    <input name="price_eur" value="{{ old('price_eur') }}" type="number" min="0.01" step="0.01" class="admin-input" required>
+                </label>
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">Stock</span>
+                    <input name="stock_quantity" value="{{ old('stock_quantity', 0) }}" type="number" min="0" class="admin-input" required>
+                </label>
+                <label class="block">
+                    <span class="admin-kicker mb-2 block">Poids grammes</span>
+                    <input name="weight_grams" value="{{ old('weight_grams') }}" type="number" min="1" class="admin-input">
+                </label>
+                <label class="block sm:col-span-2">
+                    <span class="admin-kicker mb-2 block">Description FR</span>
+                    <textarea name="description_fr" class="admin-textarea" required>{{ old('description_fr') }}</textarea>
+                </label>
+                <label class="block sm:col-span-2">
+                    <span class="admin-kicker mb-2 block">Description EN</span>
+                    <textarea name="description_en" class="admin-textarea" required>{{ old('description_en') }}</textarea>
+                </label>
+                <label class="flex items-center gap-3 sm:col-span-2">
+                    <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" name="is_active" value="1" @checked((string) old('is_active', '1') === '1') class="h-5 w-5 rounded border-leaf/20 text-leaf focus:ring-leaf">
+                    <span class="text-sm font-bold text-cocoa dark:text-cream">Publier directement</span>
+                </label>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-leaf/10 p-5 dark:border-white/10 sm:p-6">
+                <button type="button" data-dialog-close class="admin-btn-secondary">Annuler</button>
+                <button class="admin-btn">Enregistrer</button>
+            </div>
+        </form>
+    </dialog>
+
+    @foreach ($productRows as $product)
+        @php
+            $productId = $product['id'] ?? null;
+            $name = data_get($product, 'name.fr') ?: data_get($product, 'name.en') ?: $product['slug'] ?? 'Produit';
+            $isActive = (bool) ($product['is_active'] ?? false);
+        @endphp
+        @continue(! $productId)
+
+        <dialog id="product-show-{{ $productId }}" class="admin-dialog">
+            <div class="admin-modal-card p-5 sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="admin-kicker">Produit</p>
+                        <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">{{ $name }}</h2>
+                        <p class="mt-1 text-sm text-cocoa/55 dark:text-cream/55">{{ $product['sku'] ?? '-' }} - {{ $product['slug'] ?? '-' }}</p>
+                    </div>
+                    <button type="button" data-dialog-close class="admin-icon-btn" aria-label="Fermer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                    </button>
+                </div>
+                <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div class="admin-panel p-4"><p class="admin-kicker">Prix</p><p class="mt-2 text-xl font-black">{{ number_format((int) ($product['price_cents'] ?? 0) / 100, 2, ',', ' ') }} {{ $product['currency'] ?? 'EUR' }}</p></div>
+                    <div class="admin-panel p-4"><p class="admin-kicker">Stock</p><p class="mt-2 text-xl font-black">{{ $product['stock_quantity'] ?? 0 }}</p></div>
+                    <div class="admin-panel p-4"><p class="admin-kicker">Statut</p><p class="mt-2 text-xl font-black">{{ $isActive ? 'Publie' : 'Brouillon' }}</p></div>
+                </div>
+                <div class="mt-5 admin-panel p-4">
+                    <p class="admin-kicker">Description</p>
+                    <p class="mt-2 text-sm leading-6 text-cocoa/70 dark:text-cream/70">{{ Str::limit(data_get($product, 'description.fr') ?: data_get($product, 'description.en') ?: 'Aucune description.', 420) }}</p>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog id="product-stock-{{ $productId }}" class="admin-dialog" @if(session('admin_modal') === "product-stock-{$productId}") data-open-on-load @endif>
+            <form method="POST" action="{{ route('admin.catalog.products.stock', ['locale' => $locale, 'product' => $productId]) }}" class="admin-modal-card p-5 sm:p-6">
+                @csrf
+                @method('PATCH')
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="admin-kicker">Stock</p>
+                        <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">{{ $name }}</h2>
+                    </div>
+                    <button type="button" data-dialog-close class="admin-icon-btn" aria-label="Fermer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                    </button>
+                </div>
+                <label class="mt-5 block">
+                    <span class="admin-kicker mb-2 block">Quantite disponible</span>
+                    <input name="stock_quantity" value="{{ old('stock_quantity', $product['stock_quantity'] ?? 0) }}" type="number" min="0" class="admin-input" required>
+                </label>
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                    <button type="button" data-dialog-close class="admin-btn-secondary">Annuler</button>
+                    <button class="admin-btn">Mettre a jour</button>
+                </div>
+            </form>
+        </dialog>
+
+        <dialog id="product-publication-{{ $productId }}" class="admin-dialog" @if(session('admin_modal') === "product-publication-{$productId}") data-open-on-load @endif>
+            <form method="POST" action="{{ route('admin.catalog.products.publication', ['locale' => $locale, 'product' => $productId]) }}" class="admin-modal-card p-5 sm:p-6">
+                @csrf
+                <input type="hidden" name="action" value="{{ $isActive ? 'unpublish' : 'publish' }}">
+                <p class="admin-kicker">Publication</p>
+                <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">{{ $isActive ? 'Retirer du front-office' : 'Publier le produit' }}</h2>
+                <p class="mt-2 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $name }}</p>
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                    <button type="button" data-dialog-close class="admin-btn-secondary">Annuler</button>
+                    <button class="admin-btn">{{ $isActive ? 'Retirer' : 'Publier' }}</button>
+                </div>
+            </form>
+        </dialog>
+    @endforeach
+@endpush

@@ -47,10 +47,21 @@ Route::prefix('/{locale}/admin')
 
         Route::get('/', [BackOfficeController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/catalogue', [BackOfficeController::class, 'catalog'])->name('admin.catalog');
+        Route::get('/catalogue/produits', [BackOfficeController::class, 'catalogProducts'])->name('admin.catalog.products');
+        Route::get('/catalogue/categories', [BackOfficeController::class, 'catalogCategories'])->name('admin.catalog.categories');
+        Route::post('/catalogue/produits', [BackOfficeController::class, 'storeProduct'])->name('admin.catalog.products.store');
+        Route::patch('/catalogue/produits/{product}/stock', [BackOfficeController::class, 'updateProductStock'])->name('admin.catalog.products.stock');
+        Route::post('/catalogue/produits/{product}/publication', [BackOfficeController::class, 'setProductPublication'])->name('admin.catalog.products.publication');
+        Route::post('/catalogue/categories', [BackOfficeController::class, 'storeCategory'])->name('admin.catalog.categories.store');
+        Route::post('/catalogue/categories/{category}/activation', [BackOfficeController::class, 'setCategoryActivation'])->name('admin.catalog.categories.activation');
         Route::get('/stock', [BackOfficeController::class, 'inventory'])->name('admin.inventory');
         Route::get('/utilisateurs', [BackOfficeController::class, 'users'])->name('admin.users');
+        Route::post('/utilisateurs', [BackOfficeController::class, 'storeUser'])->name('admin.users.store');
+        Route::post('/utilisateurs/{user}/roles', [BackOfficeController::class, 'assignUserRoles'])->name('admin.users.roles');
+        Route::post('/utilisateurs/{user}/suspension', [BackOfficeController::class, 'suspendUser'])->name('admin.users.suspend');
         Route::get('/acces', [BackOfficeController::class, 'access'])->name('admin.access');
         Route::get('/audit', [BackOfficeController::class, 'audit'])->name('admin.audit');
+        Route::get('/modules/{module}', [BackOfficeController::class, 'modulePage'])->name('admin.modules.show');
     });
 
 Route::get('/{locale}/connexion', [CustomerAccountController::class, 'loginForm'])

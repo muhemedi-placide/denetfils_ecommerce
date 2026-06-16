@@ -33,6 +33,26 @@ class AdminApiClient
         ]), $token);
     }
 
+    public function createProduct(string $token, array $payload): array
+    {
+        return $this->send('post', 'admin/products', $payload, $token);
+    }
+
+    public function updateProduct(string $token, int|string $product, array $payload): array
+    {
+        return $this->send('patch', "admin/products/{$product}", $payload, $token);
+    }
+
+    public function publishProduct(string $token, int|string $product): array
+    {
+        return $this->send('post', "admin/products/{$product}/publish", [], $token);
+    }
+
+    public function unpublishProduct(string $token, int|string $product): array
+    {
+        return $this->send('post', "admin/products/{$product}/unpublish", [], $token);
+    }
+
     public function categories(string $token, array $filters = []): array
     {
         return $this->send('get', 'admin/categories', $this->clean([
@@ -40,6 +60,26 @@ class AdminApiClient
             'is_active' => $filters['is_active'] ?? null,
             'per_page' => $filters['per_page'] ?? 20,
         ]), $token);
+    }
+
+    public function createCategory(string $token, array $payload): array
+    {
+        return $this->send('post', 'admin/categories', $payload, $token);
+    }
+
+    public function updateCategory(string $token, int|string $category, array $payload): array
+    {
+        return $this->send('patch', "admin/categories/{$category}", $payload, $token);
+    }
+
+    public function activateCategory(string $token, int|string $category): array
+    {
+        return $this->send('post', "admin/categories/{$category}/activate", [], $token);
+    }
+
+    public function deactivateCategory(string $token, int|string $category): array
+    {
+        return $this->send('post', "admin/categories/{$category}/deactivate", [], $token);
     }
 
     public function inventory(string $token, array $filters = []): array
@@ -63,6 +103,26 @@ class AdminApiClient
             'country_code' => $filters['country_code'] ?? null,
             'per_page' => $filters['per_page'] ?? 25,
         ]), $token);
+    }
+
+    public function createUser(string $token, array $payload): array
+    {
+        return $this->send('post', 'admin/users', $payload, $token);
+    }
+
+    public function updateUser(string $token, int|string $user, array $payload): array
+    {
+        return $this->send('patch', "admin/users/{$user}", $payload, $token);
+    }
+
+    public function assignUserRoles(string $token, int|string $user, array $roles): array
+    {
+        return $this->send('post', "admin/users/{$user}/roles", ['roles' => $roles], $token);
+    }
+
+    public function suspendUser(string $token, int|string $user): array
+    {
+        return $this->send('post', "admin/users/{$user}/suspend", [], $token);
     }
 
     public function roles(string $token): array

@@ -110,6 +110,124 @@ Alpine.data('shopApp', (config) => ({
 
 }));
 
+Alpine.data('adminShell', (config) => ({
+    theme: preferredTheme(),
+    sidebarOpen: false,
+    sidebarCollapsed: false,
+    sidebarHover: false,
+    commandOpen: false,
+    quickActionsOpen: false,
+    logoutOpen: false,
+    commandQuery: '',
+    commandItems: config.commandItems || [],
+    openMenus: {},
+
+    init() {
+        this.sidebarCollapsed = this.readBoolean('adminSidebarCollapsed', false);
+        this.openMenus = (config.openMenus || []).reduce((menus, key) => ({
+            ...menus,
+            [key]: true,
+        }), {});
+        this.setTheme(this.theme, false);
+        this.watchSystemTheme();
+        this.watchViewport();
+    },
+
+    setTheme(value, persist = true) {
+        this.theme = value;
+        applyTheme(value, persist);
+    },
+
+    toggleTheme() {
+        this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
+    },
+
+    sidebarExpanded() {
+        return !this.sidebarCollapsed || this.sidebarHover;
+    },
+
+    toggleSidebarSize() {
+        this.sidebarCollapsed = !this.sidebarCollapsed;
+        this.writeBoolean('adminSidebarCollapsed', this.sidebarCollapsed);
+    },
+
+    isMenuOpen(key) {
+        return Boolean(this.openMenus[key]);
+    },
+
+    toggleMenu(key) {
+        this.openMenus = {
+            ...this.openMenus,
+            [key]: !this.openMenus[key],
+        };
+    },
+
+    closeOverlays() {
+        this.sidebarOpen = false;
+        this.commandOpen = false;
+        this.quickActionsOpen = false;
+        this.logoutOpen = false;
+    },
+
+    filteredCommandItems() {
+        const query = this.commandQuery.trim().toLowerCase();
+
+        if (!query) {
+            return this.commandItems;
+        }
+
+        return this.commandItems.filter((item) => {
+            const haystack = `${item.label || ''} ${item.hint || ''}`.toLowerCase();
+
+            return haystack.includes(query);
+        });
+    },
+
+    watchViewport() {
+        const desktopQuery = window.matchMedia('(min-width: 1024px)');
+        const syncViewport = (event) => {
+            if (event.matches) {
+                this.sidebarOpen = false;
+            }
+        };
+
+        syncViewport(desktopQuery);
+        desktopQuery.addEventListener('change', syncViewport);
+    },
+
+    watchSystemTheme() {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        mediaQuery.addEventListener('change', (event) => {
+            if (!readStoredTheme()) {
+                this.setTheme(event.matches ? 'dark' : 'light', false);
+            }
+        });
+    },
+
+    readBoolean(key, fallback) {
+        try {
+            const value = localStorage.getItem(key);
+
+            if (value === null) {
+                return fallback;
+            }
+
+            return value === 'true';
+        } catch (error) {
+            return fallback;
+        }
+    },
+
+    writeBoolean(key, value) {
+        try {
+            localStorage.setItem(key, value ? 'true' : 'false');
+        } catch (error) {
+            // Sidebar state is only a convenience.
+        }
+    },
+}));
+
 document.addEventListener('livewire:navigate', () => {
     document.documentElement.classList.add('is-navigating');
     setMobileMenu(false);
