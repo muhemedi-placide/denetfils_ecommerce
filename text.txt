@@ -4,7 +4,7 @@
 **Version:** 1.0  
 **Date:** 2026-06-13  
 **Statut:** Analyse & Spécification  
-**Timeline:** 1-2 mois (MVP)  
+**Timeline:** 1-2 mois (pre a l'emploi)  
 
 ---
 
