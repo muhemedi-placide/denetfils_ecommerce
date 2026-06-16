@@ -53,6 +53,24 @@ class AccountApiClient
         return $this->send('delete', "me/addresses/{$address}", [], $token);
     }
 
+    public function checkoutQuote(string $token, array $payload): array
+    {
+        return $this->send('post', 'checkout/quote', $payload, $token);
+    }
+
+    public function createOrder(string $token, array $payload): array
+    {
+        return $this->send('post', 'orders', $payload, $token);
+    }
+
+    public function orders(string $token, string $locale = 'fr', int $perPage = 5): array
+    {
+        return $this->send('get', 'me/orders', [
+            'locale' => $this->locale($locale),
+            'per_page' => max(5, min(15, $perPage)),
+        ], $token);
+    }
+
     public function supportedCountries(string $locale): array
     {
         $result = $this->send('get', 'supported-countries', [

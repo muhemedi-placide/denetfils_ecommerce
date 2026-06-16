@@ -3,6 +3,7 @@
 namespace App\Livewire\Shop;
 
 use App\Livewire\Shop\Concerns\InteractsWithCart;
+use App\Services\AccountApiClient;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -32,6 +33,12 @@ class CheckoutReview extends Component
 
     public ?string $checkoutError = null;
 
+    public ?string $quoteError = null;
+
+    public array $quote = [];
+
+    public ?array $confirmedOrder = null;
+
     public function mount(string $locale, ?array $user = null, array $addresses = [], array $countries = []): void
     {
         $this->locale = in_array($locale, ['fr', 'en'], true) ? $locale : 'fr';
@@ -42,15 +49,23 @@ class CheckoutReview extends Component
         $this->initializeCart();
     }
 
+    public function restoreFromBrowser(?string $token): void
+    {
+        $this->restoreCart($token);
+        $this->refreshQuote();
+    }
+
     #[On('cart:changed')]
     public function syncCart(?string $token = null): void
     {
         $this->restoreCart($token ?: $this->cartToken);
+        $this->refreshQuote();
     }
 
-    public function confirm(): void
+    public function confirm(AccountApiClient $api): void
     {
         $this->checkoutError = null;
+        $this->quoteError = null;
 
         if (empty($this->cartItems())) {
             $this->checkoutError = $this->locale === 'fr'
@@ -64,6 +79,14 @@ class CheckoutReview extends Component
             $this->checkoutError = $this->locale === 'fr'
                 ? 'Connectez-vous pour continuer.'
                 : 'Sign in to continue.';
+
+            return;
+        }
+
+        if (! $this->token()) {
+            $this->checkoutError = $this->locale === 'fr'
+                ? 'Session expiree. Reconnectez-vous pour continuer.'
+                : 'Session expired. Sign in again to continue.';
 
             return;
         }
@@ -92,6 +115,19 @@ class CheckoutReview extends Component
             return;
         }
 
+        $response = $api->createOrder($this->token(), $this->checkoutPayload());
+
+        if (! $response['ok']) {
+            $this->checkoutError = $this->firstApiError($response)
+                ?: ($this->locale === 'fr'
+                    ? 'Impossible de creer la commande pour le moment.'
+                    : 'Unable to create the order right now.');
+
+            return;
+        }
+
+        $this->confirmedOrder = $response['data'];
+        $this->quote = [];
         $this->orderConfirmed = true;
         $this->clearCartState();
         $this->dispatch('checkout-confirmed');
@@ -107,12 +143,14 @@ class CheckoutReview extends Component
         if ($value === 'relay') {
             $this->carrier = 'mondial_relay_pickup';
             $this->selectedPickupPoint = $this->selectedPickupPoint ?: 'mr-paris-11';
+            $this->refreshQuote();
 
             return;
         }
 
         $this->carrier = 'chronopost_home';
         $this->selectedPickupPoint = null;
+        $this->refreshQuote();
     }
 
     public function updatedCarrier(string $value): void
@@ -127,6 +165,12 @@ class CheckoutReview extends Component
         $this->selectedPickupPoint = $this->delivery === 'relay'
             ? ($this->selectedPickupPoint ?: 'mr-paris-11')
             : null;
+        $this->refreshQuote();
+    }
+
+    public function updatedSelectedAddressId(): void
+    {
+        $this->refreshQuote();
     }
 
     public function selectPickupPoint(string $code): void
@@ -145,7 +189,87 @@ class CheckoutReview extends Component
             'selectedCarrier' => $this->carrierOptions()[$this->carrier] ?? null,
             'pickupPoints' => $this->pickupPoints(),
             'selectedPickupPointDetails' => $this->selectedPickupPointDetails(),
+            'displayQuote' => $this->displayQuote(),
         ]);
+    }
+
+    private function refreshQuote(): void
+    {
+        $this->quoteError = null;
+
+        if (! $this->token() || ! $this->cartToken || empty($this->cartItems()) || ! $this->selectedAddressId) {
+            $this->quote = [];
+
+            return;
+        }
+
+        $response = app(AccountApiClient::class)->checkoutQuote($this->token(), $this->checkoutPayload());
+
+        if (! $response['ok']) {
+            $this->quote = [];
+            $this->quoteError = $this->firstApiError($response)
+                ?: ($this->locale === 'fr'
+                    ? 'Le devis de livraison et TVA est indisponible.'
+                    : 'Delivery and VAT quote is unavailable.');
+
+            return;
+        }
+
+        $this->quote = $response['data'];
+    }
+
+    private function checkoutPayload(): array
+    {
+        $payload = [
+            'cart_token' => $this->cartToken,
+            'shipping_address_id' => (int) $this->selectedAddressId,
+            'locale' => $this->locale,
+            'delivery_method' => $this->deliveryMethodForApi(),
+            'carrier' => $this->carrier,
+        ];
+
+        if ($this->delivery === 'relay' && $this->selectedPickupPointDetails()) {
+            $payload['metadata'] = [
+                'pickup_point' => $this->selectedPickupPointDetails(),
+            ];
+        }
+
+        return $payload;
+    }
+
+    private function deliveryMethodForApi(): string
+    {
+        return $this->delivery === 'relay' ? 'relay' : 'standard';
+    }
+
+    private function displayQuote(): array
+    {
+        return array_replace([
+            'formatted_subtotal' => $this->cart['formatted_subtotal'] ?? $this->formattedTotal(),
+            'formatted_shipping' => $this->locale === 'fr' ? 'A calculer' : 'To calculate',
+            'formatted_tax' => $this->locale === 'fr' ? 'A calculer' : 'To calculate',
+            'formatted_total' => $this->formattedTotal(),
+        ], $this->quote);
+    }
+
+    private function token(): ?string
+    {
+        return session()->get('customer_api_token');
+    }
+
+    private function firstApiError(array $response): ?string
+    {
+        if (! empty($response['errors']) && is_array($response['errors'])) {
+            foreach ($response['errors'] as $messages) {
+                $message = collect((array) $messages)->first();
+
+                if ($message) {
+                    return (string) $message;
+                }
+            }
+        }
+
+        return $response['message'] ?: null;
     }
 
     private function defaultAddressId(): int|string|null
@@ -188,7 +312,7 @@ class CheckoutReview extends Component
         }
 
         return collect($points)
-            ->filter(fn (array $point) => str_contains(mb_strtolower($point['name'] . ' ' . $point['address'] . ' ' . $point['carrier']), $query))
+            ->filter(fn (array $point) => str_contains(mb_strtolower($point['name'].' '.$point['address'].' '.$point['carrier']), $query))
             ->values()
             ->all();
     }

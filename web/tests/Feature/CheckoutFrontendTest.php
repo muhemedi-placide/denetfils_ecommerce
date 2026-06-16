@@ -20,7 +20,8 @@ class CheckoutFrontendTest extends TestCase
             ->assertOk()
             ->assertDontSee('Vérifier avant paiement.')
             ->assertDontSee('Le panier vient')
-            ->assertSee('Connectez-vous pour continuer.')
+            ->assertSee('Connexion requise pour continuer vers la livraison.')
+            ->assertSee('Connectez-vous pour sélectionner une adresse.')
             ->assertSee('wire:submit.prevent="confirm"', false)
             ->assertSee('noindex,nofollow', false);
     }
@@ -36,13 +37,13 @@ class CheckoutFrontendTest extends TestCase
             ->assertSee('Jean Martin')
             ->assertSee('12 Rue du Test')
             ->assertSee('France')
-            ->assertSee('Confirmer sans paiement')
+            ->assertSee('Créer la commande')
             ->assertSee('Checkout progress', false)
             ->assertSee('Transporteur')
             ->assertSee('Chronopost domicile')
             ->assertSee('Mondial Relay')
-            ->assertSee('Récapitulatif')
-            ->assertSee('wire:model="selectedAddressId"', false);
+            ->assertSee('TVA')
+            ->assertSee('wire:model.live="selectedAddressId"', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/me')
             && $request->hasHeader('Authorization', 'Bearer checkout-token'));
@@ -63,11 +64,45 @@ class CheckoutFrontendTest extends TestCase
             ->get('/en/commande')
             ->assertOk()
             ->assertSessionMissing('customer_api_token')
-            ->assertSee('Sign in to continue.');
+            ->assertSee('Sign-in is required to continue to delivery.');
     }
 
-    public function test_checkout_confirmation_clears_guest_cart_token(): void
+    public function test_checkout_restore_fetches_real_quote(): void
     {
+        Http::fake([
+            '*/carts/cart-token-123*' => Http::response(['data' => $this->cart([$this->cartItem()])]),
+            '*/checkout/quote' => Http::response(['data' => $this->quote()]),
+        ]);
+
+        $this->withSession(['customer_api_token' => 'checkout-token']);
+
+        Livewire::test(CheckoutReview::class, [
+            'locale' => 'fr',
+            'user' => $this->user(),
+            'addresses' => [$this->address()],
+            'countries' => $this->countries(),
+        ])
+            ->call('restoreFromBrowser', 'cart-token-123')
+            ->assertSet('quote.total_cents', 1586)
+            ->assertSet('quote.shipping_cents', 590)
+            ->assertSet('quote.tax_cents', 106);
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/checkout/quote')
+            && $request->hasHeader('Authorization', 'Bearer checkout-token')
+            && $request['cart_token'] === 'cart-token-123'
+            && (int) $request['shipping_address_id'] === 11
+            && $request['delivery_method'] === 'relay'
+            && $request['carrier'] === 'mondial_relay_pickup');
+    }
+
+    public function test_checkout_confirmation_creates_order_and_clears_guest_cart_token(): void
+    {
+        Http::fake([
+            '*/orders' => Http::response(['data' => $this->order()], 201),
+        ]);
+
+        $this->withSession(['customer_api_token' => 'checkout-token']);
+
         Livewire::test(CheckoutReview::class, [
             'locale' => 'fr',
             'user' => $this->user(),
@@ -78,11 +113,21 @@ class CheckoutFrontendTest extends TestCase
             ->set('cart', $this->cart([$this->cartItem()]))
             ->call('confirm')
             ->assertSet('orderConfirmed', true)
+            ->assertSet('confirmedOrder.order_number', 'DF-20260616-ABC123')
             ->assertSet('cartToken', null)
             ->assertSet('cart.items', [])
             ->assertDispatched('cart-token-cleared')
             ->assertDispatched('cart:cleared')
             ->assertDispatched('checkout-confirmed');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/orders')
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer checkout-token')
+            && $request['cart_token'] === 'cart-token-123'
+            && (int) $request['shipping_address_id'] === 11
+            && $request['delivery_method'] === 'relay'
+            && $request['carrier'] === 'mondial_relay_pickup'
+            && $request['metadata']['pickup_point']['code'] === 'mr-paris-11');
     }
 
     private function fakeAuthenticatedCheckout(): void
@@ -147,6 +192,42 @@ class CheckoutFrontendTest extends TestCase
             'total_cents' => 890,
             'formatted_total' => 'EUR 8.90',
             'items' => $items,
+        ];
+    }
+
+    private function quote(): array
+    {
+        return [
+            'cart_token' => 'cart-token-123',
+            'currency' => 'EUR',
+            'subtotal_cents' => 890,
+            'formatted_subtotal' => '8,90 EUR',
+            'shipping_cents' => 590,
+            'formatted_shipping' => '5,90 EUR',
+            'tax_cents' => 106,
+            'formatted_tax' => '1,06 EUR',
+            'discount_cents' => 0,
+            'formatted_discount' => '0,00 EUR',
+            'total_cents' => 1586,
+            'formatted_total' => '15,86 EUR',
+        ];
+    }
+
+    private function order(): array
+    {
+        return [
+            'id' => 22,
+            'order_number' => 'DF-20260616-ABC123',
+            'status' => 'pending_payment',
+            'payment_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
+            'currency' => 'EUR',
+            'subtotal_cents' => 890,
+            'shipping_cents' => 590,
+            'tax_cents' => 106,
+            'total_cents' => 1586,
+            'formatted_total' => '15,86 EUR',
+            'items' => [$this->cartItem()],
         ];
     }
 

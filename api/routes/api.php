@@ -1,8 +1,15 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\Admin\AuditLogController;
+use App\Http\Controllers\Api\Admin\CatalogCategoryController;
+use App\Http\Controllers\Api\Admin\CatalogProductController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\InventoryController;
+use App\Http\Controllers\Api\Admin\PaymentMethodController;
+use App\Http\Controllers\Api\Admin\PermissionController;
+use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -13,14 +20,8 @@ use App\Http\Controllers\Api\PrivacyConsentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SeoController;
 use App\Http\Controllers\Api\SupportedCountryController;
-use App\Http\Controllers\Api\Admin\AuditLogController;
-use App\Http\Controllers\Api\Admin\CatalogCategoryController;
-use App\Http\Controllers\Api\Admin\CatalogProductController;
-use App\Http\Controllers\Api\Admin\DashboardController;
-use App\Http\Controllers\Api\Admin\InventoryController;
-use App\Http\Controllers\Api\Admin\PermissionController;
-use App\Http\Controllers\Api\Admin\RoleController;
-use App\Http\Controllers\Api\Admin\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/v1/health', function () {
     return response()->json([
@@ -80,6 +81,15 @@ Route::prefix('v1')->group(function () {
             Route::get('/roles', [RoleController::class, 'index'])->middleware('permission:roles.view');
             Route::get('/permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view');
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('permission:audit.view');
+
+            Route::get('/payment-methods/schemas', [PaymentMethodController::class, 'schemas'])->middleware('permission:payments.view');
+            Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->middleware('permission:payments.view');
+            Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->middleware('permission:payments.manage');
+            Route::get('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'show'])->middleware('permission:payments.view');
+            Route::patch('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->middleware('permission:payments.manage');
+            Route::post('/payment-methods/{paymentMethod}/activate', [PaymentMethodController::class, 'activate'])->middleware('permission:payments.manage');
+            Route::post('/payment-methods/{paymentMethod}/deactivate', [PaymentMethodController::class, 'deactivate'])->middleware('permission:payments.manage');
+            Route::post('/payment-methods/{paymentMethod}/test-connection', [PaymentMethodController::class, 'testConnection'])->middleware('permission:payments.manage');
 
             Route::get('/categories', [CatalogCategoryController::class, 'index'])->middleware('permission:catalog.view');
             Route::post('/categories', [CatalogCategoryController::class, 'store'])->middleware('permission:catalog.manage');
