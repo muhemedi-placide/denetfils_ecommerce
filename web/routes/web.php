@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\CustomerAccountController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/robots.txt', [ShopController::class, 'robots'])->name('seo.robots');
@@ -35,6 +36,46 @@ Route::get('/{locale}/conditions-utilisation', [ShopController::class, 'terms'])
 Route::get('/{locale}/paiement-securise', [ShopController::class, 'securePayment'])
     ->whereIn('locale', ['fr', 'en'])
     ->name('pages.payment');
+
+Route::get('/{locale}/connexion', [CustomerAccountController::class, 'loginForm'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.login');
+
+Route::post('/{locale}/connexion', [CustomerAccountController::class, 'login'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.login.store');
+
+Route::get('/{locale}/inscription', [CustomerAccountController::class, 'registerForm'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.register');
+
+Route::post('/{locale}/inscription', [CustomerAccountController::class, 'register'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.register.store');
+
+Route::post('/{locale}/deconnexion', [CustomerAccountController::class, 'logout'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.logout');
+
+Route::get('/{locale}/mon-compte', [CustomerAccountController::class, 'show'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.show');
+
+Route::patch('/{locale}/mon-compte', [CustomerAccountController::class, 'updateProfile'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.update');
+
+Route::post('/{locale}/mon-compte/adresses', [CustomerAccountController::class, 'storeAddress'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.addresses.store');
+
+Route::patch('/{locale}/mon-compte/adresses/{address}', [CustomerAccountController::class, 'updateAddress'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.addresses.update');
+
+Route::delete('/{locale}/mon-compte/adresses/{address}', [CustomerAccountController::class, 'deleteAddress'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('account.addresses.delete');
 
 Route::get('/{locale}/panier', [ShopController::class, 'cart'])
     ->whereIn('locale', ['fr', 'en'])

@@ -40,9 +40,9 @@
         <section class="soft-grid px-4 py-10 dark:bg-ink sm:px-8 lg:py-18">
             <div class="mx-auto max-w-5xl">
                 <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60" aria-label="Breadcrumb">
-                    <a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-leaf">{{ __('home.nav.home') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-leaf" wire:navigate.hover>{{ __('home.nav.home') }}</a>
                     <span>/</span>
-                    <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="transition hover:text-leaf">{{ __('home.nav.blog') }}</a>
+                    <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="transition hover:text-leaf" wire:navigate.hover>{{ __('home.nav.blog') }}</a>
                     <span>/</span>
                     <span class="text-leaf">{{ $post['category'] }}</span>
                 </nav>
@@ -77,8 +77,8 @@
                         </div>
 
                         <div class="mt-8 flex flex-col gap-3 border-t border-leaf/10 pt-6 dark:border-white/10 sm:flex-row">
-                            <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary w-full sm:w-auto">{{ __('home.hero.primary_cta') }}</a>
-                            <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-auto">{{ $locale === 'fr' ? 'Retour au blog' : 'Back to blog' }}</a>
+                            <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary w-full sm:w-auto" wire:navigate.hover>{{ __('home.hero.primary_cta') }}</a>
+                            <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-auto" wire:navigate.hover>{{ $locale === 'fr' ? 'Retour au blog' : 'Back to blog' }}</a>
                         </div>
                     </div>
 
@@ -87,7 +87,7 @@
                             <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">DEN & FILS</p>
                             <h2 class="mt-3 text-xl font-extrabold text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'À retenir' : 'Key takeaway' }}</h2>
                             <p class="mt-3 text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ $post['description'] }}</p>
-                            <button type="button" x-on:click="openCart()" class="btn-secondary mt-5 w-full">{{ __('home.cart.title') }}</button>
+                            <livewire:shop.cart-open-button button-class="btn-secondary mt-5 w-full" />
                         </div>
                     </aside>
                 </div>
@@ -102,12 +102,12 @@
                             <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.blog.eyebrow') }}</p>
                             <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ $locale === 'fr' ? 'À lire aussi' : 'Read also' }}</h2>
                         </div>
-                        <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit">{{ __('home.nav.blog') }}</a>
+                        <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit" wire:navigate.hover>{{ __('home.nav.blog') }}</a>
                     </div>
 
                     <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
                         @foreach ($relatedPosts as $related)
-                            <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $related['slug']]) }}" class="group min-w-[260px] overflow-hidden rounded-[1.25rem] border border-leaf/10 bg-white transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0">
+                            <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $related['slug']]) }}" class="group min-w-[260px] overflow-hidden rounded-[1.25rem] border border-leaf/10 bg-white transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" wire:navigate.hover>
                                 <img class="h-40 w-full object-cover" src="{{ $related['image'] }}" alt="{{ $related['title'] }}" loading="lazy" decoding="async">
                                 <div class="p-4">
                                     <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $related['category'] }}</p>

@@ -1,40 +1,34 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
+import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm.js';
 
 window.Alpine = Alpine;
 
+const {
+    applyTheme,
+    initGlobalUi,
+    preferredTheme,
+    readStoredTheme,
+    setMobileMenu,
+} = window.ShopUi;
+
 Alpine.data('shopApp', (config) => ({
-    apiBaseUrl: config.apiBaseUrl.replace(/\/$/, ''),
     locale: config.locale,
-    labels: config.labels,
-    theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    theme: preferredTheme(),
     activeMenu: config.activeMenu || 'home',
     mobileMenuOpen: false,
     alertIndex: 0,
-    cartOpen: false,
-    cartLoading: false,
-    cartMutating: false,
-    cartError: null,
-    cart: null,
 
     init() {
         this.setTheme(this.theme, false);
         this.watchSystemTheme();
         this.watchViewport();
-        this.deferCartRestore();
         this.initNavigation();
     },
 
     setTheme(value, persist = true) {
         this.theme = value;
-
-        if (persist) {
-            localStorage.setItem('theme', value);
-        }
-
-        document.documentElement.classList.toggle('dark', value === 'dark');
-        document.body.classList.toggle('dark', value === 'dark');
+        applyTheme(value, persist);
     },
 
     toggleTheme() {
@@ -43,37 +37,12 @@ Alpine.data('shopApp', (config) => ({
 
     toggleMobileMenu() {
         this.mobileMenuOpen = !this.mobileMenuOpen;
+        setMobileMenu(this.mobileMenuOpen);
     },
 
     closeMobileMenu() {
         this.mobileMenuOpen = false;
-    },
-
-    openCart() {
-        this.closeMobileMenu();
-        window.location.href = `/${this.locale}/panier`;
-    },
-
-    openCartDrawer() {
-        this.closeMobileMenu();
-        this.loadCart(true);
-    },
-
-    deferCartRestore() {
-        this.cart = this.emptyCart();
-
-        if (!localStorage.getItem('denetfils_cart_token')) {
-            return;
-        }
-
-        const restore = () => this.loadCart(false);
-
-        if ('requestIdleCallback' in window) {
-            window.requestIdleCallback(restore, { timeout: 2000 });
-            return;
-        }
-
-        window.setTimeout(restore, 1200);
+        setMobileMenu(false);
     },
 
     watchViewport() {
@@ -92,7 +61,7 @@ Alpine.data('shopApp', (config) => ({
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
         mediaQuery.addEventListener('change', (event) => {
-            if (!localStorage.getItem('theme')) {
+            if (!readStoredTheme()) {
                 this.setTheme(event.matches ? 'dark' : 'light', false);
             }
         });
@@ -139,173 +108,17 @@ Alpine.data('shopApp', (config) => ({
         });
     },
 
-    get itemCount() {
-        return (this.cart?.items || []).reduce((total, item) => total + Number(item.quantity || 0), 0);
-    },
-
-    get cartItems() {
-        return this.cart?.items || [];
-    },
-
-    get formattedTotal() {
-        return this.cart?.formatted_total || this.labels.emptyTotal;
-    },
-
-    emptyCart() {
-        return {
-            cart_token: null,
-            subtotal_cents: 0,
-            tax_cents: 0,
-            total_cents: 0,
-            formatted_total: this.labels.emptyTotal,
-            items: [],
-        };
-    },
-
-    url(path) {
-        const normalizedPath = path.replace(/^\//, '');
-        const url = new URL(`${this.apiBaseUrl}/${normalizedPath}`);
-        url.searchParams.set('locale', this.locale);
-
-        return url.toString();
-    },
-
-    async request(path, options = {}) {
-        const response = await fetch(this.url(path), {
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                ...(options.headers || {}),
-            },
-            ...options,
-        });
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            const message = payload.message || this.labels.apiError;
-            throw new Error(message);
-        }
-
-        return payload.data;
-    },
-
-    async loadCart(openDrawer = true) {
-        const token = localStorage.getItem('denetfils_cart_token');
-
-        if (!token) {
-            this.cart = this.emptyCart();
-            this.cartOpen = openDrawer;
-            return;
-        }
-
-        this.cartLoading = true;
-        this.cartError = null;
-
-        try {
-            this.cart = await this.request(`carts/${token}`);
-            this.cartOpen = openDrawer;
-        } catch (error) {
-            localStorage.removeItem('denetfils_cart_token');
-            this.cart = this.emptyCart();
-            this.cartError = this.labels.cartExpired;
-            this.cartOpen = openDrawer;
-        } finally {
-            this.cartLoading = false;
-        }
-    },
-
-    async ensureCart() {
-        const existingToken = localStorage.getItem('denetfils_cart_token');
-
-        if (existingToken && this.cart?.cart_token === existingToken) {
-            return existingToken;
-        }
-
-        if (existingToken) {
-            try {
-                this.cart = await this.request(`carts/${existingToken}`);
-                return existingToken;
-            } catch (error) {
-                localStorage.removeItem('denetfils_cart_token');
-            }
-        }
-
-        const cart = await this.request('carts', { method: 'POST' });
-        localStorage.setItem('denetfils_cart_token', cart.cart_token);
-        this.cart = cart;
-
-        return cart.cart_token;
-    },
-
-    async addToCart(productId, variantId = null) {
-        this.cartMutating = true;
-        this.cartError = null;
-
-        try {
-            const token = await this.ensureCart();
-            const body = {
-                product_id: productId,
-                quantity: 1,
-            };
-
-            if (variantId) {
-                body.product_variant_id = Number(variantId);
-            }
-
-            this.cart = await this.request(`carts/${token}/items`, {
-                method: 'POST',
-                body: JSON.stringify(body),
-            });
-            this.cartOpen = true;
-            this.closeMobileMenu();
-        } catch (error) {
-            this.cartError = error.message || this.labels.apiError;
-            this.cartOpen = true;
-        } finally {
-            this.cartMutating = false;
-        }
-    },
-
-    async updateCartItem(itemId, quantity) {
-        const nextQuantity = Number(quantity);
-
-        if (nextQuantity < 1 || !this.cart?.cart_token) {
-            return;
-        }
-
-        this.cartMutating = true;
-        this.cartError = null;
-
-        try {
-            this.cart = await this.request(`carts/${this.cart.cart_token}/items/${itemId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ quantity: nextQuantity }),
-            });
-        } catch (error) {
-            this.cartError = error.message || this.labels.apiError;
-        } finally {
-            this.cartMutating = false;
-        }
-    },
-
-    async removeCartItem(itemId) {
-        if (!this.cart?.cart_token) {
-            return;
-        }
-
-        this.cartMutating = true;
-        this.cartError = null;
-
-        try {
-            this.cart = await this.request(`carts/${this.cart.cart_token}/items/${itemId}`, {
-                method: 'DELETE',
-            });
-        } catch (error) {
-            this.cartError = error.message || this.labels.apiError;
-        } finally {
-            this.cartMutating = false;
-        }
-    },
 }));
 
-Alpine.start();
+document.addEventListener('livewire:navigate', () => {
+    document.documentElement.classList.add('is-navigating');
+    setMobileMenu(false);
+    document.getElementById('shop-app')?._x_dataStack?.[0]?.closeMobileMenu?.();
+});
+
+document.addEventListener('livewire:navigated', () => {
+    document.documentElement.classList.remove('is-navigating');
+    initGlobalUi();
+});
+
+Livewire.start();

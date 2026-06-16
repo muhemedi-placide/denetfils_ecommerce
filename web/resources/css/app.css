@@ -10,6 +10,10 @@
     color-scheme: light;
 }
 
+html.dark {
+    color-scheme: dark;
+}
+
 html {
     scroll-behavior: smooth;
     scroll-padding-top: 9.5rem;
@@ -43,6 +47,26 @@ img {
 
 .surface-transition {
     @apply transition-colors duration-300;
+}
+
+.mobile-menu-panel {
+    display: none;
+}
+
+[data-mobile-menu-icon="close"] {
+    display: none;
+}
+
+#shop-app:has(#mobile-menu-state:checked) .mobile-menu-panel {
+    display: block;
+}
+
+#shop-app:has(#mobile-menu-state:checked) [data-mobile-menu-icon="open"] {
+    display: none;
+}
+
+#shop-app:has(#mobile-menu-state:checked) [data-mobile-menu-icon="close"] {
+    display: block;
 }
 
 .glass-panel {

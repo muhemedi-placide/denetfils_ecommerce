@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Shop\CartManager;
 use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ShopFrontendTest extends TestCase
@@ -17,9 +19,22 @@ class ShopFrontendTest extends TestCase
             ->assertSee('Miel de montagne')
             ->assertSee('Origine France')
             ->assertSee('Epicerie fine')
-            ->assertSee('addToCart(10)', false);
-
-        $this->assertStringContainsString('denetfils_cart_token', file_get_contents(resource_path('js/app.js')));
+            ->assertSee('cart:add', false)
+            ->assertSee('data-theme-toggle', false)
+            ->assertSee('id="mobile-menu-state"', false)
+            ->assertSee('data-mobile-menu-toggle', false)
+            ->assertSee('data-testid="mobile-cart-open-button"', false)
+            ->assertSee('pointer-events-none fixed', false)
+            ->assertSee('Paiement sécurisé : carte, Visa, Mastercard, PayPal.')
+            ->assertDontSee(__('home.cart.subtitle'))
+            ->assertDontSee('TVA UE')
+            ->assertDontSee('Securise')
+            ->assertDontSee('Moyens de paiement acceptés')
+            ->assertDontSee('Etape suivante')
+            ->assertDontSee('x-trap.noscroll', false)
+            ->assertDontSee('bg-black/45 backdrop-blur-sm', false)
+            ->assertDontSee("classList.toggle('overflow-hidden'", false)
+            ->assertSee('livewire', false);
     }
 
     public function test_english_catalog_displays_products_from_api(): void
@@ -29,7 +44,7 @@ class ShopFrontendTest extends TestCase
 
         $this->get('/en')
             ->assertOk()
-            ->assertSee('Reliable flavors, delivered with precision.')
+            ->assertSee('A family house bringing Haitian flavors across borders.')
             ->assertSee('Mountain honey')
             ->assertSee('French origin');
     }
@@ -42,9 +57,10 @@ class ShopFrontendTest extends TestCase
         $this->get('/en?category=boissons-naturelles&q=hibiscus&sort=price_desc')
             ->assertOk()
             ->assertSee('Hibiscus infusion')
-            ->assertSee('value="hibiscus"', false)
-            ->assertSee('value="boissons-naturelles" selected', false)
-            ->assertSee('value="price_desc" selected', false);
+            ->assertSee('wire:submit.prevent="applyFilters"', false)
+            ->assertSee('wire:model="category"', false)
+            ->assertSee('value="boissons-naturelles"', false)
+            ->assertSee('value="price_desc"', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/products')
             && $request['category'] === 'boissons-naturelles'
@@ -65,12 +81,45 @@ class ShopFrontendTest extends TestCase
             ->assertSee('A dense floral honey')
             ->assertSee('EUR 8.90')
             ->assertSee('https://example.test/honey.jpg')
-            ->assertSee('addToCart(10, variantId)', false);
+            ->assertSee('Premium selection')
+            ->assertSee('Prepared within 24 to 48 business hours.')
+            ->assertSee('application/ld+json', false)
+            ->assertSee('wire:click="addToCart"', false);
+    }
+
+    public function test_livewire_cart_manager_creates_guest_cart_and_adds_product(): void
+    {
+        Http::fake([
+            '*/carts/cart-token-123/items' => Http::response([
+                'data' => $this->cart([
+                    $this->cartItem(),
+                ]),
+            ]),
+            '*/carts' => Http::response([
+                'data' => $this->cart(),
+            ], 201),
+        ]);
+
+        Livewire::test(CartManager::class, ['locale' => 'en'])
+            ->call('addToCart', 10)
+            ->assertSet('cartToken', 'cart-token-123')
+            ->assertSet('isOpen', true);
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/carts')
+            && $request->method() === 'POST');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/carts/cart-token-123/items')
+            && $request->method() === 'POST'
+            && $request['product_id'] === 10
+            && $request['quantity'] === 1);
     }
 
     private function fakeCatalog(string $name, string $origin, string $categoryName): void
     {
         Http::fake([
+            '*/seo/site*' => Http::response([
+                'data' => $this->siteSeo(),
+            ]),
             '*/categories*' => Http::response([
                 'data' => [
                     [
@@ -115,10 +164,71 @@ class ShopFrontendTest extends TestCase
             'weight_grams' => 250,
             'stock_quantity' => 35,
             'is_active' => true,
+            'short_description' => 'A dense floral honey selected for breakfast and dessert.',
+            'rich_content' => [
+                'badges' => ['Best seller', 'EU delivery'],
+                'highlights' => ['Premium selection', 'Careful preparation'],
+                'tags' => ['honey', 'premium'],
+                'ingredients' => 'Honey.',
+                'allergens' => ['May contain traces of nuts.'],
+                'nutrition_facts' => ['serving_basis' => 'per_100g'],
+                'certifications' => ['Verified supplier'],
+                'storage_instructions' => 'Store in a cool, dry place.',
+                'usage_instructions' => 'Use with breakfast or dessert.',
+            ],
+            'commerce' => [
+                'brand' => 'Denetfils',
+                'availability' => 'in_stock',
+                'is_available' => true,
+                'max_order_quantity' => 12,
+                'rating' => ['average' => 4.8, 'count' => 38],
+                'sales_count' => 240,
+                'shipping' => [
+                    'dispatch_time' => 'Prepared within 24 to 48 business hours.',
+                    'delivery_zone' => 'France and supported European countries.',
+                ],
+                'return_policy' => 'Food products cannot be returned after opening.',
+                'guarantee' => 'Quality check before dispatch.',
+            ],
+            'seo' => [
+                'meta' => [
+                    'title' => $name . ' | Denetfils',
+                    'description' => 'Shop ' . $name . ' with structured product data.',
+                    'robots' => 'index,follow',
+                ],
+                'canonical' => 'http://127.0.0.1:8001/en/products/miel-de-montagne',
+                'hreflang' => [
+                    ['locale' => 'fr', 'hreflang' => 'fr-FR', 'url' => 'http://127.0.0.1:8001/fr/products/miel-de-montagne'],
+                    ['locale' => 'en', 'hreflang' => 'en', 'url' => 'http://127.0.0.1:8001/en/products/miel-de-montagne'],
+                ],
+                'open_graph' => [
+                    'type' => 'product',
+                    'title' => $name,
+                    'description' => 'Shop ' . $name,
+                    'image' => 'https://example.test/honey.jpg',
+                ],
+                'twitter_card' => [
+                    'card' => 'summary_large_image',
+                    'title' => $name,
+                    'description' => 'Shop ' . $name,
+                    'image' => 'https://example.test/honey.jpg',
+                ],
+                'json_ld' => [
+                    'product' => [
+                        '@context' => 'https://schema.org',
+                        '@type' => 'Product',
+                        'name' => $name,
+                    ],
+                ],
+            ],
             'primary_image' => [
                 'id' => 1,
                 'url' => 'https://example.test/honey.jpg',
                 'alt_text' => 'Jar of honey.',
+                'width' => 1200,
+                'height' => 900,
+                'loading' => 'eager',
+                'fetch_priority' => 'high',
             ],
             'images' => [],
             'variants' => [
@@ -134,6 +244,59 @@ class ShopFrontendTest extends TestCase
                     'is_active' => true,
                 ],
             ],
+        ];
+    }
+
+    private function siteSeo(): array
+    {
+        return [
+            'meta' => [
+                'title' => 'Denetfils - Premium food shop',
+                'description' => 'Discover curated grocery products, natural drinks and premium food boxes for Europe.',
+                'robots' => 'index,follow',
+            ],
+            'canonical' => 'http://127.0.0.1:8001/en',
+            'hreflang' => [
+                ['locale' => 'fr', 'hreflang' => 'fr-FR', 'url' => 'http://127.0.0.1:8001/fr'],
+                ['locale' => 'en', 'hreflang' => 'en', 'url' => 'http://127.0.0.1:8001/en'],
+            ],
+            'open_graph' => ['type' => 'website', 'title' => 'Denetfils'],
+            'twitter_card' => ['card' => 'summary'],
+            'json_ld' => [
+                'organization' => ['@context' => 'https://schema.org', '@type' => 'Organization', 'name' => 'Denetfils'],
+            ],
+        ];
+    }
+
+    private function cart(array $items = []): array
+    {
+        return [
+            'cart_token' => 'cart-token-123',
+            'subtotal_cents' => 890,
+            'tax_cents' => 0,
+            'total_cents' => 890,
+            'formatted_total' => 'EUR 8.90',
+            'items' => $items,
+        ];
+    }
+
+    private function cartItem(): array
+    {
+        return [
+            'id' => 55,
+            'quantity' => 1,
+            'line_total_cents' => 890,
+            'formatted_line_total' => 'EUR 8.90',
+            'product' => [
+                'id' => 10,
+                'name' => 'Mountain honey',
+                'origin' => 'French origin',
+                'image' => [
+                    'url' => 'https://example.test/honey.jpg',
+                    'alt_text' => 'Jar of honey.',
+                ],
+            ],
+            'variant' => null,
         ];
     }
 }

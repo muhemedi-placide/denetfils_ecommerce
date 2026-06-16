@@ -16,7 +16,8 @@ class LocalizationTest extends TestCase
 
         $this->get('/fr')
             ->assertOk()
-            ->assertSee('Des saveurs fiables, livrées avec précision.');
+            ->assertSee('Accueil')
+            ->assertSee('Boutique');
     }
 
     public function test_english_homepage_uses_english_copy(): void
@@ -28,6 +29,7 @@ class LocalizationTest extends TestCase
 
         $this->get('/en')
             ->assertOk()
-            ->assertSee('Reliable flavors, delivered with precision.');
+            ->assertSee('Home')
+            ->assertSee('Shop');
     }
 }

@@ -50,6 +50,26 @@ class CatalogManagementService
         });
     }
 
+    public function setCategoryActivation(Category $category, bool $active, User $actor, Request $request): Category
+    {
+        return DB::transaction(function () use ($category, $active, $actor, $request) {
+            $category->forceFill(['is_active' => $active])->save();
+
+            $this->auditLogger->record(
+                $actor,
+                $active ? 'catalog.categories.activated' : 'catalog.categories.deactivated',
+                $category,
+                $request,
+                [
+                    'slug' => $category->slug,
+                    'is_active' => $category->is_active,
+                ],
+            );
+
+            return $category->refresh()->loadCount('products');
+        });
+    }
+
     public function createProduct(array $data, User $actor, Request $request): Product
     {
         return DB::transaction(function () use ($data, $actor, $request) {
@@ -93,6 +113,31 @@ class CatalogManagementService
                 'slug' => $product->slug,
                 'changed' => array_values(array_unique($changed)),
             ]);
+
+            return $product->refresh()->load(['category', 'images', 'variants']);
+        });
+    }
+
+    public function setProductPublication(Product $product, bool $published, User $actor, Request $request): Product
+    {
+        return DB::transaction(function () use ($product, $published, $actor, $request) {
+            $product->forceFill([
+                'is_active' => $published,
+                'published_at' => $published ? ($product->published_at ?: now()) : $product->published_at,
+            ])->save();
+
+            $this->auditLogger->record(
+                $actor,
+                $published ? 'catalog.products.published' : 'catalog.products.unpublished',
+                $product,
+                $request,
+                [
+                    'sku' => $product->sku,
+                    'slug' => $product->slug,
+                    'is_active' => $product->is_active,
+                    'published_at' => $product->published_at?->toIso8601String(),
+                ],
+            );
 
             return $product->refresh()->load(['category', 'images', 'variants']);
         });

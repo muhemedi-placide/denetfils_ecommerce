@@ -15,8 +15,8 @@
                     {{ __('home.about.body') }}
                 </p>
                 <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary">{{ __('home.hero.primary_cta') }}</a>
-                    <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary">{{ __('home.nav.blog') }}</a>
+                    <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary" wire:navigate.hover>{{ __('home.hero.primary_cta') }}</a>
+                    <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary" wire:navigate.hover>{{ __('home.nav.blog') }}</a>
                 </div>
             </div>
 

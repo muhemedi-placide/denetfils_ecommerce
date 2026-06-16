@@ -1,13 +1,13 @@
 @extends('layouts.shop')
 
-@section('title', __('home.meta.title'))
-@section('description', __('home.meta.description'))
+@section('title', data_get($seoPayload ?? [], 'meta.title', __('home.meta.title')))
+@section('description', data_get($seoPayload ?? [], 'meta.description', __('home.meta.description')))
+@section('canonical', data_get($seoPayload ?? [], 'canonical', route('home.localized', ['locale' => $locale])))
 
 @section('content')
     @php
         $spotlightProducts = array_slice($products, 0, 3);
         $featuredBlogPosts = $blogPosts ?? [];
-        $hasActiveFilters = ($filters['q'] ?? '') !== '' || ($filters['category'] ?? '') !== '' || ($filters['sort'] ?? 'default') !== 'default';
     @endphp
 
     <section
@@ -78,7 +78,7 @@
                 <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.about.eyebrow') }}</p>
                 <h2 class="mt-3 max-w-2xl text-2xl font-extrabold leading-tight text-cocoa dark:text-cream sm:text-4xl">{{ __('home.about.title') }}</h2>
                 <p class="mt-4 max-w-2xl text-sm leading-7 text-cocoa/70 dark:text-cream/70 sm:text-base sm:leading-8">{{ __('home.about.body') }}</p>
-                <a href="{{ route('pages.about', ['locale' => $locale]) }}" class="btn-secondary mt-6 w-full sm:w-auto">{{ __('home.nav.about') }}</a>
+                <a href="{{ route('pages.about', ['locale' => $locale]) }}" class="btn-secondary mt-6 w-full sm:w-auto" wire:navigate.hover>{{ __('home.nav.about') }}</a>
 
                 <div class="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
                     @foreach (array_slice(trans('home.about.points'), 0, 3) as $point)
@@ -102,17 +102,7 @@
                 <p class="max-w-lg text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ __('home.categories.body') }}</p>
             </div>
 
-            <div class="mobile-scrollbarless flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
-                @foreach ($categories as $category)
-                    <a href="{{ route('home.localized', ['locale' => $locale, 'category' => $category['slug']]) }}#products" class="group min-w-[190px] rounded-[1.15rem] border border-leaf/10 bg-white p-4 transition hover:border-leaf/30 hover:shadow-lg dark:border-white/10 dark:bg-white/5 sm:min-w-0 sm:p-5">
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-mint text-base font-extrabold text-leaf transition group-hover:bg-terracotta group-hover:text-white">{{ str($category['name'])->substr(0, 1) }}</span>
-                            <span class="text-xs font-bold text-cocoa/50 dark:text-cream/50">{{ __('home.categories.count', ['count' => $category['products_count']]) }}</span>
-                        </div>
-                        <h3 class="mt-4 text-base font-extrabold text-cocoa dark:text-cream">{{ $category['name'] }}</h3>
-                    </a>
-                @endforeach
-            </div>
+            <livewire:shop.category-grid :locale="$locale" :categories="$categories" />
         </div>
     </section>
 
@@ -138,97 +128,13 @@
         </div>
     </section>
 
-    <section id="products" class="theme-band-soft surface-transition bg-linen px-4 py-12 dark:bg-[#172414] sm:px-8 lg:py-16" x-data="{ filtersOpen: @js($hasActiveFilters) }">
-        <div class="mx-auto max-w-7xl">
-            <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-                <div>
-                    <p class="theme-subtle text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.products.eyebrow') }}</p>
-                    <h2 class="theme-title mt-2 max-w-2xl text-2xl font-extrabold tracking-tight text-cocoa dark:text-cream sm:text-3xl">{{ __('home.products.title') }}</h2>
-                </div>
-                <p class="theme-muted max-w-xl text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.products.body') }}</p>
-            </div>
-
-            <button type="button" class="mb-3 flex min-h-[46px] w-full items-center justify-between rounded-2xl border border-leaf/10 bg-white px-4 py-3 text-sm font-extrabold text-cocoa shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-cream md:hidden" x-on:click="filtersOpen = !filtersOpen">
-                <span>{{ __('home.filters.apply') }}</span>
-                <span class="text-leaf" x-text="filtersOpen ? '−' : '+'"></span>
-            </button>
-
-            <form method="GET" action="{{ route('home.localized', ['locale' => $locale]) }}" x-show="filtersOpen" x-transition class="glass-panel grid gap-3 rounded-[1.25rem] p-3 md:grid md:grid-cols-[1fr_220px_180px_auto]" x-bind:class="filtersOpen ? 'block' : 'hidden md:grid'">
-                <label class="sr-only" for="q">{{ __('home.filters.search') }}</label>
-                <input id="q" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="{{ __('home.filters.search_placeholder') }}" class="input-premium w-full">
-
-                <label class="sr-only" for="category">{{ __('home.filters.category') }}</label>
-                <select id="category" name="category" class="input-premium w-full">
-                    <option value="">{{ __('home.filters.all_categories') }}</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category['slug'] }}" @selected(($filters['category'] ?? '') === $category['slug'])>{{ $category['name'] }} ({{ $category['products_count'] }})</option>
-                    @endforeach
-                </select>
-
-                <label class="sr-only" for="sort">{{ __('home.filters.sort') }}</label>
-                <select id="sort" name="sort" class="input-premium w-full">
-                    @foreach (trans('home.filters.sort_options') as $value => $label)
-                        <option value="{{ $value }}" @selected(($filters['sort'] ?? 'default') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-
-                <div class="grid gap-2 sm:flex">
-                    <button type="submit" class="btn-primary w-full sm:w-auto">{{ __('home.filters.apply') }}</button>
-                    @if ($hasActiveFilters)
-                        <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-secondary w-full px-4 sm:w-auto">{{ __('home.filters.reset') }}</a>
-                    @endif
-                </div>
-            </form>
-
-            @if ($apiError)
-                <div class="mt-6 rounded-2xl border border-leaf/20 bg-mint px-5 py-4 text-sm font-semibold text-leaf dark:bg-white/5">{{ $apiError }}</div>
-            @endif
-
-            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                @forelse ($products as $product)
-                    @php
-                        $ratingValue = number_format(4.6 + (($product['id'] ?? 0) % 4) / 10, 1, ',', ' ');
-                        $reviewCount = 18 + (($product['id'] ?? 0) % 37);
-                    @endphp
-                    <article class="premium-card group overflow-hidden bg-white dark:bg-white/5" itemscope itemtype="https://schema.org/Product">
-                        <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="relative block overflow-hidden bg-white dark:bg-white/5">
-                            <img class="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.04] sm:h-56 lg:h-64" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" loading="lazy" decoding="async" itemprop="image">
-                            <div class="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-extrabold text-leaf shadow-sm backdrop-blur dark:bg-ink/80 dark:text-cream">{{ $product['origin'] }}</div>
-                            <div class="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1.5 text-xs font-extrabold text-cocoa shadow-sm backdrop-blur dark:bg-ink/85 dark:text-cream" itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
-                                <span class="text-leaf dark:text-meadow" aria-hidden="true">★★★★★</span>
-                                <span class="ml-1" itemprop="ratingValue">{{ $ratingValue }}</span>
-                                <span class="sr-only">{{ $ratingValue }}/5</span>
-                                <meta itemprop="reviewCount" content="{{ $reviewCount }}">
-                            </div>
-                        </a>
-                        <div class="p-4 sm:p-5">
-                            <div class="flex items-start justify-between gap-3">
-                                <h3 class="theme-title min-w-0 text-base font-extrabold leading-snug text-cocoa dark:text-cream sm:text-lg" itemprop="name">
-                                    <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="line-clamp-2 transition hover:text-leaf">{{ $product['name'] }}</a>
-                                </h3>
-                                <span class="shrink-0 rounded-full bg-mint px-2.5 py-1 text-[11px] font-bold text-leaf dark:bg-white/10 dark:text-cream">{{ $product['stock_quantity'] }}</span>
-                            </div>
-                            <p class="theme-muted mt-2 line-clamp-2 text-sm leading-6 text-cocoa/70 dark:text-cream/70" itemprop="description">{{ $product['description'] }}</p>
-                            <div class="mt-3 flex items-center justify-between gap-3 text-xs font-bold text-cocoa/55 dark:text-cream/55">
-                                <span class="text-leaf dark:text-meadow" aria-label="{{ $ratingValue }}/5">★★★★★</span>
-                                <span>{{ $reviewCount }} {{ $locale === 'fr' ? 'avis clients' : 'customer reviews' }}</span>
-                            </div>
-                            <div class="mt-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
-                                <span class="theme-title text-xl font-extrabold text-leaf dark:text-cream" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-                                    <span itemprop="priceCurrency" content="EUR"></span>{{ $product['formatted_price'] }}
-                                    <meta itemprop="availability" content="{{ ((int) ($product['stock_quantity'] ?? 0)) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}">
-                                </span>
-                                <button class="btn-primary w-full px-4 py-2.5 sm:w-auto" type="button" x-on:click="addToCart({{ $product['id'] }})" x-bind:disabled="cartMutating">{{ __('home.products.cta') }}</button>
-                            </div>
-                        </div>
-                    </article>
-                @empty
-                    <div class="theme-card rounded-[1.5rem] border border-leaf/10 bg-white p-6 text-sm text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70 md:col-span-2 lg:col-span-3">{{ __('home.products.empty') }}</div>
-                @endforelse
-            </div>
-        </div>
-    </section>
-
+    <livewire:shop.product-catalog
+        :locale="$locale"
+        :categories="$categories"
+        :products="$products"
+        :filters="$filters"
+        :api-error="$apiError"
+    />
     <section class="bg-white px-4 py-12 dark:bg-ink sm:px-8 lg:py-14">
         <div class="mx-auto max-w-7xl">
             <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -242,11 +148,12 @@
             <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
                 @forelse ($spotlightProducts as $product)
                     @php
-                        $ratingValue = number_format(4.6 + (($product['id'] ?? 0) % 4) / 10, 1, ',', ' ');
-                        $reviewCount = 18 + (($product['id'] ?? 0) % 37);
+                        $ratingValue = number_format((float) data_get($product, 'commerce.rating.average', 0), 1, ',', ' ');
+                        $reviewCount = (int) data_get($product, 'commerce.rating.count', 0);
+                        $primaryImage = $product['primary_image'] ?? [];
                     @endphp
-                    <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="group min-w-[250px] rounded-[1.25rem] border border-leaf/10 bg-linen p-4 transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" itemscope itemtype="https://schema.org/Product">
-                        <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $product['primary_image']['url'] ?? '' }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" loading="lazy" decoding="async" itemprop="image">
+                    <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="group min-w-[250px] rounded-[1.25rem] border border-leaf/10 bg-linen p-4 transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" itemscope itemtype="https://schema.org/Product" wire:navigate.hover>
+                        <img class="h-40 w-full rounded-[1rem] object-cover sm:h-48" src="{{ $primaryImage['url'] ?? '' }}" alt="{{ $primaryImage['alt_text'] ?? $product['name'] }}" width="{{ $primaryImage['width'] ?? 600 }}" height="{{ $primaryImage['height'] ?? 450 }}" loading="{{ $primaryImage['loading'] ?? 'lazy' }}" decoding="async" itemprop="image">
                         <div class="mt-4 flex items-start justify-between gap-4">
                             <h3 class="line-clamp-2 text-base font-extrabold text-cocoa transition group-hover:text-leaf dark:text-cream sm:text-lg" itemprop="name">{{ $product['name'] }}</h3>
                             <span class="shrink-0 font-extrabold text-leaf">{{ $product['formatted_price'] }}</span>
@@ -271,11 +178,11 @@
                     <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.blog.eyebrow') }}</p>
                     <h2 class="mt-2 text-2xl font-extrabold text-cocoa dark:text-cream sm:text-3xl">{{ __('home.blog.title') }}</h2>
                 </div>
-                <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit">{{ __('home.nav.blog') }}</a>
+                <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit" wire:navigate.hover>{{ __('home.nav.blog') }}</a>
             </div>
             <div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
                 @foreach ($featuredBlogPosts as $post)
-                    <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="group min-w-[260px] overflow-hidden rounded-[1.25rem] border border-leaf/10 bg-white transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0">
+                    <a href="{{ route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]) }}" class="group min-w-[260px] overflow-hidden rounded-[1.25rem] border border-leaf/10 bg-white transition hover:shadow-xl dark:border-white/10 dark:bg-white/5 lg:min-w-0" wire:navigate.hover>
                         <img class="h-40 w-full object-cover" src="{{ $post['image'] }}" alt="{{ $post['title'] }}" loading="lazy" decoding="async">
                         <div class="p-4">
                             <div class="flex items-center justify-between gap-3">
@@ -297,7 +204,7 @@
                 <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.checkout.eyebrow') }}</p>
                 <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-cocoa dark:text-cream sm:text-3xl">{{ __('home.checkout.title') }}</h2>
                 <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.checkout.body') }}</p>
-                <button type="button" x-on:click="openCart()" class="btn-primary mt-6 w-full sm:w-auto">{{ __('home.cart.title') }}</button>
+                <livewire:shop.cart-open-button button-class="btn-primary mt-6 w-full sm:w-auto" />
             </div>
 
             <div class="grid gap-3 md:grid-cols-3">

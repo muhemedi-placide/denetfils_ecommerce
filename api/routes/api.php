@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\SupportedCountryController;
 use App\Http\Controllers\Api\Admin\AuditLogController;
 use App\Http\Controllers\Api\Admin\CatalogCategoryController;
 use App\Http\Controllers\Api\Admin\CatalogProductController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\InventoryController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\UserController;
@@ -57,6 +59,9 @@ Route::prefix('v1')->group(function () {
         Route::delete('/me/addresses/{address}', [AddressController::class, 'destroy']);
 
         Route::prefix('admin')->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:catalog.view');
+            Route::get('/inventory', [InventoryController::class, 'index'])->middleware('permission:catalog.view');
+
             Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
             Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');
             Route::get('/users/{user}', [UserController::class, 'show'])->middleware('permission:users.view');
@@ -72,11 +77,15 @@ Route::prefix('v1')->group(function () {
             Route::post('/categories', [CatalogCategoryController::class, 'store'])->middleware('permission:catalog.manage');
             Route::get('/categories/{category}', [CatalogCategoryController::class, 'show'])->middleware('permission:catalog.view');
             Route::patch('/categories/{category}', [CatalogCategoryController::class, 'update'])->middleware('permission:catalog.manage');
+            Route::post('/categories/{category}/activate', [CatalogCategoryController::class, 'activate'])->middleware('permission:catalog.manage');
+            Route::post('/categories/{category}/deactivate', [CatalogCategoryController::class, 'deactivate'])->middleware('permission:catalog.manage');
 
             Route::get('/products', [CatalogProductController::class, 'index'])->middleware('permission:catalog.view');
             Route::post('/products', [CatalogProductController::class, 'store'])->middleware('permission:catalog.manage');
             Route::get('/products/{product}', [CatalogProductController::class, 'show'])->middleware('permission:catalog.view');
             Route::patch('/products/{product}', [CatalogProductController::class, 'update'])->middleware('permission:catalog.manage');
+            Route::post('/products/{product}/publish', [CatalogProductController::class, 'publish'])->middleware('permission:catalog.manage');
+            Route::post('/products/{product}/unpublish', [CatalogProductController::class, 'unpublish'])->middleware('permission:catalog.manage');
         });
     });
 });
