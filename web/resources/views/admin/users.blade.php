@@ -20,9 +20,9 @@
 @endphp
 
 @section('content')
-    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <section class="grid gap-5">
         <div class="space-y-5">
-            <div class="admin-card p-4 sm:p-5">
+            <div class="admin-card p-2 sm:p-5">
                 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p class="admin-kicker">Comptes</p>
@@ -137,10 +137,7 @@
             </div>
         </div>
 
-        <aside class="space-y-5">
-            <div class="admin-card p-4"><div class="flex items-center justify-between gap-3"><h2 class="text-lg font-black text-ink dark:text-cream">Roles disponibles</h2><span class="admin-pill">{{ count($roleRows) }}</span></div><div class="mt-4 space-y-3">@forelse($roleRows as $role)@php $roleName = is_array($role) ? ($role['name'] ?? 'Role') : $role; @endphp<div class="rounded-xl bg-linen p-3 dark:bg-white/5"><div class="flex items-center justify-between gap-3"><p class="font-black text-ink dark:text-cream">{{ $roleName ?: 'Role' }}</p><span class="rounded-full bg-white px-2 py-1 text-xs font-bold text-cocoa/55 ring-1 ring-leaf/10 dark:bg-white/10 dark:text-cream/55 dark:ring-white/10">{{ is_array($role) ? count($role['permissions'] ?? []) : 0 }} droits</span></div></div>@empty<p class="text-sm text-cocoa/55 dark:text-cream/55">Aucun role retourne par l API.</p>@endforelse</div></div>
-            <div class="rounded-2xl border border-leaf/10 bg-forest p-5 text-white shadow-sm dark:border-white/10 dark:bg-white/5"><p class="text-xs font-bold uppercase tracking-[0.18em] text-meadow">Controle</p><h2 class="mt-2 text-lg font-black">Roles et suspensions</h2><p class="mt-2 text-sm leading-6 text-white/70">Les changements sensibles passent par confirmation modale.</p></div>
-        </aside>
+    
     </section>
 @endsection
 
