@@ -134,6 +134,7 @@ class CustomerAccountController extends Controller
             'locale' => $locale,
             'user' => $me['data'],
             'addresses' => $api->addresses($token)['data'],
+            'orders' => $api->orders($token, $locale, 5)['data'],
             'countries' => $api->supportedCountries($locale)['data'],
             'activeMenu' => 'account',
         ]);

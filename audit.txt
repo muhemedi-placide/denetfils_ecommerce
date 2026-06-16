@@ -1,0 +1,183 @@
+J’ai récupéré et lu la branche `main` via GitHub. Voilà ma compréhension claire.
+
+**Compréhension Globale**
+Le projet est un monorepo Laravel séparé en deux applications :
+
+* `api/` : backend REST Laravel 11, responsable des données, auth, catalogue, panier, commandes, TVA, SEO, admin.
+* `web/` : frontend Laravel 11 + Livewire + Blade + Tailwind + Alpine, responsable de l’expérience client.
+* La communication se fait via HTTP REST : le web appelle l’API avec `ShopApiClient` et `AccountApiClient`.
+
+Le cahier de charge `text.txt` décrit une plateforme e-commerce Europe ambitieuse : catalogue, panier, checkout, paiement Stripe/PayPal, TVA multi-pays, RGPD, livraison, SEO, compte client, admin, performance, tracking, etc. Point important : plusieurs cases sont marquées `✅` dans le cahier, mais dans le code actuel, elles ne sont pas toutes réellement terminées. Certaines sont posées comme architecture ou MVP prévu.
+
+**Déjà Fait Côté API**
+
+* API Laravel 11 structurée dans `api/`.
+* Auth client avec Sanctum : inscription, connexion, logout, profil.
+* Rôles/permissions avec `spatie/laravel-permission`.
+* Core admin API : users, roles, permissions, audit logs.
+* Catalogue produits : catégories, produits, filtres par catégorie, recherche simple, tri prix/latest.
+* Fiches produits riches : images, variants, stock, prix, SEO, données commerciales.
+* Panier invité persistant par `cart_token`.
+* Ajout, modification, suppression d’articles panier.
+* Vérification stock produit/variant.
+* Pays supportés Europe avec TVA standard + TVA alimentaire.
+* Adresses client : création, modification, suppression, adresse par défaut.
+* Devis checkout : calcul livraison, TVA, total, poids, seuil livraison gratuite.
+* Création de commande depuis panier : snapshot produits + adresses + statut `pending_payment`.
+* SEO API : site SEO, robots, sitemap, JSON-LD produit/site.
+* Seeders : produits exemples, catégories, pays, rôles, admin local.
+* Swagger prévu avec `l5-swagger`.
+
+**Pas Encore Fait Ou Partiel Côté API**
+
+* Paiement réel Stripe/PayPal non branché dans les routes actuelles.
+* Pas encore de `PaymentController`, payment intent, webhook Stripe actif dans `routes/api.php`.
+* Transporteurs réels non intégrés : Mondial Relay / Chrono Relais ne sont pas encore connectés à leurs APIs.
+* Pas de vraie recherche de points relais API.
+* Pas de création d’étiquette, suivi colis, tracking transporteur.
+* Le calcul livraison est encore interne/statique : France, Europe, non-EU, standard/relais.
+* Pas encore de wishlist côté routes visibles.
+* Pas encore de social login Google/Apple.
+* Pas encore de 2FA.
+* Pas encore de remboursement.
+* Pas encore de vraie gestion devise multi-currency : la base travaille surtout en EUR.
+* Admin API existe, mais pas forcément toute l’interface admin web.
+
+**Déjà Fait Côté Web**
+
+* Front Laravel 11 + Livewire.
+* Pages publiques : home, about, blog, livraison, mentions légales, CGU, paiement sécurisé.
+* Multilingue `fr/en`.
+* Catalogue visible côté web.
+* Filtres produits via URL : catégorie, recherche, tri.
+* Fiche produit détaillée.
+* Composant achat produit avec variants.
+* Mini-panier Livewire persistant via `localStorage` + `cart_token`.
+* Page panier complète.
+* Produits recommandés dans le panier.
+* Auth client web : login, register, logout.
+* Page compte client.
+* Gestion adresses côté compte.
+* Checkout visuel avec compte, adresse, livraison, transporteur, point relais.
+* Design déjà orienté premium : Tailwind, dark mode, responsive, composants Livewire.
+* SEO côté web alimenté par l’API quand disponible.
+
+**Pas Encore Fait Ou Partiel Côté Web**
+
+* Le checkout web ne crée pas encore une vraie commande API avec `POST /orders`.
+* Le checkout web ne consomme pas encore `POST /checkout/quote` pour afficher TVA/livraison réelle.
+* La confirmation actuelle est encore une validation front : elle vide le panier localement.
+* Pas encore de page paiement réelle Stripe/PayPal.
+* Pas encore d’historique commandes affiché côté compte, même si l’API a `/me/orders`.
+* Pas encore de suivi commande côté client.
+* Le choix point relais est encore préparatoire/mock UI, pas connecté à Mondial Relay/Chrono Relais.
+* Pas encore de tracking GA4 visible dans le flux.
+* Pas encore de gestion erreurs avancées checkout/paiement.
+
+**Consommation API Côté Web Déjà Faite**
+
+* `GET /seo/site` consommé par la home.
+* `GET /categories` consommé pour le catalogue.
+* `GET /products` consommé pour listing, filtres, recommandations.
+* `GET /products/{slug}` consommé par la fiche produit.
+* `POST /carts` consommé pour créer panier.
+* `GET /carts/{cartToken}` consommé pour restaurer panier.
+* `POST /carts/{cartToken}/items` consommé pour ajouter produit.
+* `PATCH /carts/{cartToken}/items/{item}` consommé pour quantité.
+* `DELETE /carts/{cartToken}/items/{item}` consommé pour suppression.
+* `POST /auth/register`, `POST /auth/login`, `POST /auth/logout` consommés.
+* `GET /me`, `PATCH /me` consommés.
+* `GET/POST/PATCH/DELETE /me/addresses` consommés.
+* `GET /supported-countries` consommé.
+* `GET /privacy/consents/current` consommé à l’inscription.
+* `GET /sitemap.xml` consommé/fallback côté web.
+
+**Consommation API Manquante Côté Web**
+
+* `POST /checkout/quote` à appeler dans le checkout après adresse + transporteur.
+* `POST /orders` à appeler au clic confirmation.
+* `GET /orders/{order}` pour confirmation réelle.
+* `GET /me/orders` pour historique client.
+* Futurs endpoints paiement à créer puis consommer.
+* Futurs endpoints livraison/relais à créer puis consommer.
+
+**Lecture Parano Du Cahier De Charge**
+Le cahier est bon comme vision, mais il mélange trois niveaux :
+
+* Ce qui est déjà codé.
+* Ce qui est prévu dans l’architecture.
+* Ce qui est souhaité comme produit final.
+
+Les points les plus sensibles :
+
+* Le cahier parle de paiement Stripe/PayPal comme fait, mais le code ne montre pas encore de paiement réel.
+* Le cahier parle de transporteurs DPD/GLS/UPS, alors que votre vrai besoin récent est Mondial Relay + Chrono Relais. Il faut corriger officiellement le cahier.
+* Le checkout demandé est `adresse -> paiement -> confirmation`, mais votre besoin réel doit être `panier -> adresse -> transporteur -> point relais -> devis -> paiement -> confirmation`.
+* La TVA est mieux avancée que le paiement, mais elle doit être validée juridiquement pour les pays UE.
+* Le web affiche un bon tunnel UX, mais il doit maintenant être branché aux vrais endpoints `checkout/quote` et `orders`.
+* Les produits seedés sont encore génériques, pas encore les vrais produits DEN & FILS / Selakay.
+* L’architecture est saine, mais le projet n’est pas encore “prêt production” tant que paiement, livraison réelle, commande web et tests E2E ne sont pas terminés.
+
+**Checklist API**
+
+* [x] Base Laravel API séparée.
+* [x] Auth Sanctum client.
+* [x] Rôles/permissions/admin API.
+* [x] Catalogue produits/catégories.
+* [x] Panier invité.
+* [x] Adresses client.
+* [x] Devis checkout TVA/livraison.
+* [x] Création commande depuis panier.
+* [x] SEO API.
+* [ ] Paiement Stripe intent.
+* [ ] Webhook Stripe.
+* [ ] PayPal.
+* [ ] Mondial Relay API.
+* [ ] Chrono Relais API.
+* [ ] Points relais réels.
+* [ ] Étiquette colis.
+* [ ] Tracking colis.
+* [ ] Historique commande enrichi.
+* [ ] Wishlist.
+* [ ] Tests complets checkout/paiement/livraison.
+
+**Checklist Web**
+
+* [x] Pages publiques.
+* [x] Multilingue FR/EN.
+* [x] Catalogue.
+* [x] Fiche produit.
+* [x] Mini-panier.
+* [x] Page panier.
+* [x] Login/register.
+* [x] Compte client.
+* [x] Gestion adresses.
+* [x] Checkout UI mobile-first.
+* [x] Choix transporteur/relais préparé.
+* [ ] Brancher devis réel checkout.
+* [ ] Brancher création commande réelle.
+* [ ] Brancher paiement réel.
+* [ ] Page confirmation commande réelle.
+* [ ] Historique commandes client.
+* [ ] Suivi colis.
+* [ ] Vrais produits/images DEN & FILS.
+* [ ] Tests mobile et desktop.
+
+**Checklist Consommation API Web**
+
+* [x] Catalogue consommé.
+* [x] Produits consommés.
+* [x] SEO consommé.
+* [x] Panier consommé.
+* [x] Auth consommée.
+* [x] Profil/adresses consommés.
+* [ ] Checkout quote consommé.
+* [ ] Order creation consommé.
+* [ ] Orders history consommé.
+* [ ] Payment intent consommé.
+* [ ] Webhook paiement côté API à finaliser.
+* [ ] Transporteurs réels consommés.
+* [ ] Points relais réels consommés.
+* [ ] Tracking consommé.
+
+Je n’ai pas lancé les tests localement, car j’ai travaillé via l’accès GitHub à la branche `main`, pas depuis un clone exécutable local.

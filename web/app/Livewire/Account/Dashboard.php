@@ -16,6 +16,8 @@ class Dashboard extends Component
 
     public array $addresses = [];
 
+    public array $orders = [];
+
     public array $countries = [];
 
     public array $profile = [];
@@ -26,11 +28,12 @@ class Dashboard extends Component
 
     public ?string $statusMessage = null;
 
-    public function mount(string $locale, array $user, array $addresses, array $countries): void
+    public function mount(string $locale, array $user, array $addresses, array $orders = [], array $countries = []): void
     {
         $this->locale = in_array($locale, ['fr', 'en'], true) ? $locale : 'fr';
         $this->user = $user;
         $this->addresses = $addresses;
+        $this->orders = $orders;
         $this->countries = $countries;
         $this->profile = $this->profileFromUser($user);
         $this->newAddress = $this->blankAddress();
@@ -125,6 +128,11 @@ class Dashboard extends Component
     {
         return view('livewire.account.dashboard', [
             'roles' => collect($this->user['roles'] ?? [])->implode(', '),
+            'addressesCount' => count($this->addresses),
+            'ordersCount' => count($this->orders),
+            'defaultAddress' => collect($this->addresses)
+                ->first(fn (array $address) => ($address['type'] ?? null) === 'shipping' && (bool) ($address['is_default'] ?? false))
+                ?? collect($this->addresses)->first(),
             'timezones' => [
                 'Europe/Paris',
                 'Europe/Brussels',

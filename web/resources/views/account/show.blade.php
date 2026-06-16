@@ -15,7 +15,7 @@
                 </div>
             </div>
 
-            <livewire:account.dashboard :locale="$locale" :user="$user" :addresses="$addresses" :countries="$countries" />
+            <livewire:account.dashboard :locale="$locale" :user="$user" :addresses="$addresses" :orders="$orders" :countries="$countries" />
         </div>
     </section>
 @endsection

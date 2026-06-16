@@ -26,6 +26,12 @@
                 </div>
             @endif
 
+            @if ($quoteError)
+                <div class="mb-4 rounded-xl border border-leaf/20 bg-mint px-4 py-3 text-sm font-semibold text-leaf dark:border-white/10 dark:bg-white/5 dark:text-meadow">
+                    {{ $quoteError }}
+                </div>
+            @endif
+
             <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
                 <form class="space-y-4" wire:submit.prevent="confirm">
                     <section class="rounded-xl border border-leaf/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-5">
@@ -235,9 +241,9 @@
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-leaf text-xs font-black text-white dark:bg-meadow dark:text-ink">{{ $delivery === 'relay' ? '6' : '5' }}</span>
                             <div class="min-w-0 flex-1">
                                 <h2 class="text-lg font-extrabold text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Paiement et confirmation' : 'Payment and confirmation' }}</h2>
-                                <p class="mt-1 text-xs leading-5 text-cocoa/55 dark:text-cream/55">{{ $locale === 'fr' ? 'Le paiement Stripe/PayPal peut se brancher ici sans changer le parcours.' : 'Stripe/PayPal payment can plug in here without changing the flow.' }}</p>
+                                <p class="mt-1 text-xs leading-5 text-cocoa/55 dark:text-cream/55">{{ $locale === 'fr' ? 'La commande sera créée dans l’API avant le paiement réel Stripe/PayPal.' : 'The order will be created in the API before real Stripe/PayPal payment.' }}</p>
                                 <button type="submit" class="btn-primary mt-4 w-full py-3 text-sm disabled:pointer-events-none disabled:opacity-50" wire:loading.attr="disabled" @disabled(count($this->cartItems()) === 0 || ! $isAuthenticated || ! $selectedAddressId)>
-                                    <span wire:loading.remove>{{ $locale === 'fr' ? 'Confirmer la commande' : 'Confirm order' }}</span>
+                                    <span wire:loading.remove>{{ $locale === 'fr' ? 'Créer la commande' : 'Create order' }}</span>
                                     <span wire:loading>{{ __('home.cart.loading') }}</span>
                                 </button>
                             </div>
@@ -252,7 +258,7 @@
                                 <p class="text-xs font-black uppercase tracking-[0.2em] text-leaf dark:text-meadow">{{ $locale === 'fr' ? 'Résumé' : 'Summary' }}</p>
                                 <h2 class="mt-2 text-xl font-extrabold text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Votre commande' : 'Your order' }}</h2>
                             </div>
-                            <strong class="shrink-0 text-lg font-black text-leaf dark:text-meadow">{{ $this->formattedTotal() }}</strong>
+                            <strong class="shrink-0 text-lg font-black text-leaf dark:text-meadow">{{ $displayQuote['formatted_total'] }}</strong>
                         </div>
 
                         <div wire:loading.flex class="mt-3 items-center gap-3 rounded-lg bg-linen px-3 py-2 text-xs font-semibold text-cocoa/65 dark:bg-white/5 dark:text-cream/65">
@@ -289,7 +295,15 @@
                         <div class="mt-4 space-y-2 border-t border-leaf/10 pt-4 text-sm text-cocoa/70 dark:border-white/10 dark:text-cream/70">
                             <div class="flex items-center justify-between">
                                 <span>{{ $locale === 'fr' ? 'Sous-total' : 'Subtotal' }}</span>
-                                <strong class="text-cocoa dark:text-cream">{{ $this->formattedTotal() }}</strong>
+                                <strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_subtotal'] }}</strong>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>{{ $locale === 'fr' ? 'Livraison' : 'Shipping' }}</span>
+                                <strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_shipping'] }}</strong>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>{{ $locale === 'fr' ? 'TVA' : 'VAT' }}</span>
+                                <strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_tax'] }}</strong>
                             </div>
                             <div class="flex items-center justify-between gap-3">
                                 <span>{{ $locale === 'fr' ? 'Transporteur' : 'Carrier' }}</span>
@@ -309,6 +323,10 @@
                                 <span>{{ $locale === 'fr' ? 'Paiement' : 'Payment' }}</span>
                                 <span class="font-semibold">{{ $locale === 'fr' ? 'Étape prête' : 'Ready step' }}</span>
                             </div>
+                            <div class="flex items-center justify-between border-t border-leaf/10 pt-3 text-base dark:border-white/10">
+                                <span class="font-extrabold text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Total' : 'Total' }}</span>
+                                <strong class="text-lg text-leaf dark:text-meadow">{{ $displayQuote['formatted_total'] }}</strong>
+                            </div>
                         </div>
                     </div>
                 </aside>
@@ -322,6 +340,11 @@
                 <h1 class="mt-2 text-3xl font-extrabold text-cocoa dark:text-cream">
                     {{ $locale === 'fr' ? 'Commande validée.' : 'Order confirmed.' }}
                 </h1>
+                @if (! empty($confirmedOrder['order_number']))
+                    <p class="mt-3 rounded-full bg-mint px-4 py-2 text-sm font-black text-leaf dark:bg-white/10 dark:text-meadow">
+                        {{ $confirmedOrder['order_number'] }}
+                    </p>
+                @endif
                 <p class="mx-auto mt-3 max-w-md text-sm leading-6 text-cocoa/65 dark:text-cream/65">
                     {{ $locale === 'fr' ? 'Votre panier a été vidé. Le parcours est prêt pour la prochaine étape de paiement réel et création d’expédition.' : 'Your cart has been cleared. The flow is ready for real payment and shipment creation.' }}
                 </p>
