@@ -25,7 +25,7 @@
                     'label' => 'Commandes',
                     'icon' => 'orders',
                     'items' => [
-                        ['key' => 'sales.orders', 'label' => 'Commandes', 'route' => 'admin.modules.show', 'params' => ['module' => 'commandes'], 'hint' => 'Ventes'],
+                        ['key' => 'sales.orders', 'label' => 'Commandes', 'route' => 'admin.orders', 'hint' => 'Ventes'],
                         ['key' => 'sales.invoices', 'label' => 'Factures', 'route' => 'admin.modules.show', 'params' => ['module' => 'factures'], 'hint' => 'Documents'],
                         ['key' => 'sales.credits', 'label' => 'Avoirs', 'route' => 'admin.modules.show', 'params' => ['module' => 'avoirs'], 'hint' => 'Retours'],
                         ['key' => 'sales.delivery-notes', 'label' => 'Bons de livraison', 'route' => 'admin.modules.show', 'params' => ['module' => 'bons-livraison'], 'hint' => 'Logistique'],

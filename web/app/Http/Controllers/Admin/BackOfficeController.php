@@ -8,6 +8,7 @@ use App\Services\AdminApiClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -166,6 +167,70 @@ class BackOfficeController extends Controller
         ]));
     }
 
+    public function orders(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $filters = $request->only([
+            'id',
+            'q',
+            'customer',
+            'new_customer',
+            'total',
+            'status',
+            'payment_status',
+            'fulfillment_status',
+            'carrier',
+            'date_from',
+            'date_to',
+        ]);
+        $orders = $admin->orders($context['token'], $locale, $filters);
+
+        return view('admin.orders', $this->payload($context, [
+            'activeAdmin' => 'sales.orders',
+            'orders' => $orders,
+            'filters' => $filters,
+        ]));
+    }
+
+    public function showOrder(Request $request, AdminApiClient $admin, string $locale, int $order): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->order($context['token'], $order, $locale);
+
+        if (! ($response['ok'] ?? false)) {
+            return redirect()
+                ->route('admin.orders', ['locale' => $locale])
+                ->withErrors($this->responseErrors($response, 'admin_action'));
+        }
+
+        return view('admin.order-show', $this->payload($context, [
+            'activeAdmin' => 'sales.orders',
+            'order' => $response['data'],
+        ]));
+    }
+
+    public function downloadOrderInvoice(Request $request, AdminApiClient $admin, string $locale, int $order)
+    {
+        return $this->downloadOrderDocument($request, $admin, $locale, $order, 'invoice');
+    }
+
+    public function downloadOrderDeliveryNote(Request $request, AdminApiClient $admin, string $locale, int $order)
+    {
+        return $this->downloadOrderDocument($request, $admin, $locale, $order, 'delivery-note');
+    }
+
     public function users(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
     {
         $locale = $this->setLocale($locale);
@@ -194,6 +259,10 @@ class BackOfficeController extends Controller
 
         if ($context instanceof RedirectResponse) {
             return $context;
+        }
+
+        if ($module === 'commandes') {
+            return redirect()->route('admin.orders', ['locale' => $locale]);
         }
 
         $definition = $this->moduleDefinitions()[$module] ?? null;
@@ -403,6 +472,83 @@ class BackOfficeController extends Controller
         );
     }
 
+    public function updateOrder(Request $request, AdminApiClient $admin, string $locale, int $order): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'status' => ['required', Rule::in($this->orderStatuses())],
+            'payment_status' => ['required', Rule::in($this->paymentStatuses())],
+            'fulfillment_status' => ['required', Rule::in($this->fulfillmentStatuses())],
+            'carrier' => ['nullable', 'string', 'max:64'],
+            'tracking_number' => ['nullable', 'string', 'max:120'],
+            'tracking_url' => ['nullable', 'url', 'max:2048'],
+            'admin_note' => ['nullable', 'string', 'max:2000'],
+            'notify_customer' => ['nullable', 'boolean'],
+        ], "order-update-{$order}");
+
+        $response = $admin->updateOrder($context['token'], $order, [
+            ...$validated,
+            'notify_customer' => $request->boolean('notify_customer'),
+        ]);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Commande mise a jour.',
+            "order-update-{$order}",
+        );
+    }
+
+    public function storeOrder(Request $request, AdminApiClient $admin, string $locale): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'user_id' => ['required', 'integer', 'min:1'],
+            'cart_token' => ['required', 'string', 'max:64'],
+            'shipping_address_id' => ['required', 'integer', 'min:1'],
+            'billing_address_id' => ['nullable', 'integer', 'min:1'],
+            'delivery_method' => ['nullable', Rule::in(['standard', 'relay'])],
+            'carrier' => ['nullable', 'string', 'max:64'],
+            'admin_note' => ['nullable', 'string', 'max:2000'],
+        ], 'order-create');
+
+        $metadata = [];
+
+        if (! empty($validated['admin_note'])) {
+            $metadata['admin_note'] = $validated['admin_note'];
+        }
+
+        $response = $admin->createOrder($context['token'], [
+            'user_id' => (int) $validated['user_id'],
+            'cart_token' => $validated['cart_token'],
+            'shipping_address_id' => (int) $validated['shipping_address_id'],
+            'billing_address_id' => isset($validated['billing_address_id']) ? (int) $validated['billing_address_id'] : null,
+            'locale' => $locale,
+            'delivery_method' => $validated['delivery_method'] ?? 'standard',
+            'carrier' => $validated['carrier'] ?? null,
+            'metadata' => $metadata,
+        ]);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Commande creee depuis le panier client.',
+            'order-create',
+        );
+    }
+
     public function storeUser(Request $request, AdminApiClient $admin, string $locale): RedirectResponse
     {
         $locale = $this->setLocale($locale);
@@ -548,7 +694,7 @@ class BackOfficeController extends Controller
                 'title' => 'Commandes',
                 'section' => 'Vendre',
                 'description' => 'Suivi des commandes web, statuts, preparation et priorites de traitement.',
-                'status' => 'Pret a brancher',
+                'status' => 'Branche API',
                 'metrics' => ['A traiter', 'En preparation', 'Expediees', 'Litiges'],
                 'workflows' => ['Importer les commandes API', 'Assigner un statut', 'Declencher la preparation', 'Informer le client'],
             ],
@@ -805,6 +951,114 @@ class BackOfficeController extends Controller
         return (int) round((float) $value * 100);
     }
 
+    private function downloadOrderDocument(Request $request, AdminApiClient $admin, string $locale, int $order, string $type)
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->order($context['token'], $order, $locale);
+
+        if (! ($response['ok'] ?? false)) {
+            return redirect()
+                ->route('admin.orders', ['locale' => $locale])
+                ->withErrors($this->responseErrors($response, 'admin_action'));
+        }
+
+        $orderData = $response['data'];
+        $reference = preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($orderData['order_number'] ?? $order));
+        $title = $type === 'invoice' ? 'Facture' : 'Bon de livraison';
+        $filename = ($type === 'invoice' ? 'facture-' : 'bon-livraison-').$reference.'.pdf';
+
+        return response($this->orderPdf($title, $orderData), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    private function orderPdf(string $title, array $order): string
+    {
+        $lines = [
+            $title.' - '.($order['order_number'] ?? 'Commande'),
+            'DEN & FILS',
+            'Date: '.(string) ($order['placed_at'] ?? $order['created_at'] ?? '-'),
+            'Client: '.(string) data_get($order, 'customer.name', '-'),
+            'Email: '.(string) data_get($order, 'customer.email', '-'),
+            'Total: '.(string) ($order['formatted_total'] ?? '-'),
+            'Livraison: '.(string) ($order['carrier'] ?? '-'),
+            '',
+            'Articles',
+        ];
+
+        foreach (($order['items'] ?? []) as $item) {
+            $lines[] = sprintf(
+                '- %s x%s - %s',
+                (string) data_get($item, 'product.name', 'Produit'),
+                (string) ($item['quantity'] ?? 0),
+                (string) ($item['formatted_line_total'] ?? '-'),
+            );
+        }
+
+        $lines[] = '';
+        $lines[] = 'Sous-total: '.(string) ($order['formatted_subtotal'] ?? '-');
+        $lines[] = 'Livraison: '.(string) ($order['formatted_shipping'] ?? '-');
+        $lines[] = 'TVA: '.(string) ($order['formatted_tax'] ?? '-');
+        $lines[] = 'Total: '.(string) ($order['formatted_total'] ?? '-');
+
+        return $this->simplePdf($lines);
+    }
+
+    private function simplePdf(array $lines): string
+    {
+        $content = "BT\n/F1 12 Tf\n50 790 Td\n";
+
+        foreach ($lines as $index => $line) {
+            if ($index > 0) {
+                $content .= "0 -18 Td\n";
+            }
+
+            $content .= '('.$this->pdfText((string) $line).") Tj\n";
+        }
+
+        $content .= "ET\n";
+        $objects = [
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+            "5 0 obj\n<< /Length ".strlen($content)." >>\nstream\n{$content}endstream\nendobj\n",
+        ];
+        $pdf = "%PDF-1.4\n";
+        $offsets = [0];
+
+        foreach ($objects as $object) {
+            $offsets[] = strlen($pdf);
+            $pdf .= $object;
+        }
+
+        $xref = strlen($pdf);
+        $pdf .= "xref\n0 ".(count($objects) + 1)."\n";
+        $pdf .= "0000000000 65535 f \n";
+
+        for ($i = 1; $i <= count($objects); $i++) {
+            $pdf .= str_pad((string) $offsets[$i], 10, '0', STR_PAD_LEFT)." 00000 n \n";
+        }
+
+        $pdf .= "trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF";
+
+        return $pdf;
+    }
+
+    private function pdfText(string $value): string
+    {
+        $encoded = iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $value) ?: $value;
+
+        return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $encoded);
+    }
+
     private function setLocale(?string $locale): string
     {
         $locale = in_array($locale, ['fr', 'en'], true) ? $locale : config('app.locale', 'fr');
@@ -812,5 +1066,20 @@ class BackOfficeController extends Controller
         app()->setLocale($locale);
 
         return $locale;
+    }
+
+    private function orderStatuses(): array
+    {
+        return ['pending_payment', 'confirmed', 'processing', 'completed', 'cancelled', 'refunded'];
+    }
+
+    private function paymentStatuses(): array
+    {
+        return ['unpaid', 'authorized', 'paid', 'failed', 'partially_refunded', 'refunded'];
+    }
+
+    private function fulfillmentStatuses(): array
+    {
+        return ['unfulfilled', 'preparing', 'ready_to_ship', 'shipped', 'delivered', 'returned', 'cancelled'];
     }
 }

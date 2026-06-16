@@ -54,6 +54,12 @@ Route::prefix('/{locale}/admin')
         Route::post('/catalogue/produits/{product}/publication', [BackOfficeController::class, 'setProductPublication'])->name('admin.catalog.products.publication');
         Route::post('/catalogue/categories', [BackOfficeController::class, 'storeCategory'])->name('admin.catalog.categories.store');
         Route::post('/catalogue/categories/{category}/activation', [BackOfficeController::class, 'setCategoryActivation'])->name('admin.catalog.categories.activation');
+        Route::get('/commandes', [BackOfficeController::class, 'orders'])->name('admin.orders');
+        Route::post('/commandes', [BackOfficeController::class, 'storeOrder'])->name('admin.orders.store');
+        Route::get('/commandes/{order}', [BackOfficeController::class, 'showOrder'])->name('admin.orders.show');
+        Route::get('/commandes/{order}/facture', [BackOfficeController::class, 'downloadOrderInvoice'])->name('admin.orders.invoice');
+        Route::get('/commandes/{order}/bon-livraison', [BackOfficeController::class, 'downloadOrderDeliveryNote'])->name('admin.orders.delivery-note');
+        Route::patch('/commandes/{order}', [BackOfficeController::class, 'updateOrder'])->name('admin.orders.update');
         Route::get('/stock', [BackOfficeController::class, 'inventory'])->name('admin.inventory');
         Route::get('/utilisateurs', [BackOfficeController::class, 'users'])->name('admin.users');
         Route::post('/utilisateurs', [BackOfficeController::class, 'storeUser'])->name('admin.users.store');
