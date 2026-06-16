@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\CatalogCategoryController;
 use App\Http\Controllers\Api\Admin\CatalogProductController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\InventoryController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\PaymentMethodController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\RoleController;
@@ -70,6 +71,11 @@ Route::prefix('v1')->group(function () {
         Route::prefix('admin')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:catalog.view');
             Route::get('/inventory', [InventoryController::class, 'index'])->middleware('permission:catalog.view');
+
+            Route::get('/orders', [AdminOrderController::class, 'index'])->middleware('permission:orders.view');
+            Route::post('/orders', [AdminOrderController::class, 'store'])->middleware('permission:orders.manage');
+            Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->middleware('permission:orders.view');
+            Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->middleware('permission:orders.manage');
 
             Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
             Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');

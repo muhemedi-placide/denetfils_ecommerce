@@ -172,6 +172,99 @@ class OrdersApiTest extends TestCase
             ->assertJsonValidationErrors('cart_token');
     }
 
+    public function test_operations_manager_can_list_and_update_orders_with_audit(): void
+    {
+        $customer = $this->customer();
+        $address = $this->address($customer);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+
+        Sanctum::actingAs($customer);
+
+        $orderId = $this->postJson('/api/v1/orders', [
+            'cart_token' => $this->cartWithProduct($product),
+            'shipping_address_id' => $address->id,
+            'delivery_method' => 'relay',
+            'carrier' => 'mondial_relay_pickup',
+        ])->assertCreated()->json('data.id');
+
+        $manager = User::factory()->create();
+        $manager->assignRole('operations_manager');
+
+        Sanctum::actingAs($manager);
+
+        $this->getJson('/api/v1/admin/orders?status=pending_payment&locale=fr')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $orderId)
+            ->assertJsonPath('data.0.status_label', 'Paiement en attente')
+            ->assertJsonPath('data.0.is_new_customer', true)
+            ->assertJsonPath('summary.total_orders', 1)
+            ->assertJsonPath('summary.to_prepare_orders', 1)
+            ->assertJsonPath('summary.abandoned_carts', 0)
+            ->assertJsonPath('summary.conversion_rate_percent', 100);
+
+        $this->patchJson("/api/v1/admin/orders/{$orderId}", [
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+            'fulfillment_status' => 'preparing',
+            'carrier' => 'chrono_relais_pickup',
+            'tracking_number' => 'CR123456789FR',
+            'tracking_url' => 'https://tracking.example.test/CR123456789FR',
+            'admin_note' => 'Preparation prioritaire.',
+            'notify_customer' => true,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'confirmed')
+            ->assertJsonPath('data.payment_status', 'paid')
+            ->assertJsonPath('data.fulfillment_status', 'preparing')
+            ->assertJsonPath('data.tracking.number', 'CR123456789FR')
+            ->assertJsonPath('data.admin_notes.0.body', 'Preparation prioritaire.');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $orderId,
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+            'fulfillment_status' => 'preparing',
+            'carrier' => 'chrono_relais_pickup',
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'orders.status_updated',
+            'auditable_id' => $orderId,
+        ]);
+
+        $adminCreateResponse = $this->postJson('/api/v1/admin/orders', [
+            'user_id' => $customer->id,
+            'cart_token' => $this->cartWithProduct($product),
+            'shipping_address_id' => $address->id,
+            'delivery_method' => 'standard',
+            'carrier' => 'chronopost_home',
+            'metadata' => [
+                'admin_note' => 'Commande creee par le back-office.',
+            ],
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.carrier', 'chronopost_home')
+            ->assertJsonPath('data.metadata.created_from', 'admin')
+            ->assertJsonPath('data.admin_notes.0.body', 'Commande creee par le back-office.');
+
+        $adminCreatedOrderId = $adminCreateResponse->json('data.id');
+        $adminCreatedTotal = number_format(((int) $adminCreateResponse->json('data.total_cents')) / 100, 2, '.', '');
+
+        $this->getJson("/api/v1/admin/orders?new_customer=0&customer={$customer->email}&total={$adminCreatedTotal}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $adminCreatedOrderId)
+            ->assertJsonPath('data.0.is_new_customer', false);
+    }
+
+    public function test_customer_cannot_read_admin_orders(): void
+    {
+        $customer = $this->customer();
+
+        Sanctum::actingAs($customer);
+
+        $this->getJson('/api/v1/admin/orders')->assertForbidden();
+    }
+
     private function customer(array $overrides = []): User
     {
         $user = User::factory()->create($overrides);

@@ -94,6 +94,42 @@ class AdminApiClient
         ]), $token);
     }
 
+    public function orders(string $token, string $locale, array $filters = []): array
+    {
+        return $this->send('get', 'admin/orders', $this->clean([
+            'locale' => $this->locale($locale),
+            'id' => $filters['id'] ?? null,
+            'q' => $filters['q'] ?? null,
+            'customer' => $filters['customer'] ?? null,
+            'new_customer' => $filters['new_customer'] ?? null,
+            'total' => $filters['total'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'payment_status' => $filters['payment_status'] ?? null,
+            'fulfillment_status' => $filters['fulfillment_status'] ?? null,
+            'carrier' => $filters['carrier'] ?? null,
+            'date_from' => $filters['date_from'] ?? null,
+            'date_to' => $filters['date_to'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+        ]), $token);
+    }
+
+    public function createOrder(string $token, array $payload): array
+    {
+        return $this->send('post', 'admin/orders', $payload, $token);
+    }
+
+    public function order(string $token, int|string $order, string $locale): array
+    {
+        return $this->send('get', "admin/orders/{$order}", [
+            'locale' => $this->locale($locale),
+        ], $token);
+    }
+
+    public function updateOrder(string $token, int|string $order, array $payload): array
+    {
+        return $this->send('patch', "admin/orders/{$order}", $this->clean($payload), $token);
+    }
+
     public function users(string $token, array $filters = []): array
     {
         return $this->send('get', 'admin/users', $this->clean([

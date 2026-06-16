@@ -26,7 +26,7 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertOk()
             ->assertSee('Back-office Denetfils')
             ->assertSee('adminShell', false)
-            ->assertSee('Cockpit ERP / CRM');
+            ->assertSee('Centre de pilotage');
 
         $this->withSession($session)
             ->get('/fr/admin/catalogue/produits')
@@ -47,6 +47,20 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertSee('inventory-stock-10', false);
 
         $this->withSession($session)
+            ->get('/fr/admin/commandes')
+            ->assertOk()
+            ->assertSee('Commandes (1)')
+            ->assertSee('Actions groupees')
+            ->assertSee('Ajouter une commande')
+            ->assertSee('order-create-modal', false)
+            ->assertDontSee('order-show-42', false)
+            ->assertDontSee('order-update-42', false)
+            ->assertSee('DF-20260616-ABC123')
+            ->assertSee('/fr/admin/commandes/42/facture', false)
+            ->assertSee('/fr/admin/commandes/42/bon-livraison', false)
+            ->assertSee('/fr/admin/commandes/42', false);
+
+        $this->withSession($session)
             ->get('/fr/admin/utilisateurs')
             ->assertOk()
             ->assertSee('Inviter un membre')
@@ -65,9 +79,120 @@ class AdminBackOfficeFrontendTest extends TestCase
 
         $this->withSession($session)
             ->get('/fr/admin/modules/commandes')
+            ->assertRedirect('/fr/admin/commandes');
+    }
+
+    public function test_admin_can_open_order_detail_page(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->get('/fr/admin/commandes/42')
             ->assertOk()
-            ->assertSee('Commandes')
-            ->assertSee('Module separe');
+            ->assertSee('Commande #42 DF-20260616-ABC123')
+            ->assertSee('Basic information')
+            ->assertSee('Produits (1)')
+            ->assertSee('Client')
+            ->assertSee('Documents')
+            ->assertSee('Transporteur')
+            ->assertSee('Sources');
+    }
+
+    public function test_admin_can_download_order_invoice_and_delivery_note(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $session = [
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ];
+
+        $this->withSession($session)
+            ->get('/fr/admin/commandes/42/facture')
+            ->assertOk()
+            ->assertDownload('facture-DF-20260616-ABC123.pdf');
+
+        $this->withSession($session)
+            ->get('/fr/admin/commandes/42/bon-livraison')
+            ->assertOk()
+            ->assertDownload('bon-livraison-DF-20260616-ABC123.pdf');
+    }
+
+    public function test_admin_can_submit_order_status_update_to_api(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->patch('/fr/admin/commandes/42', [
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+            'fulfillment_status' => 'preparing',
+            'carrier' => 'chrono_relais_pickup',
+            'tracking_number' => 'CR123456789FR',
+            'tracking_url' => 'https://tracking.example.test/CR123456789FR',
+            'admin_note' => 'Preparation prioritaire.',
+            'notify_customer' => '1',
+        ])
+            ->assertRedirect()
+            ->assertSessionHas('status', 'Commande mise a jour.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/orders/42')
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer admin-token')
+            && $request['status'] === 'confirmed'
+            && $request['payment_status'] === 'paid'
+            && $request['tracking_number'] === 'CR123456789FR');
+    }
+
+    public function test_admin_can_submit_manual_order_creation_to_api(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->post('/fr/admin/commandes', [
+            'user_id' => 7,
+            'cart_token' => 'cart-token-123',
+            'shipping_address_id' => 11,
+            'billing_address_id' => 12,
+            'delivery_method' => 'relay',
+            'carrier' => 'mondial_relay_pickup',
+            'admin_note' => 'Commande ajoutee par telephone.',
+        ])
+            ->assertRedirect()
+            ->assertSessionHas('status', 'Commande creee depuis le panier client.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/orders')
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer admin-token')
+            && $request['user_id'] === 7
+            && $request['cart_token'] === 'cart-token-123'
+            && data_get($request->data(), 'metadata.admin_note') === 'Commande ajoutee par telephone.');
     }
 
     private function adminApiFakes(): array
@@ -102,6 +227,25 @@ class AdminBackOfficeFrontendTest extends TestCase
             '*/admin/inventory*' => Http::response([
                 'data' => [$this->inventoryProduct()],
                 'meta' => ['total' => 1],
+            ]),
+            '*/admin/orders/42*' => Http::response([
+                'data' => $this->order(),
+            ]),
+            '*/admin/orders*' => Http::response([
+                'data' => [$this->order()],
+                'meta' => ['total' => 1],
+                'summary' => [
+                    'total_orders' => 1,
+                    'pending_orders' => 1,
+                    'paid_orders' => 0,
+                    'to_prepare_orders' => 1,
+                    'shipped_orders' => 0,
+                    'formatted_total' => '25,86 EUR',
+                    'conversion_rate_percent' => 50,
+                    'abandoned_carts' => 1,
+                    'formatted_average_order' => '25,86 EUR',
+                    'formatted_net_margin_per_visitor' => '0,00 EUR',
+                ],
             ]),
             '*/admin/users*' => Http::response([
                 'data' => [$this->user()],
@@ -146,6 +290,80 @@ class AdminBackOfficeFrontendTest extends TestCase
             'stock_status' => 'in_stock',
             'low_stock_threshold' => 5,
             'updated_at' => '2026-06-16T10:00:00Z',
+        ];
+    }
+
+    private function order(): array
+    {
+        return [
+            'id' => 42,
+            'cart_id' => 78,
+            'order_number' => 'DF-20260616-ABC123',
+            'status' => 'pending_payment',
+            'payment_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
+            'currency' => 'EUR',
+            'formatted_total' => '25,86 EUR',
+            'formatted_subtotal' => '17,80 EUR',
+            'formatted_shipping' => '5,90 EUR',
+            'formatted_tax' => '2,16 EUR',
+            'customer' => [
+                'name' => 'Jean Martin',
+                'email' => 'jean@example.test',
+                'phone' => '+33600000000',
+                'country_code' => 'FR',
+            ],
+            'delivery_method' => 'relay',
+            'carrier' => 'mondial_relay_pickup',
+            'tracking' => [
+                'number' => null,
+                'url' => null,
+            ],
+            'payment_method' => 'PayPal',
+            'is_new_customer' => true,
+            'metadata' => [
+                'pickup_point' => [
+                    'name' => 'Commerce partenaire',
+                    'address' => '12 rue Oberkampf, 75011 Paris',
+                ],
+                'source_events' => [
+                    [
+                        'date' => '2026-06-16T09:50:00Z',
+                        'from' => 'Boutique web',
+                        'to' => 'Checkout DEN & FILS',
+                    ],
+                ],
+            ],
+            'admin_notes' => [],
+            'placed_at' => '2026-06-16T10:00:00Z',
+            'items' => [
+                [
+                    'id' => 1,
+                    'product' => ['name' => 'Miel doux', 'sku' => 'MIEL-001'],
+                    'quantity' => 2,
+                    'available_quantity' => 12,
+                    'formatted_unit_price' => '8,90 EUR',
+                    'formatted_line_total' => '17,80 EUR',
+                ],
+            ],
+            'addresses' => [
+                [
+                    'type' => 'shipping',
+                    'recipient_name' => 'Jean Martin',
+                    'street_line_1' => '12 Rue du Test',
+                    'postal_code' => '75001',
+                    'city' => 'Paris',
+                    'country_code' => 'FR',
+                ],
+                [
+                    'type' => 'billing',
+                    'recipient_name' => 'Jean Martin',
+                    'street_line_1' => '12 Rue du Test',
+                    'postal_code' => '75001',
+                    'city' => 'Paris',
+                    'country_code' => 'FR',
+                ],
+            ],
         ];
     }
 
