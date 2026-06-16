@@ -72,6 +72,7 @@ class BackOfficeMetricsService
                     ->whereHas('products', fn ($query) => $query->where('is_active', true))
                     ->count(),
             ],
+            'visitor_acquisition' => $this->visitorAcquisition($locale),
             'stock_alerts' => $this->stockAlerts($lowStockThreshold, $locale),
             'recent_activity' => AuditLog::query()
                 ->with('actor')
@@ -112,6 +113,83 @@ class BackOfficeMetricsService
         return 'in_stock';
     }
 
+    private function visitorAcquisition(string $locale): array
+    {
+        $total = max(1, User::query()->count());
+        $customers = User::role('customer')->count();
+        $staff = User::query()->whereDoesntHave('roles', fn ($query) => $query->where('name', 'customer'))->count();
+        $suspended = User::query()->where('status', 'suspended')->count();
+        $active = User::query()->where('status', 'active')->count();
+
+        $segments = [
+            ['key' => 'customers', 'label' => 'Clients', 'value' => $customers, 'percentage' => $this->percentage($customers, $total), 'color' => '#1f8a5b'],
+            ['key' => 'staff', 'label' => 'Equipe interne', 'value' => $staff, 'percentage' => $this->percentage($staff, $total), 'color' => '#c46a2a'],
+            ['key' => 'suspended', 'label' => 'Suspendus', 'value' => $suspended, 'percentage' => $this->percentage($suspended, $total), 'color' => '#b91c1c'],
+            ['key' => 'active', 'label' => 'Actifs', 'value' => $active, 'percentage' => $this->percentage($active, $total), 'color' => '#6554c0'],
+        ];
+
+        $countries = User::query()
+            ->selectRaw("COALESCE(NULLIF(country_code, ''), 'N/A') as label, COUNT(*) as total")
+            ->groupBy('label')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get()
+            ->map(fn ($row) => [
+                'label' => strtoupper((string) $row->label),
+                'value' => (int) $row->total,
+                'percentage' => $this->percentage((int) $row->total, $total),
+            ])
+            ->values()
+            ->all();
+
+        $platforms = collect([
+            ['label' => 'Site web', 'value' => $customers, 'percentage' => $this->percentage($customers, $total), 'color' => '#1f8a5b'],
+            ['label' => 'Back-office', 'value' => $staff, 'percentage' => $this->percentage($staff, $total), 'color' => '#c46a2a'],
+            ['label' => 'Import manuel', 'value' => max(0, $total - $customers - $staff), 'percentage' => $this->percentage(max(0, $total - $customers - $staff), $total), 'color' => '#6554c0'],
+        ])->filter(fn ($item) => $item['value'] > 0)->values()->all();
+
+        $recent = User::query()
+            ->with('roles')
+            ->latest('id')
+            ->limit(4)
+            ->get()
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'status' => $user->status,
+                'country_code' => $user->country_code,
+                'preferred_locale' => $user->preferred_locale,
+                'roles' => $user->roles->pluck('name')->values()->all(),
+                'source' => $user->hasRole('customer') ? 'Inscription client' : 'Creation administrative',
+                'platform' => $user->hasRole('customer') ? 'Site web' : 'Back-office',
+                'channel' => $user->hasRole('customer') ? 'Compte client' : 'Equipe interne',
+                'campaign' => 'Non rattachee',
+                'first_touch_at' => optional($user->created_at)->toIso8601String(),
+                'last_touch_at' => optional($user->updated_at)->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'total' => User::query()->count(),
+            'source' => 'computed_from_users',
+            'segments' => $segments,
+            'platforms' => $platforms,
+            'countries' => $countries,
+            'recent_visitors' => $recent,
+            'next_api_contract' => [
+                'source',
+                'platform',
+                'channel',
+                'campaign',
+                'first_touch_at',
+                'last_touch_at',
+            ],
+        ];
+    }
+
     private function stockAlerts(int $lowStockThreshold, string $locale): array
     {
         return Product::query()
@@ -137,6 +215,11 @@ class BackOfficeMetricsService
             ])
             ->values()
             ->all();
+    }
+
+    private function percentage(int $value, int $total): float
+    {
+        return $total > 0 ? round(($value / $total) * 100, 1) : 0.0;
     }
 
     private function threshold(int $value): int
