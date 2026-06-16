@@ -1,0 +1,6 @@
+[
+  {
+    "type": "sqlite",
+    "path": "d:\\htdocs\\ecom\\api\\database\\database.sqlite"
+  }
+]
