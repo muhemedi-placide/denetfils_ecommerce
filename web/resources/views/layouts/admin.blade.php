@@ -63,6 +63,9 @@
                             <div class="min-w-0">
                                 <p class="truncate text-xs font-black uppercase tracking-[0.2em] text-[#2f7d1b]">Back-office Denetfils</p>
                                 <h1 class="truncate text-lg font-black text-[#1f2a1c] sm:text-xl">@yield('page_title', 'Administration')</h1>
+                                @hasSection('page_subtitle')
+                                    <p class="hidden max-w-2xl truncate text-xs font-semibold text-[#1f2a1c]/55 sm:block">@yield('page_subtitle')</p>
+                                @endif
                             </div>
                         </div>
                         <div class="hidden items-center gap-2 text-right sm:flex">
@@ -82,6 +85,10 @@
                             @php $isActive = ($activeAdmin ?? '') === $item['key']; @endphp
                             <a href="{{ route($item['route'], ['locale' => $currentLocale]) }}" class="shrink-0 rounded-full px-4 py-2 text-xs font-black uppercase tracking-wide {{ $isActive ? 'bg-[#12210f] text-white' : 'bg-[#f7f5ef] text-[#1f2a1c]/70' }}">{{ $item['label'] }}</a>
                         @endforeach
+                        <form method="POST" action="{{ route('admin.logout', ['locale' => $currentLocale]) }}" class="shrink-0 sm:hidden">
+                            @csrf
+                            <button type="submit" class="rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-wide text-[#f15b2a] ring-1 ring-black/10">Quitter</button>
+                        </form>
                     </nav>
                 </header>
 
