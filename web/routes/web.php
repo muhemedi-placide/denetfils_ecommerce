@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\ShopController;
+use App\Http\Controllers\Admin\BackOfficeController;
 use App\Http\Controllers\CustomerAccountController;
+use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/robots.txt', [ShopController::class, 'robots'])->name('seo.robots');
@@ -36,6 +37,21 @@ Route::get('/{locale}/conditions-utilisation', [ShopController::class, 'terms'])
 Route::get('/{locale}/paiement-securise', [ShopController::class, 'securePayment'])
     ->whereIn('locale', ['fr', 'en'])
     ->name('pages.payment');
+
+Route::prefix('/{locale}/admin')
+    ->whereIn('locale', ['fr', 'en'])
+    ->group(function () {
+        Route::get('/connexion', [BackOfficeController::class, 'loginForm'])->name('admin.login');
+        Route::post('/connexion', [BackOfficeController::class, 'login'])->name('admin.login.store');
+        Route::post('/deconnexion', [BackOfficeController::class, 'logout'])->name('admin.logout');
+
+        Route::get('/', [BackOfficeController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/catalogue', [BackOfficeController::class, 'catalog'])->name('admin.catalog');
+        Route::get('/stock', [BackOfficeController::class, 'inventory'])->name('admin.inventory');
+        Route::get('/utilisateurs', [BackOfficeController::class, 'users'])->name('admin.users');
+        Route::get('/acces', [BackOfficeController::class, 'access'])->name('admin.access');
+        Route::get('/audit', [BackOfficeController::class, 'audit'])->name('admin.audit');
+    });
 
 Route::get('/{locale}/connexion', [CustomerAccountController::class, 'loginForm'])
     ->whereIn('locale', ['fr', 'en'])
