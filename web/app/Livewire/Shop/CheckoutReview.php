@@ -131,7 +131,7 @@ class CheckoutReview extends Component
 
     public function selectPickupPoint(string $code): void
     {
-        if (collect($this->pickupPoints())->contains('code', $code)) {
+        if (collect($this->allPickupPoints())->contains('code', $code)) {
             $this->selectedPickupPoint = $code;
         }
     }
@@ -171,7 +171,7 @@ class CheckoutReview extends Component
             return null;
         }
 
-        return collect($this->pickupPoints())->firstWhere('code', $this->selectedPickupPoint);
+        return collect($this->allPickupPoints())->firstWhere('code', $this->selectedPickupPoint);
     }
 
     private function pickupPoints(): array
@@ -180,7 +180,22 @@ class CheckoutReview extends Component
             return [];
         }
 
-        $points = $this->locale === 'fr'
+        $points = $this->allPickupPoints();
+        $query = trim(mb_strtolower($this->pickupQuery));
+
+        if ($query === '') {
+            return $points;
+        }
+
+        return collect($points)
+            ->filter(fn (array $point) => str_contains(mb_strtolower($point['name'] . ' ' . $point['address'] . ' ' . $point['carrier']), $query))
+            ->values()
+            ->all();
+    }
+
+    private function allPickupPoints(): array
+    {
+        return $this->locale === 'fr'
             ? [
                 [
                     'code' => 'mr-paris-11',
@@ -233,17 +248,6 @@ class CheckoutReview extends Component
                     'distance' => '1.1 km',
                 ],
             ];
-
-        $query = trim(mb_strtolower($this->pickupQuery));
-
-        if ($query === '') {
-            return $points;
-        }
-
-        return collect($points)
-            ->filter(fn (array $point) => str_contains(mb_strtolower($point['name'] . ' ' . $point['address'] . ' ' . $point['carrier']), $query))
-            ->values()
-            ->all();
     }
 
     private function carrierOptions(): array
