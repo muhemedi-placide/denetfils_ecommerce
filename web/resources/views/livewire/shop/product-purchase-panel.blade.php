@@ -26,13 +26,22 @@
         </select>
     @endif
 
-    <button type="button" data-testid="product-detail-add-button" class="btn-primary mt-5 w-full py-4 text-base disabled:pointer-events-none disabled:opacity-50" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="addToCart" wire:loading.attr="disabled" @disabled(! $isAvailable)>
-        <span wire:loading.remove wire:target="addToCart">{{ __('home.products.cta') }}</span>
-        <span wire:loading wire:target="addToCart">{{ __('home.cart.loading') }}</span>
-    </button>
-    <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-secondary mt-3 w-full" wire:navigate>{{ __('home.product.back') }}</a>
+    <div class="mt-5 grid gap-2">
+        <button type="button" data-testid="product-detail-add-button" class="btn-primary w-full py-4 text-base disabled:pointer-events-none disabled:opacity-50" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="addToCart" wire:loading.attr="disabled" @disabled(! $isAvailable)>
+            <span wire:loading.remove wire:target="addToCart">{{ __('home.products.cta') }}</span>
+            <span wire:loading wire:target="addToCart">{{ __('home.cart.loading') }}</span>
+        </button>
+        <a href="{{ route('cart.show', ['locale' => $locale]) }}" class="btn-secondary w-full" wire:navigate>{{ $locale === 'fr' ? 'Voir mon panier' : 'View my cart' }}</a>
+    </div>
+
+    <div class="mt-4 grid gap-2 rounded-[1rem] bg-mint p-3 text-xs font-semibold leading-5 text-leaf dark:bg-white/5 dark:text-meadow sm:grid-cols-3">
+        <span>{{ $locale === 'fr' ? 'Ajout instantané' : 'Instant add' }}</span>
+        <span>{{ $locale === 'fr' ? 'Relais disponible' : 'Pickup ready' }}</span>
+        <span>{{ $locale === 'fr' ? 'Paiement sécurisé' : 'Secure payment' }}</span>
+    </div>
 
     <p class="theme-muted mt-4 text-center text-xs leading-5 text-cocoa/60 dark:text-cream/60">
         {{ data_get($shipping, 'dispatch_time', __('home.product.shipping_note')) }}
+        {{ $locale === 'fr' ? 'Mondial Relay et Chrono Relais seront proposés à la commande.' : 'Mondial Relay and Chrono Relais will be available at checkout.' }}
     </p>
 </aside>
