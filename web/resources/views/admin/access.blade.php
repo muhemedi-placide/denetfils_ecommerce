@@ -7,9 +7,11 @@
 @section('content')
     @php
         $roleRows = data_get($roles, 'data', []);
-        $permissionRows = collect(data_get($permissions, 'data', []));
+        $permissionRows = collect(data_get($permissions, 'data', []))->map(function ($permission) {
+            return is_array($permission) ? ($permission['name'] ?? 'permission') : $permission;
+        })->filter()->values();
         $permissionGroups = $permissionRows->groupBy(function ($permission) {
-            return Str::of($permission['name'] ?? 'general')->before('.')->headline()->toString();
+            return Str::of($permission ?: 'general')->before('.')->headline()->toString();
         });
     @endphp
 
@@ -39,17 +41,24 @@
 
             <div class="grid gap-4 lg:grid-cols-2">
                 @forelse($roleRows as $role)
+                    @php
+                        $roleName = is_array($role) ? ($role['name'] ?? 'Role') : $role;
+                        $rolePermissions = collect(is_array($role) ? ($role['permissions'] ?? []) : [])
+                            ->map(fn ($permission) => is_array($permission) ? ($permission['name'] ?? null) : $permission)
+                            ->filter()
+                            ->values();
+                    @endphp
                     <article class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Role</p>
-                                <h2 class="mt-1 text-xl font-black text-[#12210f]">{{ $role['name'] ?? 'Role' }}</h2>
+                                <h2 class="mt-1 text-xl font-black text-[#12210f]">{{ $roleName ?: 'Role' }}</h2>
                             </div>
-                            <span class="rounded-full bg-[#f15b2a]/10 px-3 py-1 text-xs font-black text-[#f15b2a]">{{ count($role['permissions'] ?? []) }} droits</span>
+                            <span class="rounded-full bg-[#f15b2a]/10 px-3 py-1 text-xs font-black text-[#f15b2a]">{{ $rolePermissions->count() }} droits</span>
                         </div>
                         <div class="mt-4 flex flex-wrap gap-2">
-                            @forelse($role['permissions'] ?? [] as $permission)
-                                <span class="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-700">{{ $permission['name'] ?? $permission }}</span>
+                            @forelse($rolePermissions as $permission)
+                                <span class="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-700">{{ $permission }}</span>
                             @empty
                                 <span class="text-sm text-stone-500">Aucune permission associee.</span>
                             @endforelse
@@ -73,7 +82,7 @@
                             </div>
                             <div class="mt-3 flex flex-wrap gap-1.5">
                                 @foreach($items as $permission)
-                                    <span class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-stone-600 ring-1 ring-stone-200">{{ $permission['name'] ?? 'permission' }}</span>
+                                    <span class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-stone-600 ring-1 ring-stone-200">{{ $permission }}</span>
                                 @endforeach
                             </div>
                         </section>
