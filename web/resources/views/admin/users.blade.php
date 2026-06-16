@@ -42,7 +42,8 @@
                         <select name="role" class="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm outline-none transition focus:border-[#f15b2a] focus:bg-white focus:ring-4 focus:ring-orange-100">
                             <option value="">Tous</option>
                             @foreach($roleRows as $role)
-                                <option value="{{ $role['name'] ?? '' }}" @selected(($filters['role'] ?? '') === ($role['name'] ?? null))>{{ $role['name'] ?? 'Role' }}</option>
+                                @php $roleName = is_array($role) ? ($role['name'] ?? '') : $role; @endphp
+                                <option value="{{ $roleName }}" @selected(($filters['role'] ?? '') === $roleName)>{{ $roleName ?: 'Role' }}</option>
                             @endforeach
                         </select>
                     </label>
@@ -71,7 +72,10 @@
                     @forelse($rows as $user)
                         @php
                             $status = $user['status'] ?? 'active';
-                            $userRoles = collect($user['roles'] ?? [])->pluck('name')->filter()->values();
+                            $userRoles = collect($user['roles'] ?? [])
+                                ->map(fn ($role) => is_array($role) ? ($role['name'] ?? null) : $role)
+                                ->filter()
+                                ->values();
                         @endphp
                         <article class="grid gap-3 p-4 transition hover:bg-stone-50 lg:grid-cols-[minmax(0,1.2fr)_220px_130px_120px_150px] lg:items-center">
                             <div class="min-w-0">
@@ -113,10 +117,11 @@
                 <h2 class="text-lg font-black text-[#12210f]">Roles disponibles</h2>
                 <div class="mt-4 space-y-3">
                     @forelse($roleRows as $role)
+                        @php $roleName = is_array($role) ? ($role['name'] ?? 'Role') : $role; @endphp
                         <div class="rounded-2xl bg-stone-50 p-3">
                             <div class="flex items-center justify-between gap-3">
-                                <p class="font-black text-[#12210f]">{{ $role['name'] ?? 'Role' }}</p>
-                                <span class="rounded-full bg-white px-2 py-1 text-xs font-bold text-stone-500 ring-1 ring-stone-200">{{ count($role['permissions'] ?? []) }} droits</span>
+                                <p class="font-black text-[#12210f]">{{ $roleName ?: 'Role' }}</p>
+                                <span class="rounded-full bg-white px-2 py-1 text-xs font-bold text-stone-500 ring-1 ring-stone-200">{{ is_array($role) ? count($role['permissions'] ?? []) : 0 }} droits</span>
                             </div>
                         </div>
                     @empty
