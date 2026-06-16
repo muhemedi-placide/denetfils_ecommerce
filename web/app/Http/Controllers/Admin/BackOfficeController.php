@@ -7,6 +7,8 @@ use App\Services\AccountApiClient;
 use App\Services\AdminApiClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BackOfficeController extends Controller
@@ -93,7 +95,14 @@ class BackOfficeController extends Controller
         ]));
     }
 
-    public function catalog(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
+    public function catalog(string $locale): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+
+        return redirect()->route('admin.catalog.products', ['locale' => $locale]);
+    }
+
+    public function catalogProducts(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
     {
         $locale = $this->setLocale($locale);
         $context = $this->context($request, $admin, $locale);
@@ -109,8 +118,27 @@ class BackOfficeController extends Controller
         $categories = $admin->categories($context['token'], $request->only(['q', 'is_active']));
 
         return view('admin.catalog', $this->payload($context, [
-            'activeAdmin' => 'catalog',
+            'activeAdmin' => 'catalog.products',
             'products' => $products,
+            'categories' => $categories,
+            'filters' => $filters,
+        ]));
+    }
+
+    public function catalogCategories(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $filters = $request->only(['q', 'is_active']);
+        $categories = $admin->categories($context['token'], $filters);
+
+        return view('admin.categories', $this->payload($context, [
+            'activeAdmin' => 'catalog.categories',
             'categories' => $categories,
             'filters' => $filters,
         ]));
@@ -159,6 +187,30 @@ class BackOfficeController extends Controller
         ]));
     }
 
+    public function modulePage(Request $request, AdminApiClient $admin, string $locale, string $module): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $definition = $this->moduleDefinitions()[$module] ?? null;
+
+        if (! $definition) {
+            abort(404);
+        }
+
+        return view('admin.module', $this->payload($context, [
+            'activeAdmin' => $definition['active'],
+            'module' => [
+                ...$definition,
+                'slug' => $module,
+            ],
+        ]));
+    }
+
     public function access(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
     {
         $locale = $this->setLocale($locale);
@@ -191,6 +243,252 @@ class BackOfficeController extends Controller
             'auditLogs' => $admin->auditLogs($context['token'], $filters),
             'filters' => $filters,
         ]));
+    }
+
+    public function storeProduct(Request $request, AdminApiClient $admin, string $locale): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'category_id' => ['required', 'integer'],
+            'name_fr' => ['required', 'string', 'max:180'],
+            'name_en' => ['required', 'string', 'max:180'],
+            'slug' => ['required', 'string', 'max:220', 'alpha_dash:ascii'],
+            'description_fr' => ['required', 'string', 'max:5000'],
+            'description_en' => ['required', 'string', 'max:5000'],
+            'sku' => ['required', 'string', 'max:80'],
+            'price_eur' => ['required', 'numeric', 'min:0.01'],
+            'stock_quantity' => ['required', 'integer', 'min:0'],
+            'weight_grams' => ['nullable', 'integer', 'min:1'],
+        ], 'product-create');
+
+        $response = $admin->createProduct($context['token'], [
+            'category_id' => (int) $validated['category_id'],
+            'name' => [
+                'fr' => $validated['name_fr'],
+                'en' => $validated['name_en'],
+            ],
+            'slug' => $validated['slug'],
+            'description' => [
+                'fr' => $validated['description_fr'],
+                'en' => $validated['description_en'],
+            ],
+            'sku' => $validated['sku'],
+            'price_cents' => $this->priceCents($validated['price_eur']),
+            'currency' => 'EUR',
+            'stock_quantity' => (int) $validated['stock_quantity'],
+            'weight_grams' => $validated['weight_grams'] ?? null,
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Produit cree dans le catalogue.',
+            'product-create',
+        );
+    }
+
+    public function updateProductStock(Request $request, AdminApiClient $admin, string $locale, int $product): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'stock_quantity' => ['required', 'integer', 'min:0'],
+        ], "product-stock-{$product}");
+
+        $response = $admin->updateProduct($context['token'], $product, [
+            'stock_quantity' => (int) $validated['stock_quantity'],
+        ]);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Stock produit mis a jour.',
+            "product-stock-{$product}",
+        );
+    }
+
+    public function setProductPublication(Request $request, AdminApiClient $admin, string $locale, int $product): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'action' => ['required', 'in:publish,unpublish'],
+        ], "product-publication-{$product}");
+
+        $response = $validated['action'] === 'publish'
+            ? $admin->publishProduct($context['token'], $product)
+            : $admin->unpublishProduct($context['token'], $product);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            $validated['action'] === 'publish' ? 'Produit publie.' : 'Produit repasse en brouillon.',
+            "product-publication-{$product}",
+        );
+    }
+
+    public function storeCategory(Request $request, AdminApiClient $admin, string $locale): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'name_fr' => ['required', 'string', 'max:160'],
+            'name_en' => ['required', 'string', 'max:160'],
+            'slug' => ['required', 'string', 'max:180', 'alpha_dash:ascii'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+        ], 'category-create');
+
+        $response = $admin->createCategory($context['token'], [
+            'name' => [
+                'fr' => $validated['name_fr'],
+                'en' => $validated['name_en'],
+            ],
+            'slug' => $validated['slug'],
+            'sort_order' => (int) ($validated['sort_order'] ?? 0),
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Categorie creee.',
+            'category-create',
+        );
+    }
+
+    public function setCategoryActivation(Request $request, AdminApiClient $admin, string $locale, int $category): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'action' => ['required', 'in:activate,deactivate'],
+        ], "category-activation-{$category}");
+
+        $response = $validated['action'] === 'activate'
+            ? $admin->activateCategory($context['token'], $category)
+            : $admin->deactivateCategory($context['token'], $category);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            $validated['action'] === 'activate' ? 'Categorie activee.' : 'Categorie desactivee.',
+            "category-activation-{$category}",
+        );
+    }
+
+    public function storeUser(Request $request, AdminApiClient $admin, string $locale): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'first_name' => ['required', 'string', 'max:120'],
+            'last_name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email:rfc', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'phone' => ['nullable', 'string', 'max:32'],
+            'preferred_locale' => ['nullable', 'in:fr,en'],
+            'country_code' => ['required', 'string', 'size:2'],
+            'timezone' => ['nullable', 'string', 'max:64'],
+            'status' => ['nullable', 'in:active,pending,suspended'],
+            'roles' => ['nullable', 'array'],
+            'roles.*' => ['nullable', 'string'],
+            'position' => ['nullable', 'string', 'max:120'],
+            'admin_notes' => ['nullable', 'string', 'max:2000'],
+        ], 'user-create');
+
+        unset($validated['password_confirmation']);
+        $validated['country_code'] = strtoupper($validated['country_code']);
+        $roles = array_values(array_filter($validated['roles'] ?? []));
+
+        if ($roles === []) {
+            unset($validated['roles']);
+        } else {
+            $validated['roles'] = $roles;
+        }
+
+        $response = $admin->createUser($context['token'], $validated);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Compte utilisateur cree.',
+            'user-create',
+        );
+    }
+
+    public function assignUserRoles(Request $request, AdminApiClient $admin, string $locale, int $user): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => ['required', 'string'],
+        ], "user-roles-{$user}");
+
+        $response = $admin->assignUserRoles($context['token'], $user, array_values($validated['roles']));
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Roles utilisateur mis a jour.',
+            "user-roles-{$user}",
+        );
+    }
+
+    public function suspendUser(Request $request, AdminApiClient $admin, string $locale, int $user): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->suspendUser($context['token'], $user);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Utilisateur suspendu.',
+            "user-suspend-{$user}",
+        );
     }
 
     private function context(Request $request, AdminApiClient $admin, string $locale): array|RedirectResponse
@@ -240,6 +538,271 @@ class BackOfficeController extends Controller
         }
 
         return [$fallbackField => $response['message'] ?: 'Connexion impossible.'];
+    }
+
+    private function moduleDefinitions(): array
+    {
+        return [
+            'commandes' => [
+                'active' => 'sales.orders',
+                'title' => 'Commandes',
+                'section' => 'Vendre',
+                'description' => 'Suivi des commandes web, statuts, preparation et priorites de traitement.',
+                'status' => 'Pret a brancher',
+                'metrics' => ['A traiter', 'En preparation', 'Expediees', 'Litiges'],
+                'workflows' => ['Importer les commandes API', 'Assigner un statut', 'Declencher la preparation', 'Informer le client'],
+            ],
+            'factures' => [
+                'active' => 'sales.invoices',
+                'title' => 'Factures',
+                'section' => 'Vendre',
+                'description' => 'Generation, recherche et suivi des factures client.',
+                'status' => 'Structure prete',
+                'metrics' => ['A generer', 'Envoyees', 'Impayees', 'Archives'],
+                'workflows' => ['Relier aux commandes', 'Generer le PDF', 'Envoyer au client', 'Exporter comptabilite'],
+            ],
+            'avoirs' => [
+                'active' => 'sales.credits',
+                'title' => 'Avoirs',
+                'section' => 'Vendre',
+                'description' => 'Avoirs commerciaux, remboursements partiels et corrections de commande.',
+                'status' => 'Structure prete',
+                'metrics' => ['Demandes', 'Valides', 'Montant', 'A traiter'],
+                'workflows' => ['Verifier commande', 'Saisir motif', 'Valider montant', 'Notifier client'],
+            ],
+            'bons-livraison' => [
+                'active' => 'sales.delivery-notes',
+                'title' => 'Bons de livraison',
+                'section' => 'Vendre',
+                'description' => 'Documents logistiques pour preparation, colisage et expedition.',
+                'status' => 'Structure prete',
+                'metrics' => ['A imprimer', 'En picking', 'Colises', 'Expedies'],
+                'workflows' => ['Selection commandes', 'Generer bon', 'Controler colis', 'Marquer expedie'],
+            ],
+            'paniers' => [
+                'active' => 'sales.carts',
+                'title' => 'Paniers',
+                'section' => 'Vendre',
+                'description' => 'Paniers actifs et abandonnes pour relance commerciale.',
+                'status' => 'API lecture a brancher',
+                'metrics' => ['Actifs', 'Abandonnes', 'Valeur', 'Relances'],
+                'workflows' => ['Lister paniers', 'Segmenter valeur', 'Relancer', 'Mesurer conversion'],
+            ],
+            'suivi-catalogue' => [
+                'active' => 'catalog.monitoring',
+                'title' => 'Suivi catalogue',
+                'section' => 'Catalogue',
+                'description' => 'Controle qualite des fiches produit, SEO, visuels et disponibilite.',
+                'status' => 'Partiellement couvert dashboard',
+                'metrics' => ['Sans image', 'SEO incomplet', 'Sans stock', 'A valider'],
+                'workflows' => ['Scanner catalogue', 'Prioriser anomalies', 'Assigner corrections', 'Publier'],
+            ],
+            'attributs-caracteristiques' => [
+                'active' => 'catalog.attributes',
+                'title' => 'Attributs & caracteristiques',
+                'section' => 'Catalogue',
+                'description' => 'Tailles, formats, poids, variantes et caracteristiques visibles sur les fiches.',
+                'status' => 'Structure prete',
+                'metrics' => ['Attributs', 'Groupes', 'Variantes', 'Incomplets'],
+                'workflows' => ['Creer attribut', 'Associer produits', 'Verifier variantes', 'Publier'],
+            ],
+            'marques-fournisseurs' => [
+                'active' => 'catalog.brands',
+                'title' => 'Marques et fournisseurs',
+                'section' => 'Catalogue',
+                'description' => 'Referentiel fournisseurs, marques, origines et contacts d approvisionnement.',
+                'status' => 'Structure prete',
+                'metrics' => ['Fournisseurs', 'Marques', 'Produits lies', 'A revoir'],
+                'workflows' => ['Creer fournisseur', 'Associer produits', 'Suivre origine', 'Maintenir contacts'],
+            ],
+            'fichiers' => [
+                'active' => 'catalog.files',
+                'title' => 'Fichiers',
+                'section' => 'Catalogue',
+                'description' => 'Mediatheque produit: images, fiches techniques et documents publics.',
+                'status' => 'Structure prete',
+                'metrics' => ['Images', 'Documents', 'Non utilises', 'A optimiser'],
+                'workflows' => ['Importer fichier', 'Renseigner alt', 'Associer produit', 'Optimiser poids'],
+            ],
+            'reductions' => [
+                'active' => 'catalog.discounts',
+                'title' => 'Reductions',
+                'section' => 'Catalogue',
+                'description' => 'Promotions, codes avantage, prix barres et campagnes tarifaires.',
+                'status' => 'Structure prete',
+                'metrics' => ['Actives', 'Planifiees', 'Expirees', 'Conversions'],
+                'workflows' => ['Creer campagne', 'Limiter conditions', 'Publier', 'Analyser impact'],
+            ],
+            'collections-produits' => [
+                'active' => 'catalog.collections',
+                'title' => 'Collections de produits',
+                'section' => 'Catalogue',
+                'description' => 'Collections editoriales et selections merchandising.',
+                'status' => 'Structure prete',
+                'metrics' => ['Collections', 'Produits lies', 'Publiees', 'Brouillons'],
+                'workflows' => ['Creer collection', 'Ordonner produits', 'Associer au front', 'Mesurer clics'],
+            ],
+            'adresses-clients' => [
+                'active' => 'customers.addresses',
+                'title' => 'Adresses clients',
+                'section' => 'Clients',
+                'description' => 'Carnets d adresses, pays actifs et controles de livraison.',
+                'status' => 'API lecture a brancher',
+                'metrics' => ['Adresses', 'Pays actifs', 'Incompletes', 'Defauts'],
+                'workflows' => ['Rechercher client', 'Verifier adresse', 'Corriger format', 'Confirmer livraison'],
+            ],
+            'sav' => [
+                'active' => 'support.tickets',
+                'title' => 'SAV',
+                'section' => 'SAV',
+                'description' => 'Tickets client, demandes post-achat et suivi de resolution.',
+                'status' => 'Structure prete',
+                'metrics' => ['Ouverts', 'Urgents', 'En attente', 'Resolus'],
+                'workflows' => ['Recevoir demande', 'Qualifier motif', 'Assigner', 'Cloturer'],
+            ],
+            'messages-predefinis' => [
+                'active' => 'support.templates',
+                'title' => 'Messages predefinis',
+                'section' => 'SAV',
+                'description' => 'Modeles de reponse pour demandes courantes.',
+                'status' => 'Structure prete',
+                'metrics' => ['Modeles', 'Langues', 'Utilises', 'A revoir'],
+                'workflows' => ['Creer modele', 'Traduire', 'Valider ton', 'Utiliser dans ticket'],
+            ],
+            'retours-produits' => [
+                'active' => 'support.returns',
+                'title' => 'Retours produits',
+                'section' => 'SAV',
+                'description' => 'Retours, remboursements, motifs et reintegration stock.',
+                'status' => 'Structure prete',
+                'metrics' => ['Demandes', 'Autorises', 'Reintegrations', 'Refus'],
+                'workflows' => ['Valider retour', 'Recevoir produit', 'Controler etat', 'Cloturer'],
+            ],
+            'modules' => [
+                'active' => 'customize.modules',
+                'title' => 'Modules',
+                'section' => 'Personnaliser',
+                'description' => 'Extensions, connecteurs et automatisations du back-office.',
+                'status' => 'Structure prete',
+                'metrics' => ['Actifs', 'Disponibles', 'A configurer', 'Alertes'],
+                'workflows' => ['Installer module', 'Configurer', 'Tester', 'Activer'],
+            ],
+            'apparence' => [
+                'active' => 'customize.appearance',
+                'title' => 'Apparence',
+                'section' => 'Personnaliser',
+                'description' => 'Theme, sections front-office, bannieres et mise en avant.',
+                'status' => 'Structure prete',
+                'metrics' => ['Themes', 'Bannieres', 'Pages', 'Brouillons'],
+                'workflows' => ['Modifier theme', 'Previsualiser', 'Valider responsive', 'Publier'],
+            ],
+            'livraison' => [
+                'active' => 'customize.delivery',
+                'title' => 'Livraison',
+                'section' => 'Personnaliser',
+                'description' => 'Transporteurs, zones, tarifs et points relais.',
+                'status' => 'Structure prete',
+                'metrics' => ['Transporteurs', 'Zones', 'Tarifs', 'Exceptions'],
+                'workflows' => ['Definir zone', 'Associer transporteur', 'Fixer tarif', 'Tester checkout'],
+            ],
+            'paiement' => [
+                'active' => 'customize.payment',
+                'title' => 'Paiement',
+                'section' => 'Personnaliser',
+                'description' => 'Moyens de paiement, capture, remboursements et statut checkout.',
+                'status' => 'Structure prete',
+                'metrics' => ['Moyens', 'Actifs', 'Echecs', 'Remboursements'],
+                'workflows' => ['Configurer prestataire', 'Tester sandbox', 'Activer', 'Surveiller echecs'],
+            ],
+            'international' => [
+                'active' => 'customize.international',
+                'title' => 'International',
+                'section' => 'Personnaliser',
+                'description' => 'Langues, pays, devises et contenus localises.',
+                'status' => 'Partiellement branche',
+                'metrics' => ['Langues', 'Pays', 'Traductions', 'Manquants'],
+                'workflows' => ['Activer pays', 'Traduire contenus', 'Verifier SEO', 'Publier'],
+            ],
+            'marketing' => [
+                'active' => 'customize.marketing',
+                'title' => 'Marketing',
+                'section' => 'Personnaliser',
+                'description' => 'Campagnes, segments clients et relances CRM.',
+                'status' => 'Structure prete',
+                'metrics' => ['Campagnes', 'Segments', 'Relances', 'Conversions'],
+                'workflows' => ['Creer segment', 'Composer message', 'Planifier', 'Analyser'],
+            ],
+            'parametres-boutique' => [
+                'active' => 'settings.shop',
+                'title' => 'Parametres de la boutique',
+                'section' => 'Configurer',
+                'description' => 'Identite boutique, contacts, taxes et preferences operationnelles.',
+                'status' => 'Structure prete',
+                'metrics' => ['Profil', 'Taxes', 'Contacts', 'SEO'],
+                'workflows' => ['Verifier identite', 'Configurer taxes', 'Mettre contacts', 'Sauvegarder'],
+            ],
+            'parametres-avances' => [
+                'active' => 'settings.advanced',
+                'title' => 'Parametres avances',
+                'section' => 'Configurer',
+                'description' => 'Options techniques, cache, integrations et garde-fous systeme.',
+                'status' => 'Structure prete',
+                'metrics' => ['Integrations', 'Jobs', 'Cache', 'Securite'],
+                'workflows' => ['Verifier config', 'Tester integration', 'Surveiller logs', 'Documenter'],
+            ],
+            'assistance' => [
+                'active' => 'settings.assistance',
+                'title' => 'Assistance',
+                'section' => 'Configurer',
+                'description' => 'Centre d aide interne, procedures et contacts support.',
+                'status' => 'Structure prete',
+                'metrics' => ['Guides', 'Contacts', 'Incidents', 'SLA'],
+                'workflows' => ['Chercher procedure', 'Ouvrir incident', 'Documenter reponse', 'Cloturer'],
+            ],
+            'update-assistant' => [
+                'active' => 'settings.update',
+                'title' => 'Update assistant',
+                'section' => 'Configurer',
+                'description' => 'Suivi de version, migrations et controles avant mise a jour.',
+                'status' => 'Structure prete',
+                'metrics' => ['Version', 'Migrations', 'Checks', 'Risques'],
+                'workflows' => ['Lire changelog', 'Verifier sauvegarde', 'Tester staging', 'Executer update'],
+            ],
+        ];
+    }
+
+    private function redirectAfterAdminAction(Request $request, array $response, string $success, string $modal): RedirectResponse
+    {
+        if (! ($response['ok'] ?? false)) {
+            return back()
+                ->withErrors($this->responseErrors($response, 'admin_action'))
+                ->withInput()
+                ->with('admin_modal', $modal);
+        }
+
+        return back()->with('status', $success);
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function validateAdminAction(Request $request, array $rules, string $modal): array
+    {
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            throw new ValidationException(
+                $validator,
+                back()->withErrors($validator)->withInput()->with('admin_modal', $modal),
+            );
+        }
+
+        return $validator->validated();
+    }
+
+    private function priceCents(int|float|string $value): int
+    {
+        return (int) round((float) $value * 100);
     }
 
     private function setLocale(?string $locale): string

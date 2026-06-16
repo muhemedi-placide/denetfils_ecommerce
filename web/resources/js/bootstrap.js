@@ -71,6 +71,12 @@ if (!window.ShopUi) {
     const initGlobalUi = () => {
         applyTheme(preferredTheme(), false);
         setMobileMenu(false);
+
+        document.querySelectorAll('dialog[data-open-on-load]').forEach((dialog) => {
+            if (typeof dialog.showModal === 'function' && !dialog.open) {
+                dialog.showModal();
+            }
+        });
     };
 
     document.addEventListener('click', (event) => {
@@ -85,6 +91,30 @@ if (!window.ShopUi) {
 
         if (event.target.closest('[data-mobile-menu] a')) {
             setMobileMenu(false);
+            return;
+        }
+
+        const dialogButton = event.target.closest('[data-dialog-target]');
+
+        if (dialogButton) {
+            event.preventDefault();
+            const dialog = document.getElementById(dialogButton.dataset.dialogTarget);
+
+            if (dialog && typeof dialog.showModal === 'function' && !dialog.open) {
+                dialog.showModal();
+            }
+
+            return;
+        }
+
+        if (event.target.closest('[data-dialog-close]')) {
+            event.preventDefault();
+            event.target.closest('dialog')?.close();
+            return;
+        }
+
+        if (event.target instanceof HTMLDialogElement && event.target.classList.contains('admin-dialog')) {
+            event.target.close();
         }
     });
 

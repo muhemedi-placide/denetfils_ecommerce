@@ -98,6 +98,102 @@ img {
     @apply min-h-[44px] rounded-full border border-leaf/20 bg-white px-4 py-3 text-sm text-cocoa outline-none transition placeholder:text-cocoa/40 focus:border-terracotta focus:ring-4 focus:ring-terracotta/10;
 }
 
+.admin-card {
+    @apply rounded-2xl border border-leaf/10 bg-white shadow-sm;
+}
+
+.admin-panel {
+    @apply rounded-2xl border border-leaf/10 bg-linen;
+}
+
+.admin-kicker {
+    @apply text-xs font-black uppercase tracking-[0.18em] text-leaf;
+}
+
+.admin-heading {
+    @apply text-2xl font-black text-ink;
+}
+
+.admin-muted {
+    @apply text-sm leading-6 text-cocoa/60;
+}
+
+.admin-input,
+.admin-select,
+.admin-textarea {
+    @apply w-full border border-leaf/15 bg-linen px-4 text-sm font-semibold text-cocoa outline-none transition placeholder:text-cocoa/40 focus:border-leaf focus:bg-white focus:ring-4 focus:ring-leaf/10;
+}
+
+.admin-input,
+.admin-select {
+    @apply min-h-[46px] rounded-xl;
+}
+
+.admin-textarea {
+    @apply min-h-28 rounded-xl py-3;
+}
+
+.admin-btn {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-xl bg-forest px-4 py-2.5 text-sm font-black text-white transition hover:bg-leaf disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.admin-btn-secondary {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-xl border border-leaf/15 bg-white px-4 py-2.5 text-sm font-black text-cocoa transition hover:border-leaf hover:bg-mint hover:text-leaf disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.admin-btn-danger {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.admin-icon-btn {
+    @apply inline-grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-leaf/10 bg-white text-cocoa transition hover:border-leaf hover:bg-mint hover:text-leaf;
+}
+
+.admin-pill {
+    @apply inline-flex items-center rounded-full bg-mint px-3 py-1 text-xs font-black text-leaf;
+}
+
+.admin-table {
+    @apply min-w-full divide-y divide-leaf/10 text-left text-sm;
+}
+
+.admin-table thead {
+    @apply bg-linen text-xs font-black uppercase tracking-wide text-cocoa/55;
+}
+
+.admin-table tbody {
+    @apply divide-y divide-leaf/10;
+}
+
+.admin-dialog {
+    width: min(100% - 2rem, 760px);
+    max-height: calc(100vh - 2rem);
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+}
+
+.admin-dialog-wide {
+    width: min(100% - 2rem, 1080px);
+}
+
+.admin-dialog::backdrop {
+    background: rgba(18, 26, 16, 0.62);
+    backdrop-filter: blur(14px);
+}
+
+.admin-modal-card {
+    @apply max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-leaf/10 bg-white text-cocoa shadow-2xl shadow-black/20;
+}
+
+.admin-shell-backdrop {
+    background:
+        radial-gradient(circle at 12% 8%, rgba(79, 176, 0, 0.10), transparent 28%),
+        radial-gradient(circle at 88% 0%, rgba(142, 217, 87, 0.12), transparent 26%),
+        linear-gradient(180deg, #ffffff 0%, #f7fbf4 100%);
+}
+
 .mobile-scrollbarless {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -284,4 +380,57 @@ html.dark .input-premium {
     background-color: rgba(234, 247, 223, 0.06);
     border-color: rgba(234, 247, 223, 0.12);
     color: #ffffff;
+}
+
+html.dark .admin-card,
+html.dark .admin-modal-card {
+    background-color: rgba(234, 247, 223, 0.06);
+    border-color: rgba(234, 247, 223, 0.12);
+    color: #ffffff;
+}
+
+html.dark .admin-panel,
+html.dark .admin-input,
+html.dark .admin-select,
+html.dark .admin-textarea {
+    background-color: rgba(234, 247, 223, 0.06);
+    border-color: rgba(234, 247, 223, 0.12);
+    color: #ffffff;
+}
+
+html.dark .admin-input::placeholder,
+html.dark .admin-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+html.dark .admin-heading {
+    color: #ffffff;
+}
+
+html.dark .admin-muted {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+html.dark .admin-btn-secondary,
+html.dark .admin-icon-btn {
+    background-color: rgba(234, 247, 223, 0.06);
+    border-color: rgba(234, 247, 223, 0.12);
+    color: #ffffff;
+}
+
+html.dark .admin-table thead {
+    background-color: rgba(234, 247, 223, 0.06);
+    color: rgba(255, 255, 255, 0.58);
+}
+
+html.dark .admin-table,
+html.dark .admin-table tbody {
+    border-color: rgba(234, 247, 223, 0.12);
+}
+
+html.dark .admin-shell-backdrop {
+    background:
+        radial-gradient(circle at 12% 8%, rgba(79, 176, 0, 0.18), transparent 28%),
+        radial-gradient(circle at 88% 0%, rgba(142, 217, 87, 0.12), transparent 26%),
+        linear-gradient(180deg, #121a10 0%, #172414 100%);
 }
