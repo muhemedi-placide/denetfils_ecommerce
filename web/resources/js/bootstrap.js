@@ -122,6 +122,14 @@ if (!window.ShopUi) {
         if (event.target?.matches?.('#mobile-menu-state')) {
             setMobileMenu(event.target.checked);
         }
+
+        if (event.target?.matches?.('[data-submit-on-change]')) {
+            const form = event.target.form;
+
+            if (form) {
+                form.requestSubmit ? form.requestSubmit() : form.submit();
+            }
+        }
     });
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {

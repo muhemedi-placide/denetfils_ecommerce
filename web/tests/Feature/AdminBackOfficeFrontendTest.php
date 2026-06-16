@@ -26,7 +26,7 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertOk()
             ->assertSee('Back-office Denetfils')
             ->assertSee('adminShell', false)
-            ->assertSee('Centre de pilotage');
+            ->assertSee('Objectifs rapides');
 
         $this->withSession($session)
             ->get('/fr/admin/catalogue/produits')
@@ -53,9 +53,13 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertSee('Actions groupees')
             ->assertSee('Ajouter une commande')
             ->assertSee('order-create-modal', false)
+            ->assertSee('order-state-form-42', false)
+            ->assertSee('data-submit-on-change', false)
+            ->assertSee('name="order_state"', false)
             ->assertDontSee('order-show-42', false)
             ->assertDontSee('order-update-42', false)
             ->assertSee('DF-20260616-ABC123')
+            ->assertSee('En attente de paiement')
             ->assertSee('/fr/admin/commandes/42/facture', false)
             ->assertSee('/fr/admin/commandes/42/bon-livraison', false)
             ->assertSee('/fr/admin/commandes/42', false);
@@ -102,7 +106,29 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertSee('Client')
             ->assertSee('Documents')
             ->assertSee('Transporteur')
-            ->assertSee('Sources');
+            ->assertSee('Sources')
+            ->assertSee('/fr/admin/commandes/42/impression', false);
+    }
+
+    public function test_admin_can_open_printable_order_page(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->get('/fr/admin/commandes/42/impression')
+            ->assertOk()
+            ->assertSee('DEN &amp; FILS', false)
+            ->assertSee('COMMANDE')
+            ->assertSee('DF-20260616-ABC123')
+            ->assertSee('document-footer', false)
+            ->assertSee('window.print()', false);
     }
 
     public function test_admin_can_download_order_invoice_and_delivery_note(): void
@@ -119,15 +145,23 @@ class AdminBackOfficeFrontendTest extends TestCase
             ],
         ];
 
-        $this->withSession($session)
+        $invoice = $this->withSession($session)
             ->get('/fr/admin/commandes/42/facture')
             ->assertOk()
             ->assertDownload('facture-DF-20260616-ABC123.pdf');
 
-        $this->withSession($session)
+        $this->assertStringStartsWith('%PDF-1.4', $invoice->baseResponse->getContent());
+        $this->assertStringContainsString('DEN & FILS', $invoice->baseResponse->getContent());
+        $this->assertStringContainsString('FACTURE', $invoice->baseResponse->getContent());
+        $this->assertStringContainsString('Page 1 / 1', $invoice->baseResponse->getContent());
+
+        $deliveryNote = $this->withSession($session)
             ->get('/fr/admin/commandes/42/bon-livraison')
             ->assertOk()
             ->assertDownload('bon-livraison-DF-20260616-ABC123.pdf');
+
+        $this->assertStringStartsWith('%PDF-1.4', $deliveryNote->baseResponse->getContent());
+        $this->assertStringContainsString('BON DE LIVRAISON', $deliveryNote->baseResponse->getContent());
     }
 
     public function test_admin_can_submit_order_status_update_to_api(): void
@@ -161,6 +195,36 @@ class AdminBackOfficeFrontendTest extends TestCase
             && $request['status'] === 'confirmed'
             && $request['payment_status'] === 'paid'
             && $request['tracking_number'] === 'CR123456789FR');
+    }
+
+    public function test_admin_can_update_order_state_from_list_shortcut(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->patch('/fr/admin/commandes/42', [
+            'order_state' => 'delivered',
+            'status' => 'pending_payment',
+            'payment_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
+        ])
+            ->assertRedirect()
+            ->assertSessionHas('status', 'Commande mise a jour.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/orders/42')
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer admin-token')
+            && $request['status'] === 'completed'
+            && $request['payment_status'] === 'paid'
+            && $request['fulfillment_status'] === 'delivered'
+            && $request['order_state'] === 'delivered');
     }
 
     public function test_admin_can_submit_manual_order_creation_to_api(): void

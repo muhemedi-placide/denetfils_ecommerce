@@ -33,6 +33,25 @@
         'returned' => 'Retournee',
         'cancelled' => 'Annulee',
     ];
+    $orderStateOptions = [
+        'cancelled' => 'Annule',
+        'authorized' => 'Autorisation. A capturer par le marchand',
+        'pending_payment' => 'En attente de paiement',
+        'cash_on_delivery' => 'En attente de paiement a la livraison',
+        'awaiting_stock_unpaid' => 'En attente de reapprovisionnement (non paye)',
+        'awaiting_stock_paid' => 'En attente de reapprovisionnement (paye)',
+        'awaiting_wire' => 'En attente de virement bancaire',
+        'awaiting_check' => 'En attente du paiement par cheque',
+        'processing' => 'En cours de preparation',
+        'failed' => 'Erreur de paiement',
+        'ready_to_ship' => 'Pret a expedier',
+        'shipped' => 'Expedie',
+        'paid' => 'Paiement accepte',
+        'partially_refunded' => 'Paiement partiel',
+        'delivered' => 'Livre',
+        'refunded' => 'Rembourse',
+        'returned' => 'Retour produit',
+    ];
     $carrierLabels = [
         'mondial_relay_pickup' => 'Mondial Relay',
         'chrono_relais_pickup' => 'Chrono Relais',
@@ -42,9 +61,26 @@
         return match ($value) {
             'paid', 'completed', 'delivered', 'shipped' => 'bg-emerald-600 text-white',
             'confirmed', 'processing', 'preparing', 'ready_to_ship', 'authorized' => 'bg-sky-600 text-white',
-            'pending_payment', 'unpaid', 'unfulfilled' => 'bg-amber-500 text-white',
+            'pending_payment', 'unpaid', 'unfulfilled', 'cash_on_delivery', 'awaiting_stock_unpaid', 'awaiting_stock_paid', 'awaiting_wire', 'awaiting_check' => 'bg-amber-500 text-white',
             'failed', 'cancelled', 'refunded', 'returned' => 'bg-red-600 text-white',
             default => 'bg-cocoa/20 text-cocoa dark:bg-white/15 dark:text-cream',
+        };
+    };
+    $orderStateValue = function (?string $status, ?string $payment, ?string $fulfillment): string {
+        return match (true) {
+            $status === 'cancelled' || $fulfillment === 'cancelled' => 'cancelled',
+            $payment === 'failed' => 'failed',
+            $status === 'refunded' || $payment === 'refunded' => 'refunded',
+            $payment === 'partially_refunded' => 'partially_refunded',
+            $fulfillment === 'returned' => 'returned',
+            $fulfillment === 'delivered' => 'delivered',
+            $fulfillment === 'shipped' => 'shipped',
+            $fulfillment === 'ready_to_ship' => 'ready_to_ship',
+            $fulfillment === 'preparing' => 'processing',
+            $payment === 'authorized' => 'authorized',
+            $payment === 'paid' => 'paid',
+            $status === 'pending_payment' => 'pending_payment',
+            default => $status ?? $payment ?? $fulfillment ?? 'pending_payment',
         };
     };
     $dateValue = fn (?string $value) => $value ? Str::of($value)->replace('T', ' ')->before('+')->before('Z') : '-';
@@ -226,13 +262,17 @@
                         @forelse ($rows as $order)
                             @php
                                 $orderId = $order['id'] ?? null;
-                                $status = $order['status'] ?? null;
-                                $payment = $order['payment_status'] ?? null;
-                                $fulfillment = $order['fulfillment_status'] ?? null;
+                                $status = $order['status'] ?? 'pending_payment';
+                                $payment = $order['payment_status'] ?? 'unpaid';
+                                $fulfillment = $order['fulfillment_status'] ?? 'unfulfilled';
                                 $carrier = $order['carrier'] ?? null;
                                 $shipping = collect($order['addresses'] ?? [])->firstWhere('type', 'shipping');
                                 $isNew = (bool) data_get($order, 'is_new_customer', true);
                                 $paymentMethod = data_get($order, 'payment_method') ?: ($paymentLabels[$payment] ?? $payment ?? '-');
+                                $metadataOrderState = data_get($order, 'metadata.order_state');
+                                $currentOrderState = array_key_exists((string) $metadataOrderState, $orderStateOptions)
+                                    ? (string) $metadataOrderState
+                                    : $orderStateValue($status, $payment, $fulfillment);
                             @endphp
                             <tr class="hover:bg-linen dark:hover:bg-white/5">
                                 <td class="px-2 py-4"><input type="checkbox" class="h-6 w-6 rounded-none border-cocoa/30"></td>
@@ -246,7 +286,21 @@
                                 </td>
                                 <td class="px-3 py-4 text-ink dark:text-cream">{{ $paymentMethod }}</td>
                                 <td class="px-3 py-4">
-                                    <span class="inline-flex px-2 py-1 text-sm font-black {{ $stateBadge($fulfillment) }}">{{ $fulfillmentLabels[$fulfillment] ?? $statusLabels[$status] ?? $fulfillment ?? '-' }}</span>
+                                    @if ($orderId)
+                                        <select
+                                            name="order_state"
+                                            form="order-state-form-{{ $orderId }}"
+                                            data-submit-on-change
+                                            aria-label="Mettre a jour l'etat de la commande {{ $order['order_number'] ?? $orderId }}"
+                                            class="min-h-[40px] max-w-[250px] rounded-none border-2 border-transparent px-2 py-1 text-sm font-black outline-none transition focus:border-ink focus:ring-4 focus:ring-leaf/15 {{ $stateBadge($currentOrderState) }}"
+                                        >
+                                            @foreach ($orderStateOptions as $stateKey => $stateLabel)
+                                                <option value="{{ $stateKey }}" class="bg-white text-ink" @selected($currentOrderState === $stateKey)>{{ $stateLabel }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <span class="inline-flex px-2 py-1 text-sm font-black {{ $stateBadge($currentOrderState) }}">{{ $orderStateOptions[$currentOrderState] ?? $fulfillmentLabels[$fulfillment] ?? $statusLabels[$status] ?? '-' }}</span>
+                                    @endif
                                 </td>
                                 <td class="px-3 py-4 leading-6 text-ink dark:text-cream">{{ $dateValue($order['placed_at'] ?? $order['created_at'] ?? null) }}</td>
                                 <td class="px-3 py-4">
@@ -276,6 +330,25 @@
 @endsection
 
 @push('admin_modals')
+    @foreach ($rows as $order)
+        @php
+            $orderId = $order['id'] ?? null;
+            $status = $order['status'] ?? 'pending_payment';
+            $payment = $order['payment_status'] ?? 'unpaid';
+            $fulfillment = $order['fulfillment_status'] ?? 'unfulfilled';
+        @endphp
+        @continue(! $orderId)
+
+        <form id="order-state-form-{{ $orderId }}" method="POST" action="{{ route('admin.orders.update', ['locale' => $locale, 'order' => $orderId]) }}" class="hidden">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="status" value="{{ $status }}">
+            <input type="hidden" name="payment_status" value="{{ $payment }}">
+            <input type="hidden" name="fulfillment_status" value="{{ $fulfillment }}">
+            <input type="hidden" name="carrier" value="{{ $order['carrier'] ?? '' }}">
+        </form>
+    @endforeach
+
     <dialog id="order-create-modal" class="admin-dialog" @if(session('admin_modal') === 'order-create') data-open-on-load @endif>
         <form method="POST" action="{{ route('admin.orders.store', ['locale' => $locale]) }}" class="admin-modal-card p-5 sm:p-6">
             @csrf

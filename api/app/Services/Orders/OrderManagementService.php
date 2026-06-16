@@ -96,6 +96,12 @@ class OrderManagementService
             $metadata['admin_notes'] = $notes;
         }
 
+        if (array_key_exists('order_state', $data)) {
+            $this->setOrForget($metadata, 'order_state', $data['order_state'] ?? null);
+        } elseif (array_intersect(['status', 'payment_status', 'fulfillment_status'], array_keys($data)) !== []) {
+            unset($metadata['order_state']);
+        }
+
         return $metadata;
     }
 

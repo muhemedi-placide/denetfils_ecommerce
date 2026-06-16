@@ -24,6 +24,7 @@ class UpdateOrderRequest extends FormRequest
             'tracking_number' => ['nullable', 'string', 'max:120'],
             'tracking_url' => ['nullable', 'url', 'max:2048'],
             'admin_note' => ['nullable', 'string', 'max:2000'],
+            'order_state' => ['nullable', 'string', 'max:64'],
             'notify_customer' => ['sometimes', 'boolean'],
         ];
     }
@@ -40,6 +41,7 @@ class UpdateOrderRequest extends FormRequest
                     'tracking_number',
                     'tracking_url',
                     'admin_note',
+                    'order_state',
                 ];
 
                 $hasAction = collect($keys)->contains(fn (string $key) => $this->has($key));

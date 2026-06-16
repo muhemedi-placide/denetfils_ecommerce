@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\AccountApiClient;
 use App\Services\AdminApiClient;
+use App\Services\Documents\OrderDocumentPdfRenderer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -218,6 +219,30 @@ class BackOfficeController extends Controller
         return view('admin.order-show', $this->payload($context, [
             'activeAdmin' => 'sales.orders',
             'order' => $response['data'],
+        ]));
+    }
+
+    public function printOrder(Request $request, AdminApiClient $admin, string $locale, int $order): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->order($context['token'], $order, $locale);
+
+        if (! ($response['ok'] ?? false)) {
+            return redirect()
+                ->route('admin.orders', ['locale' => $locale])
+                ->withErrors($this->responseErrors($response, 'admin_action'));
+        }
+
+        return view('admin.order-print', $this->payload($context, [
+            'activeAdmin' => 'sales.orders',
+            'order' => $response['data'],
+            'shopDocument' => config('documents.shop', []),
         ]));
     }
 
@@ -481,6 +506,17 @@ class BackOfficeController extends Controller
             return $context;
         }
 
+        if ($request->filled('order_state')) {
+            $request->merge($this->orderStatePayload(
+                (string) $request->input('order_state'),
+                [
+                    'status' => $request->input('status', 'pending_payment'),
+                    'payment_status' => $request->input('payment_status', 'unpaid'),
+                    'fulfillment_status' => $request->input('fulfillment_status', 'unfulfilled'),
+                ],
+            ));
+        }
+
         $validated = $this->validateAdminAction($request, [
             'status' => ['required', Rule::in($this->orderStatuses())],
             'payment_status' => ['required', Rule::in($this->paymentStatuses())],
@@ -489,6 +525,7 @@ class BackOfficeController extends Controller
             'tracking_number' => ['nullable', 'string', 'max:120'],
             'tracking_url' => ['nullable', 'url', 'max:2048'],
             'admin_note' => ['nullable', 'string', 'max:2000'],
+            'order_state' => ['nullable', 'string', Rule::in($this->orderStateKeys())],
             'notify_customer' => ['nullable', 'boolean'],
         ], "order-update-{$order}");
 
@@ -970,93 +1007,12 @@ class BackOfficeController extends Controller
 
         $orderData = $response['data'];
         $reference = preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($orderData['order_number'] ?? $order));
-        $title = $type === 'invoice' ? 'Facture' : 'Bon de livraison';
         $filename = ($type === 'invoice' ? 'facture-' : 'bon-livraison-').$reference.'.pdf';
 
-        return response($this->orderPdf($title, $orderData), 200, [
+        return response(app(OrderDocumentPdfRenderer::class)->render($type, $orderData), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
-    }
-
-    private function orderPdf(string $title, array $order): string
-    {
-        $lines = [
-            $title.' - '.($order['order_number'] ?? 'Commande'),
-            'DEN & FILS',
-            'Date: '.(string) ($order['placed_at'] ?? $order['created_at'] ?? '-'),
-            'Client: '.(string) data_get($order, 'customer.name', '-'),
-            'Email: '.(string) data_get($order, 'customer.email', '-'),
-            'Total: '.(string) ($order['formatted_total'] ?? '-'),
-            'Livraison: '.(string) ($order['carrier'] ?? '-'),
-            '',
-            'Articles',
-        ];
-
-        foreach (($order['items'] ?? []) as $item) {
-            $lines[] = sprintf(
-                '- %s x%s - %s',
-                (string) data_get($item, 'product.name', 'Produit'),
-                (string) ($item['quantity'] ?? 0),
-                (string) ($item['formatted_line_total'] ?? '-'),
-            );
-        }
-
-        $lines[] = '';
-        $lines[] = 'Sous-total: '.(string) ($order['formatted_subtotal'] ?? '-');
-        $lines[] = 'Livraison: '.(string) ($order['formatted_shipping'] ?? '-');
-        $lines[] = 'TVA: '.(string) ($order['formatted_tax'] ?? '-');
-        $lines[] = 'Total: '.(string) ($order['formatted_total'] ?? '-');
-
-        return $this->simplePdf($lines);
-    }
-
-    private function simplePdf(array $lines): string
-    {
-        $content = "BT\n/F1 12 Tf\n50 790 Td\n";
-
-        foreach ($lines as $index => $line) {
-            if ($index > 0) {
-                $content .= "0 -18 Td\n";
-            }
-
-            $content .= '('.$this->pdfText((string) $line).") Tj\n";
-        }
-
-        $content .= "ET\n";
-        $objects = [
-            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
-            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-            "5 0 obj\n<< /Length ".strlen($content)." >>\nstream\n{$content}endstream\nendobj\n",
-        ];
-        $pdf = "%PDF-1.4\n";
-        $offsets = [0];
-
-        foreach ($objects as $object) {
-            $offsets[] = strlen($pdf);
-            $pdf .= $object;
-        }
-
-        $xref = strlen($pdf);
-        $pdf .= "xref\n0 ".(count($objects) + 1)."\n";
-        $pdf .= "0000000000 65535 f \n";
-
-        for ($i = 1; $i <= count($objects); $i++) {
-            $pdf .= str_pad((string) $offsets[$i], 10, '0', STR_PAD_LEFT)." 00000 n \n";
-        }
-
-        $pdf .= "trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF";
-
-        return $pdf;
-    }
-
-    private function pdfText(string $value): string
-    {
-        $encoded = iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $value) ?: $value;
-
-        return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $encoded);
     }
 
     private function setLocale(?string $locale): string
@@ -1081,5 +1037,128 @@ class BackOfficeController extends Controller
     private function fulfillmentStatuses(): array
     {
         return ['unfulfilled', 'preparing', 'ready_to_ship', 'shipped', 'delivered', 'returned', 'cancelled'];
+    }
+
+    private function orderStatePayload(string $state, array $current): array
+    {
+        $fallback = [
+            'status' => in_array($current['status'] ?? null, $this->orderStatuses(), true) ? $current['status'] : 'pending_payment',
+            'payment_status' => in_array($current['payment_status'] ?? null, $this->paymentStatuses(), true) ? $current['payment_status'] : 'unpaid',
+            'fulfillment_status' => in_array($current['fulfillment_status'] ?? null, $this->fulfillmentStatuses(), true) ? $current['fulfillment_status'] : 'unfulfilled',
+        ];
+
+        return match ($state) {
+            'cancelled' => [
+                ...$fallback,
+                'status' => 'cancelled',
+                'fulfillment_status' => 'cancelled',
+            ],
+            'authorized' => [
+                ...$fallback,
+                'status' => 'confirmed',
+                'payment_status' => 'authorized',
+            ],
+            'pending_payment' => [
+                ...$fallback,
+                'status' => 'pending_payment',
+                'payment_status' => 'unpaid',
+            ],
+            'cash_on_delivery' => [
+                ...$fallback,
+                'status' => 'confirmed',
+                'payment_status' => 'unpaid',
+            ],
+            'awaiting_stock_unpaid' => [
+                ...$fallback,
+                'status' => 'processing',
+                'payment_status' => 'unpaid',
+                'fulfillment_status' => 'unfulfilled',
+            ],
+            'awaiting_stock_paid' => [
+                ...$fallback,
+                'status' => 'processing',
+                'payment_status' => 'paid',
+                'fulfillment_status' => 'unfulfilled',
+            ],
+            'awaiting_wire' => [
+                ...$fallback,
+                'status' => 'pending_payment',
+                'payment_status' => 'unpaid',
+            ],
+            'awaiting_check' => [
+                ...$fallback,
+                'status' => 'pending_payment',
+                'payment_status' => 'unpaid',
+            ],
+            'processing' => [
+                ...$fallback,
+                'status' => 'processing',
+                'fulfillment_status' => 'preparing',
+            ],
+            'failed' => [
+                ...$fallback,
+                'status' => 'pending_payment',
+                'payment_status' => 'failed',
+            ],
+            'ready_to_ship' => [
+                ...$fallback,
+                'status' => 'processing',
+                'fulfillment_status' => 'ready_to_ship',
+            ],
+            'shipped' => [
+                ...$fallback,
+                'status' => 'processing',
+                'payment_status' => 'paid',
+                'fulfillment_status' => 'shipped',
+            ],
+            'paid' => [
+                ...$fallback,
+                'status' => 'confirmed',
+                'payment_status' => 'paid',
+            ],
+            'partially_refunded' => [
+                ...$fallback,
+                'payment_status' => 'partially_refunded',
+            ],
+            'delivered' => [
+                ...$fallback,
+                'status' => 'completed',
+                'payment_status' => 'paid',
+                'fulfillment_status' => 'delivered',
+            ],
+            'refunded' => [
+                ...$fallback,
+                'status' => 'refunded',
+                'payment_status' => 'refunded',
+            ],
+            'returned' => [
+                ...$fallback,
+                'fulfillment_status' => 'returned',
+            ],
+            default => $fallback,
+        };
+    }
+
+    private function orderStateKeys(): array
+    {
+        return [
+            'cancelled',
+            'authorized',
+            'pending_payment',
+            'cash_on_delivery',
+            'awaiting_stock_unpaid',
+            'awaiting_stock_paid',
+            'awaiting_wire',
+            'awaiting_check',
+            'processing',
+            'failed',
+            'ready_to_ship',
+            'shipped',
+            'paid',
+            'partially_refunded',
+            'delivered',
+            'refunded',
+            'returned',
+        ];
     }
 }

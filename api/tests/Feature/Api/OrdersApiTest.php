@@ -210,12 +210,14 @@ class OrdersApiTest extends TestCase
             'tracking_number' => 'CR123456789FR',
             'tracking_url' => 'https://tracking.example.test/CR123456789FR',
             'admin_note' => 'Preparation prioritaire.',
+            'order_state' => 'processing',
             'notify_customer' => true,
         ])
             ->assertOk()
             ->assertJsonPath('data.status', 'confirmed')
             ->assertJsonPath('data.payment_status', 'paid')
             ->assertJsonPath('data.fulfillment_status', 'preparing')
+            ->assertJsonPath('data.metadata.order_state', 'processing')
             ->assertJsonPath('data.tracking.number', 'CR123456789FR')
             ->assertJsonPath('data.admin_notes.0.body', 'Preparation prioritaire.');
 

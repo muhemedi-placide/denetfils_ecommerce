@@ -57,6 +57,7 @@ Route::prefix('/{locale}/admin')
         Route::get('/commandes', [BackOfficeController::class, 'orders'])->name('admin.orders');
         Route::post('/commandes', [BackOfficeController::class, 'storeOrder'])->name('admin.orders.store');
         Route::get('/commandes/{order}', [BackOfficeController::class, 'showOrder'])->name('admin.orders.show');
+        Route::get('/commandes/{order}/impression', [BackOfficeController::class, 'printOrder'])->name('admin.orders.print');
         Route::get('/commandes/{order}/facture', [BackOfficeController::class, 'downloadOrderInvoice'])->name('admin.orders.invoice');
         Route::get('/commandes/{order}/bon-livraison', [BackOfficeController::class, 'downloadOrderDeliveryNote'])->name('admin.orders.delivery-note');
         Route::patch('/commandes/{order}', [BackOfficeController::class, 'updateOrder'])->name('admin.orders.update');

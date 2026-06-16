@@ -93,6 +93,10 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h12v9H3z" /><path d="M15 10h3l3 3v3h-6z" /><circle cx="7" cy="18" r="2" /><circle cx="18" cy="18" r="2" /></svg>
                     Bon de livraison
                 </a>
+                <a href="{{ route('admin.orders.print', ['locale' => $locale, 'order' => $order['id']]) }}" target="_blank" class="inline-flex min-h-[48px] items-center gap-2 border border-ink/70 px-5 py-3 text-sm font-black text-ink transition hover:bg-ink hover:text-white dark:border-white/60 dark:text-cream dark:hover:bg-white dark:hover:text-ink">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" /></svg>
+                    Imprimer
+                </a>
                 <button type="button" class="inline-flex min-h-[48px] items-center gap-2 bg-cocoa/15 px-5 py-3 text-sm font-black text-ink transition hover:bg-cocoa/25 dark:bg-white/10 dark:text-cream">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
                     Booster les ventes
@@ -269,6 +273,7 @@
                         <div class="mt-4 grid gap-2">
                             <a href="{{ route('admin.orders.invoice', ['locale' => $locale, 'order' => $order['id']]) }}" class="admin-btn-secondary rounded-none">Telecharger la facture</a>
                             <a href="{{ route('admin.orders.delivery-note', ['locale' => $locale, 'order' => $order['id']]) }}" class="admin-btn-secondary rounded-none">Telecharger le bon de livraison</a>
+                            <a href="{{ route('admin.orders.print', ['locale' => $locale, 'order' => $order['id']]) }}" target="_blank" class="admin-btn-secondary rounded-none">Ouvrir la version imprimable</a>
                         </div>
                     </div>
                     <div class="bg-linen p-4 dark:bg-white/5">
