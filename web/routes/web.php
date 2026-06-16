@@ -58,8 +58,7 @@ Route::prefix('/{locale}/admin')
                 return redirect()->route('admin.login', ['locale' => $locale]);
             }
 
-            $baseUrl = rtrim((string) config('services.denetfils_api.base_url'), '/');
-            $response = Http::baseUrl($baseUrl)
+            $response = Http::baseUrl(rtrim((string) config('services.denetfils_api.base_url'), '/'))
                 ->acceptJson()
                 ->withToken($token)
                 ->timeout(10)
@@ -86,7 +85,7 @@ Route::prefix('/{locale}/admin')
                 return redirect()->route('admin.login', ['locale' => $locale]);
             }
 
-            $validated = validator($request->all(), [
+            $validated = $request->validate([
                 'code' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9_-]*$/'],
                 'provider' => ['required', Rule::in(['mondial_relay'])],
                 'display_name.fr' => ['required', 'string', 'max:120'],
@@ -102,7 +101,7 @@ Route::prefix('/{locale}/admin')
                 'credentials.brand_code' => ['nullable', 'string', 'max:120'],
                 'credentials.account_number' => ['nullable', 'string', 'max:120'],
                 'credentials.api_endpoint' => ['nullable', 'url', 'max:2048'],
-            ])->validateWithBag('carrier-create');
+            ]);
 
             $countries = collect(preg_split('/[,;\s]+/', (string) ($validated['countries'] ?? '')) ?: [])
                 ->map(fn ($country) => strtoupper(trim((string) $country)))
@@ -144,7 +143,7 @@ Route::prefix('/{locale}/admin')
             }
 
             return back()
-                ->withErrors($response->json('errors', ['carrier-create' => $response->json('message', 'Action impossible.')]), 'carrier-create')
+                ->withErrors($response->json('errors', ['carrier' => $response->json('message', 'Action impossible.')]))
                 ->withInput($request->except('credentials.private_key'));
         })->name('admin.delivery.carriers.store');
 
