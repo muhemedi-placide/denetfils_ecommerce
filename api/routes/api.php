@@ -6,7 +6,9 @@ use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PrivacyConsentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SeoController;
@@ -53,10 +55,16 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/me', [MeController::class, 'show']);
         Route::patch('/me', [MeController::class, 'update']);
+        Route::get('/me/orders', [OrderController::class, 'index']);
         Route::get('/me/addresses', [AddressController::class, 'index']);
         Route::post('/me/addresses', [AddressController::class, 'store']);
         Route::patch('/me/addresses/{address}', [AddressController::class, 'update']);
         Route::delete('/me/addresses/{address}', [AddressController::class, 'destroy']);
+
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::post('/orders', [OrderController::class, 'store']);
+        Route::get('/orders/{order}', [OrderController::class, 'show']);
+        Route::post('/checkout/quote', [CheckoutQuoteController::class, 'store']);
 
         Route::prefix('admin')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:catalog.view');

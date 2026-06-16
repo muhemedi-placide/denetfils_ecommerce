@@ -73,6 +73,11 @@ class User extends Authenticatable
         return $this->hasMany(UserAddress::class);
     }
 
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function privacyConsents(): HasMany
     {
         return $this->hasMany(PrivacyConsent::class);
