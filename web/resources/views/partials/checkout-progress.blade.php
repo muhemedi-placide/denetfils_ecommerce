@@ -14,8 +14,8 @@
     $activeIndex = $activeIndex === false ? 0 : $activeIndex;
 @endphp
 
-<nav class="mx-auto mb-3 w-full max-w-[340px] lg:w-[20vw] lg:max-w-none" aria-label="Checkout progress">
-    <ol class="grid h-5 grid-cols-4 items-center rounded-full border border-leaf/10 bg-white/85 px-2 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+<nav class="mb-5 w-full" aria-label="Checkout progress">
+    <ol class="grid grid-cols-4 gap-2 rounded-xl border border-leaf/10 bg-white/85 p-2 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
         @foreach ($steps as $index => $step)
             @php
                 $isDone = $index < $activeIndex;
@@ -24,12 +24,14 @@
             @endphp
             <li class="min-w-0">
                 @if (! $isLocked)
-                    <a href="{{ $step['url'] }}" class="group flex items-center justify-center gap-1.5" @if ($isActive) aria-current="step" @endif wire:navigate>
+                    <a href="{{ $step['url'] }}" class="flex min-h-[48px] flex-col items-center justify-center rounded-lg px-2 py-2 text-center transition {{ $isActive ? 'bg-mint text-leaf dark:bg-white/10 dark:text-meadow' : 'text-cocoa/55 hover:bg-linen hover:text-leaf dark:text-cream/55 dark:hover:bg-white/10' }}" @if ($isActive) aria-current="step" @endif wire:navigate>
                 @else
-                    <span class="flex items-center justify-center gap-1.5">
+                    <span class="flex min-h-[48px] flex-col items-center justify-center rounded-lg px-2 py-2 text-center text-cocoa/35 dark:text-cream/35">
                 @endif
-                    <span class="h-2 w-2 rounded-full {{ $isActive ? 'bg-leaf ring-4 ring-leaf/15 dark:bg-meadow dark:ring-meadow/20' : ($isDone ? 'bg-leaf/80 dark:bg-meadow/80' : 'bg-cocoa/20 dark:bg-cream/20') }}"></span>
-                    <span class="hidden truncate text-[9px] font-black uppercase tracking-wide {{ $isActive ? 'text-leaf dark:text-meadow' : 'text-cocoa/45 dark:text-cream/45' }} xl:block">
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black {{ $isActive ? 'bg-leaf text-white dark:bg-meadow dark:text-ink' : ($isDone ? 'bg-leaf/80 text-white dark:bg-meadow/80 dark:text-ink' : 'bg-cocoa/10 text-cocoa/50 dark:bg-cream/10 dark:text-cream/50') }}">
+                        {{ $isDone ? '✓' : $index + 1 }}
+                    </span>
+                    <span class="mt-1 block max-w-full truncate text-[10px] font-black uppercase tracking-wide sm:text-xs">
                         {{ $step['label'] }}
                     </span>
                 @if (! $isLocked)
