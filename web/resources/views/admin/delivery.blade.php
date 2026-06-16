@@ -16,9 +16,9 @@
             </div>
         @endif
 
-        @if ($errors->hasBag('carrier-create'))
+        @if ($errors->any())
             <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
-                {{ $errors->carrierCreate->first() }}
+                {{ $errors->first() }}
             </div>
         @endif
 
