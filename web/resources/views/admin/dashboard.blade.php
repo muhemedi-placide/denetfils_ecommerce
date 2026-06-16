@@ -65,6 +65,37 @@
 @endphp
 
 @section('content')
+    <style>
+        .dashboard-line {
+            stroke-dasharray: 520;
+            stroke-dashoffset: 520;
+            animation: dashboard-draw 1.4s ease-out forwards;
+        }
+
+        .dashboard-progress {
+            transform-origin: left;
+            animation: dashboard-fill .9s ease-out both;
+        }
+
+        .dashboard-float {
+            animation: dashboard-float 5.5s ease-in-out infinite;
+        }
+
+        @keyframes dashboard-draw {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes dashboard-fill {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+
+        @keyframes dashboard-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
+
     @if (! ($dashboard['ok'] ?? false))
         <div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {{ $dashboard['message'] ?? 'Impossible de charger le dashboard admin.' }}

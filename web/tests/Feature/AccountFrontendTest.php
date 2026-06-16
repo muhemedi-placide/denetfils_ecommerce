@@ -73,7 +73,13 @@ class AccountFrontendTest extends TestCase
             ->assertSee('wire:click="logout"', false)
             ->assertSee('Jean Martin')
             ->assertSee('12 Rue du Test')
-            ->assertSee('France');
+            ->assertSee('France')
+            ->assertSee('DF-20260616-ABC123')
+            ->assertSee('Miel de montagne');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/me/orders')
+            && $request->method() === 'GET'
+            && $request->hasHeader('Authorization', 'Bearer api-token-123'));
     }
 
     public function test_livewire_login_posts_to_api_and_stores_token(): void
@@ -187,6 +193,7 @@ class AccountFrontendTest extends TestCase
         Http::fake([
             '*/me' => Http::response(['data' => $this->user()]),
             '*/me/addresses' => Http::response(['data' => [$this->address()]]),
+            '*/me/orders*' => Http::response(['data' => [$this->order()]]),
             '*/supported-countries*' => Http::response(['data' => $this->countries()]),
         ]);
     }
@@ -239,6 +246,28 @@ class AccountFrontendTest extends TestCase
             'country_code' => 'FR',
             'phone' => '+33600000000',
             'is_default' => true,
+        ], $overrides);
+    }
+
+    private function order(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => 21,
+            'order_number' => 'DF-20260616-ABC123',
+            'status' => 'pending_payment',
+            'payment_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
+            'formatted_total' => '25,86 EUR',
+            'placed_at' => '2026-06-16T09:30:00+00:00',
+            'items' => [
+                [
+                    'product' => [
+                        'name' => 'Miel de montagne',
+                        'slug' => 'miel-de-montagne',
+                    ],
+                    'quantity' => 2,
+                ],
+            ],
         ], $overrides);
     }
 
