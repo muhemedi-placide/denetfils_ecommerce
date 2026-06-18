@@ -1,6 +1,7 @@
 <div>
-    <button type="button" data-testid="desktop-cart-open-button" class="hidden min-h-[44px] items-center justify-center rounded-full bg-forest px-4 py-2.5 text-sm font-black text-cream shadow-sm transition hover:bg-leaf sm:inline-flex" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="open">
-        {{ __('home.cart.title') }}
+    <button type="button" data-testid="header-cart-open-button" class="inline-flex min-h-[40px] items-center justify-center rounded-full bg-forest px-3 py-2 text-sm font-black text-cream shadow-sm transition hover:bg-leaf sm:min-h-[44px] sm:px-4" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="open">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7Z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+        <span class="ml-2 hidden sm:inline">{{ __('home.cart.title') }}</span>
         <span class="ml-2 rounded-full bg-sunshine px-2 py-0.5 text-xs text-forest">{{ $this->itemCount() }}</span>
     </button>
 
