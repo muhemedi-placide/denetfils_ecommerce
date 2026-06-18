@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BackOfficeController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\ShopIndexController;
@@ -18,6 +19,10 @@ Route::get('/{locale}/boutique', ShopIndexController::class)
 Route::get('/{locale}/about', [ShopController::class, 'about'])
     ->whereIn('locale', ['fr', 'en'])
     ->name('pages.about');
+
+Route::get('/{locale}/contact', ContactController::class)
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('pages.contact');
 
 Route::get('/{locale}/blog', [ShopController::class, 'blog'])
     ->whereIn('locale', ['fr', 'en'])
