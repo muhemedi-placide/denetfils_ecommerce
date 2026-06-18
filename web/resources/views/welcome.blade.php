@@ -41,15 +41,6 @@
             $newProducts = array_slice($fallbackProducts, 2, 2);
         }
 
-        $categoryCards = [
-            ['title' => 'Sauces & Pikliz', 'body' => 'Pikliz, sauces piquantes et condiments du pays.', 'icon' => '🌶️', 'class' => 'bg-[#fb5a4e] text-white'],
-            ['title' => 'Épices Créoles', 'body' => 'Colombo, épis, mélanges traditionnels.', 'icon' => '🧂', 'class' => 'bg-[#f4668d] text-white'],
-            ['title' => 'Boissons Tropicales', 'body' => 'Nectars, jus pressés et boissons des îles.', 'icon' => '🥭', 'class' => 'bg-[#ff9817] text-forest'],
-            ['title' => 'Produits Frais', 'body' => 'Plantains, ignames, légumes pays de saison.', 'icon' => '🍌', 'class' => 'bg-forest text-white'],
-            ['title' => 'Épicerie Sèche', 'body' => 'Riz, légumineuses, farines essentielles.', 'icon' => '🌾', 'class' => 'bg-caribbean text-white'],
-            ['title' => 'Coffrets Cadeaux', 'body' => 'Sélections gourmandes à offrir.', 'icon' => '🎁', 'class' => 'bg-sunshine text-forest'],
-        ];
-
         $recipes = [
             ['meta' => '45 min · facile', 'title' => 'Riz djon djon maison', 'body' => 'Le classique haïtien, parfumé aux champignons noirs.', 'image' => $recipeImages[0]],
             ['meta' => 'Astuces · 3 min', 'title' => 'Comment utiliser le pikliz ?', 'body' => '5 façons d’ajouter du peps à vos plats du quotidien.', 'image' => $recipeImages[1]],
@@ -61,6 +52,8 @@
             ['name' => 'Jean-Marc', 'product' => 'Mélange Colombo', 'text' => 'J’ai retrouvé les saveurs de chez moi. C’est exactement ce que je cherchais depuis des années.'],
             ['name' => 'Sandra', 'product' => 'Nectar de Mangue', 'text' => 'Livraison rapide et très bonne qualité. Le nectar de mangue est incroyable.'],
         ];
+
+        $flavorBadges = ['Chef Crafted', 'Vegan Friendly', 'No Additives', '100% Peyi', 'Natural Ting'];
     @endphp
 
     <section id="home" class="relative overflow-hidden bg-cream px-4 py-14 sm:px-8 lg:py-24">
@@ -106,22 +99,32 @@
         </div>
     </section>
 
-    <section id="categories" class="bg-cream px-4 py-16 sm:px-8 lg:py-24">
-        <div class="mx-auto max-w-7xl">
-            <div class="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div><p class="text-xs font-black uppercase tracking-[0.35em] text-coral">Rayons</p><h2 class="mt-3 text-5xl font-black tracking-tight text-forest sm:text-6xl">Explorez le marché</h2><p class="mt-4 text-base font-semibold text-forest/65">Choisissez votre rayon et retrouvez les saveurs du pays en quelques clics.</p></div>
-                <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="text-sm font-black uppercase tracking-wide text-forest" wire:navigate.hover>Voir tout →</a>
-            </div>
-            <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                @foreach ($categoryCards as $card)
-                    <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="group min-h-[180px] rounded-[1.5rem] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical {{ $card['class'] }}" wire:navigate.hover>
-                        <span class="text-3xl">{{ $card['icon'] }}</span>
-                        <h3 class="mt-8 text-2xl font-black leading-tight">{{ $card['title'] }}</h3>
-                        <p class="mt-3 text-sm font-semibold leading-6 opacity-80">{{ $card['body'] }}</p>
-                        <span class="mt-5 inline-flex text-sm font-black uppercase tracking-wide">Découvrir →</span>
-                    </a>
+    <section id="categories" class="relative overflow-hidden bg-white px-4 pb-16 pt-32 text-black dark:bg-ink dark:text-cream sm:px-8 lg:pb-24 lg:pt-40">
+        <div class="absolute inset-x-0 top-0 h-24 bg-sunshine dark:bg-sunshine"></div>
+        <svg class="absolute inset-x-0 top-20 h-10 w-full text-white dark:text-ink" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+            <path fill="currentColor" d="M0,28 C30,58 60,58 90,28 C120,-2 150,-2 180,28 C210,58 240,58 270,28 C300,-2 330,-2 360,28 C390,58 420,58 450,28 C480,-2 510,-2 540,28 C570,58 600,58 630,28 C660,-2 690,-2 720,28 C750,58 780,58 810,28 C840,-2 870,-2 900,28 C930,58 960,58 990,28 C1020,-2 1050,-2 1080,28 C1110,58 1140,58 1170,28 C1200,-2 1230,-2 1260,28 C1290,58 1320,58 1350,28 C1380,-2 1410,-2 1440,28 L1440,80 L0,80 Z" />
+        </svg>
+
+        <div class="pointer-events-none absolute left-8 top-10 z-10 hidden text-8xl lg:block" style="transform: rotate(369deg);">🥄</div>
+        <img class="pointer-events-none absolute right-10 top-40 z-10 hidden w-44 drop-shadow-2xl lg:block" style="transform: rotate(369deg);" src="{{ $productImages[0] }}" alt="Produit Marché Peyi" loading="lazy" decoding="async">
+
+        <div class="relative mx-auto max-w-7xl text-center">
+            <h2 class="mx-auto max-w-5xl text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+                {{ $locale === 'fr' ? 'Des saveurs caribéennes puissantes quand la maison vous manque ou pour relever vos plats.' : 'Bold Caribbean flavors for when you’re missing home or looking to spice things up.' }}
+            </h2>
+            <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="mt-8 inline-flex rounded-full border-2 border-black bg-[#4cff1f] px-6 py-3 text-sm font-black uppercase tracking-wide text-black shadow-[0_7px_0_#000] transition hover:-translate-y-1 hover:shadow-[0_10px_0_#000] dark:border-cream dark:shadow-[0_7px_0_#fff]" wire:navigate.hover>
+                {{ $locale === 'fr' ? 'Shop now' : 'Shop now' }}
+            </a>
+
+            <div class="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+                @foreach ($flavorBadges as $badge)
+                    <div class="mx-auto grid h-44 w-44 place-items-center rounded-full border-2 border-black bg-[#f5ff2f] p-5 text-center text-2xl font-black uppercase leading-[0.9] text-black shadow-[8px_8px_0_#000] sm:h-52 sm:w-52 sm:text-3xl">
+                        {{ $badge }}
+                    </div>
                 @endforeach
             </div>
+
+            <p class="mt-16 text-4xl font-black uppercase tracking-tight sm:text-5xl">Saucy Tings</p>
         </div>
     </section>
 
