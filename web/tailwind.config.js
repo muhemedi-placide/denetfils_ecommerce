@@ -32,8 +32,8 @@ export default {
         flamingo: '#f36aa5',
       },
       fontFamily: {
-        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        display: ['Impact', 'Haettenschweiler', 'Arial Narrow Bold', 'Arial', 'sans-serif'],
+        sans: ['DM Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['Archivo Black', 'Impact', 'Haettenschweiler', 'Arial Narrow Bold', 'Arial', 'sans-serif'],
       },
       boxShadow: {
         tropical: '0 24px 70px rgba(15, 95, 34, 0.16)',

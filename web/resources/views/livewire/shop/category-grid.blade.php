@@ -1,20 +1,35 @@
+@php
+    $cards = [
+        ['class' => 'bg-coral text-cream', 'icon' => '🌶️'],
+        ['class' => 'bg-flamingo text-cream', 'icon' => '🧂'],
+        ['class' => 'bg-mango text-forest', 'icon' => '🥭'],
+        ['class' => 'bg-forest text-cream', 'icon' => '🍌'],
+        ['class' => 'bg-caribbean text-cream', 'icon' => '🫘'],
+        ['class' => 'bg-sunshine text-forest', 'icon' => '🎁'],
+    ];
+@endphp
+
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     @foreach ($categories as $category)
+        @php($style = $cards[$loop->index % count($cards)])
         <a
             href="#products"
             wire:click.prevent="selectCategory('{{ $category['slug'] }}')"
-            class="premium-card group relative overflow-hidden bg-white p-5 text-left dark:bg-white/5 sm:p-6"
+            class="group relative min-h-[190px] overflow-hidden rounded-[1.5rem] p-6 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical {{ $style['class'] }}"
         >
-            <div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-br from-sunshine/30 via-mango/20 to-caribbean/20 opacity-80"></div>
-            <div class="relative flex items-start justify-between gap-4">
-                <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-sunshine/25 text-2xl font-black text-forest shadow-sm">{{ str($category['name'])->substr(0, 1) }}</span>
-                <span class="rounded-full bg-cream px-3 py-1 text-xs font-black uppercase tracking-wide text-leaf dark:bg-white/10 dark:text-meadow">{{ __('home.categories.count', ['count' => $category['products_count']]) }}</span>
+            <span class="text-3xl" aria-hidden="true">{{ $style['icon'] }}</span>
+            <div class="mt-7">
+                <h3 class="text-2xl font-black leading-tight">{{ $category['name'] }}</h3>
+                <p class="mt-3 max-w-sm text-sm font-semibold leading-6 opacity-80">
+                    {{ $locale === 'fr' ? 'Découvrez ce rayon et ajoutez vos essentiels au panier.' : 'Explore this aisle and add your essentials to the cart.' }}
+                </p>
+                <span class="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-wide">
+                    {{ $locale === 'fr' ? 'Découvrir' : 'Explore' }} <span class="transition group-hover:translate-x-1">→</span>
+                </span>
             </div>
-            <div class="relative mt-8">
-                <h3 class="brand-display text-2xl uppercase leading-none text-leaf dark:text-meadow">{{ $category['name'] }}</h3>
-                <p class="mt-3 text-sm font-semibold leading-6 text-cocoa/65 dark:text-cream/65">{{ $locale === 'fr' ? 'Découvrez ce rayon et ajoutez vos essentiels au panier.' : 'Discover this aisle and add your essentials to the cart.' }}</p>
-                <span class="mt-4 inline-flex text-sm font-black uppercase tracking-wide text-tomato transition group-hover:translate-x-1">{{ $locale === 'fr' ? 'Découvrir' : 'Explore' }}</span>
-            </div>
+            <span class="absolute right-5 top-5 rounded-full bg-cream/20 px-3 py-1 text-xs font-black uppercase tracking-wide backdrop-blur">
+                {{ __('home.categories.count', ['count' => $category['products_count']]) }}
+            </span>
         </a>
     @endforeach
 </div>

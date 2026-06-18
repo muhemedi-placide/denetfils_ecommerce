@@ -18,7 +18,7 @@
     @endif
 
     @if ($errors->any())
-        <div class="mt-8 rounded-lg border border-terracotta/25 bg-terracotta/10 px-4 py-3 text-sm text-cocoa dark:text-cream">
+        <div class="mt-8 rounded-lg border border-coral/25 bg-coral/10 px-4 py-3 text-sm text-cocoa dark:text-cream">
             {{ $errors->first() }}
         </div>
     @endif
@@ -72,7 +72,7 @@
                 <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ __('home.account.addresses.intro') }}</p>
             @endif
 
-            <button type="button" wire:click="logout" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg border border-leaf/20 bg-white px-5 py-3 text-sm font-bold uppercase tracking-wide text-cocoa transition hover:border-terracotta hover:text-terracotta disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-cream">
+            <button type="button" wire:click="logout" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg border border-leaf/20 bg-white px-5 py-3 text-sm font-bold uppercase tracking-wide text-cocoa transition hover:border-coral hover:text-coral disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-cream">
                 {{ __('home.account.profile.logout') }}
             </button>
         </aside>
@@ -196,7 +196,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="rounded-lg bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-clay disabled:opacity-60" wire:loading.attr="disabled" wire:target="updateProfile">
+                <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="updateProfile">
                     <span wire:loading.remove wire:target="updateProfile">{{ __('home.account.profile.save') }}</span>
                     <span wire:loading wire:target="updateProfile">{{ __('home.cart.loading') }}</span>
                 </button>
@@ -210,7 +210,7 @@
 
             <form wire:submit.prevent="createAddress" class="mt-6 space-y-4">
                 @include('livewire.account.partials.address-fields', ['model' => 'newAddress', 'prefix' => 'new'])
-                <button type="submit" class="w-full rounded-lg bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-clay disabled:opacity-60" wire:loading.attr="disabled" wire:target="createAddress">
+                <button type="submit" class="btn-primary w-full" wire:loading.attr="disabled" wire:target="createAddress">
                     <span wire:loading.remove wire:target="createAddress">{{ __('home.account.addresses.save') }}</span>
                     <span wire:loading wire:target="createAddress">{{ __('home.cart.loading') }}</span>
                 </button>
@@ -252,10 +252,10 @@
                         <form wire:submit.prevent="updateAddress({{ (int) $address['id'] }})" class="space-y-4">
                             @include('livewire.account.partials.address-fields', ['model' => 'addressForms.' . $address['id'], 'prefix' => 'address-' . $address['id']])
                             <div class="flex flex-col gap-3 sm:flex-row">
-                                <button type="submit" class="rounded-lg bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-clay disabled:opacity-60" wire:loading.attr="disabled" wire:target="updateAddress({{ (int) $address['id'] }})">
+                                <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="updateAddress({{ (int) $address['id'] }})">
                                     {{ __('home.account.addresses.update') }}
                                 </button>
-                                <button type="button" wire:click="deleteAddress({{ (int) $address['id'] }})" wire:loading.attr="disabled" class="rounded-lg border border-leaf/20 px-5 py-3 text-sm font-bold text-cocoa transition hover:border-terracotta hover:text-terracotta disabled:opacity-60 dark:border-white/10 dark:text-cream">
+                                <button type="button" wire:click="deleteAddress({{ (int) $address['id'] }})" wire:loading.attr="disabled" class="rounded-lg border border-leaf/20 px-5 py-3 text-sm font-bold text-cocoa transition hover:border-coral hover:text-coral disabled:opacity-60 dark:border-white/10 dark:text-cream">
                                     {{ __('home.account.addresses.delete') }}
                                 </button>
                             </div>
