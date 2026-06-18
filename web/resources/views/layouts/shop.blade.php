@@ -6,7 +6,9 @@
         ? route('account.show', ['locale' => $currentLocale])
         : route('account.login', ['locale' => $currentLocale]);
 
-    if (request()->routeIs('pages.about')) {
+    if (request()->routeIs('shop.index')) {
+        $alternateUrl = route('shop.index', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.about')) {
         $alternateUrl = route('pages.about', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('blog.index')) {
         $alternateUrl = route('blog.index', ['locale' => $alternateLocale]);
@@ -29,14 +31,6 @@
     } elseif (request()->routeIs('products.show')) {
         $alternateUrl = route('products.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     }
-
-    $navItems = [
-        ['key' => 'home', 'label' => __('home.nav.home'), 'url' => route('home.localized', ['locale' => $currentLocale])],
-        ['key' => 'products', 'label' => __('home.nav.shop'), 'url' => route('home.localized', ['locale' => $currentLocale]) . '#products'],
-        ['key' => 'categories', 'label' => $currentLocale === 'fr' ? 'Catégories' : 'Categories', 'url' => route('home.localized', ['locale' => $currentLocale]) . '#categories'],
-        ['key' => 'blog', 'label' => __('home.nav.blog'), 'url' => route('blog.index', ['locale' => $currentLocale])],
-        ['key' => 'about', 'label' => __('home.nav.about'), 'url' => route('pages.about', ['locale' => $currentLocale])],
-    ];
 @endphp
 
 <!DOCTYPE html>
@@ -54,11 +48,8 @@
             }
             if (storedTheme === 'dark') { document.documentElement.classList.add('dark'); }
         </script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-        <link rel="dns-prefetch" href="https://images.unsplash.com">
-        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://moodboard-to-shop.lovable.app" crossorigin>
+        <link rel="dns-prefetch" href="https://moodboard-to-shop.lovable.app">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
@@ -66,79 +57,43 @@
         <div id="shop-app" x-data="shopApp({ locale: @js($currentLocale), activeMenu: @js($activeMenu ?? 'home') })" x-init="init()">
             <input id="mobile-menu-state" class="sr-only" type="checkbox" autocomplete="off" aria-hidden="true">
 
-            <header class="sticky top-0 z-40 border-b border-leaf/10 bg-cream/95 backdrop-blur dark:border-white/10 dark:bg-ink/95">
-                <div class="overflow-hidden bg-forest px-4 py-2 text-[11px] font-black uppercase tracking-[0.24em] text-cream sm:px-8">
-                    <div class="market-ticker flex w-max gap-7">
-                        <span>{{ $currentLocale === 'fr' ? 'Livraison offerte dès 35€' : 'Free delivery from €35' }}</span>
-                        <span>•</span>
-                        <span>{{ $currentLocale === 'fr' ? 'Paiement sécurisé' : 'Secure payment' }}</span>
-                        <span>•</span>
-                        <span>{{ $currentLocale === 'fr' ? 'Produits haïtiens authentiques' : 'Authentic Haitian products' }}</span>
-                        <span>•</span>
-                        <span>{{ $currentLocale === 'fr' ? 'Votre marché des saveurs 24h/24' : 'Your flavor market 24/7' }}</span>
-                        <span>•</span>
-                        <span>{{ $currentLocale === 'fr' ? 'Livraison offerte dès 35€' : 'Free delivery from €35' }}</span>
-                        <span>•</span>
-                        <span>{{ $currentLocale === 'fr' ? 'Paiement sécurisé' : 'Secure payment' }}</span>
-                        <span>•</span>
-                        <span>{{ $currentLocale === 'fr' ? 'Produits haïtiens authentiques' : 'Authentic Haitian products' }}</span>
+            <header class="sticky top-0 z-40 border-b border-leaf/15 bg-cream/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-ink/95">
+                <div class="overflow-hidden bg-sunshine px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-forest sm:px-8">
+                    <div class="market-ticker flex gap-6">
+                        <span>{{ $currentLocale === 'fr' ? 'Votre marché des saveurs exotiques 24h/24' : 'Your exotic flavors market 24/7' }}</span><span>•</span>
+                        <span>{{ $currentLocale === 'fr' ? 'Livraison offerte dès 49€' : 'Free delivery from €49' }}</span><span>•</span>
+                        <span>{{ $currentLocale === 'fr' ? 'Produits authentiques des Antilles & d’Afrique' : 'Authentic Caribbean & African products' }}</span><span>•</span>
+                        <span>{{ $currentLocale === 'fr' ? 'Récolte fraîche chaque semaine' : 'Fresh harvest every week' }}</span><span>•</span>
+                        <span>{{ $currentLocale === 'fr' ? 'Votre marché des saveurs exotiques 24h/24' : 'Your exotic flavors market 24/7' }}</span>
                     </div>
                 </div>
 
                 <div class="px-4 py-4 sm:px-8">
-                    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
-                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex min-w-0 items-center gap-3" x-on:click="closeMobileMenu(); activeMenu = 'home'" wire:navigate.hover>
-                            <span class="brand-mark" aria-hidden="true">
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 11.5 12 4l9 7.5"></path>
-                                    <path d="M5.5 10.5V20h13v-9.5"></path>
-                                    <path d="M9.5 20v-5h5v5"></path>
-                                </svg>
-                            </span>
-                            <span class="min-w-0">
-                                <span class="brand-display block truncate text-xl uppercase leading-none text-forest sm:text-2xl">DEN & FILS</span>
-                                <span class="block truncate text-[10px] font-black uppercase tracking-[0.2em] text-cocoa/55 dark:text-cream/60">{{ __('home.nav.promise') }}</span>
-                            </span>
+                    <div class="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3">
+                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex min-w-0 items-center gap-2" x-on:click="closeMobileMenu(); activeMenu = 'home'" wire:navigate.hover>
+                            <span class="brand-display text-2xl uppercase leading-none text-leaf dark:text-meadow sm:text-3xl">Marché<span class="text-tomato">.</span>Peyi</span>
                         </a>
 
-                        <nav class="hidden items-center justify-center gap-1 text-sm font-black uppercase tracking-wide text-cocoa/70 dark:text-cream/70 lg:flex">
-                            @foreach ($navItems as $item)
-                                <a
-                                    href="{{ $item['url'] }}"
-                                    x-on:click="activeMenu = @js($item['key'])"
-                                    x-bind:class="activeMenu === @js($item['key']) ? 'text-forest' : 'hover:text-forest dark:hover:text-meadow'"
-                                    class="rounded-full px-4 py-2.5 transition"
-                                    wire:navigate.hover
-                                >{{ $item['label'] }}</a>
-                            @endforeach
+                        <nav class="hidden items-center justify-center gap-1 text-sm font-black uppercase tracking-wide text-cocoa/75 dark:text-cream/75 lg:flex">
+                            <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" x-bind:class="activeMenu === 'home' ? 'bg-leaf text-white' : 'hover:bg-mint hover:text-leaf dark:hover:bg-white/10'" class="rounded-full px-4 py-2.5 transition" wire:navigate.hover>{{ __('home.nav.home') }}</a>
+                            <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" x-bind:class="activeMenu === 'products' ? 'bg-leaf text-white' : 'hover:bg-mint hover:text-leaf dark:hover:bg-white/10'" class="rounded-full px-4 py-2.5 transition" wire:navigate.hover>{{ __('home.nav.shop') }}</a>
+                            <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" x-bind:class="activeMenu === 'about' ? 'bg-leaf text-white' : 'hover:bg-mint hover:text-leaf dark:hover:bg-white/10'" class="rounded-full px-4 py-2.5 transition" wire:navigate.hover>{{ __('home.nav.about') }}</a>
+                            <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" x-bind:class="activeMenu === 'blog' ? 'bg-leaf text-white' : 'hover:bg-mint hover:text-leaf dark:hover:bg-white/10'" class="rounded-full px-4 py-2.5 transition" wire:navigate.hover>{{ __('home.nav.blog') }}</a>
+                            <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" class="rounded-full px-4 py-2.5 transition hover:bg-mint hover:text-leaf dark:hover:bg-white/10" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Contact' : 'Contact' }}</a>
                         </nav>
 
-                        <div class="flex shrink-0 items-center justify-end gap-2">
-                            <livewire:shop.header-search
-                                :locale="$currentLocale"
-                                input-id="global-search"
-                                form-class="hidden overflow-hidden rounded-full border border-leaf/15 bg-white p-1 shadow-sm dark:border-white/10 dark:bg-white/5 xl:flex"
-                                :on-catalog-page="request()->routeIs('home') || request()->routeIs('home.localized')"
-                            />
-
-                            <a href="{{ $accountUrl }}" class="inline-flex h-11 w-11 items-center justify-center rounded-full text-forest transition hover:bg-mint dark:text-meadow dark:hover:bg-white/10" aria-label="{{ __('home.account.nav') }}" wire:navigate.hover>
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 21a8 8 0 0 0-16 0"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </a>
-
+                        <div class="flex items-center justify-end gap-2">
                             @persist('cart-manager-'.$currentLocale)
                                 <livewire:shop.cart-manager :locale="$currentLocale" />
                             @endpersist
 
-                            <a href="{{ $alternateUrl }}" class="hidden min-h-[42px] items-center justify-center rounded-full bg-sunshine px-3 text-xs font-black uppercase tracking-wide text-forest transition hover:bg-mango sm:inline-flex" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a>
+                            <a href="{{ $alternateUrl }}" class="hidden min-h-[40px] items-center rounded-full bg-sunshine px-4 py-2 text-xs font-black uppercase tracking-wide text-forest transition hover:bg-mango sm:inline-flex" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a>
 
-                            <button type="button" data-theme-toggle class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-forest transition hover:bg-mint dark:text-meadow dark:hover:bg-white/10" aria-label="{{ __('home.theme.toggle') }}">
+                            <button type="button" data-theme-toggle class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-leaf/20 bg-white text-leaf transition hover:bg-mint dark:border-white/10 dark:bg-white/5 dark:text-meadow sm:inline-flex" aria-label="{{ __('home.theme.toggle') }}">
                                 <span data-theme-icon="light">☀</span><span data-theme-icon="dark" class="hidden">☾</span>
                             </button>
 
-                            <label for="mobile-menu-state" data-mobile-menu-toggle class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-leaf/15 bg-white text-forest transition hover:bg-mint dark:border-white/10 dark:bg-white/5 dark:text-cream lg:hidden" role="button" tabindex="0" aria-expanded="false" aria-controls="mobile-menu" aria-label="Menu">
+                            <label for="mobile-menu-state" data-mobile-menu-toggle class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-leaf/20 bg-white text-cocoa transition hover:bg-mint hover:text-leaf dark:border-white/10 dark:bg-white/5 dark:text-cream lg:hidden" role="button" tabindex="0" aria-expanded="false" aria-controls="mobile-menu" aria-label="Menu">
                                 <span data-mobile-menu-icon="open">☰</span><span data-mobile-menu-icon="close" class="hidden">×</span>
                             </label>
                         </div>
@@ -146,15 +101,13 @@
                 </div>
 
                 <div id="mobile-menu" data-mobile-menu class="mobile-menu-panel border-t border-leaf/10 bg-cream px-4 py-4 shadow-lg dark:border-white/10 dark:bg-ink lg:hidden">
-                    <livewire:shop.header-search :locale="$currentLocale" input-id="mobile-search" form-class="flex overflow-hidden rounded-full border border-leaf/20 bg-white p-1 dark:border-white/10 dark:bg-white/5" :on-catalog-page="request()->routeIs('home') || request()->routeIs('home.localized')" />
-                    <div class="mt-4 grid gap-2">
-                        @foreach ($navItems as $item)
-                            <a href="{{ $item['url'] }}" x-on:click="closeMobileMenu(); activeMenu = @js($item['key'])" class="flex min-h-[48px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-black text-cocoa shadow-sm transition hover:bg-mint dark:bg-white/5 dark:text-cream" wire:navigate.hover>
-                                <span>{{ $item['label'] }}</span><span class="text-forest">→</span>
-                            </a>
-                        @endforeach
-                        <a href="{{ $accountUrl }}" x-on:click="closeMobileMenu(); activeMenu = 'account'" class="flex min-h-[48px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-black text-cocoa shadow-sm transition hover:bg-mint dark:bg-white/5 dark:text-cream" wire:navigate.hover>{{ __('home.account.nav') }}<span class="text-forest">→</span></a>
-                        <a href="{{ $alternateUrl }}" x-on:click="closeMobileMenu()" class="flex min-h-[48px] items-center justify-between rounded-2xl bg-sunshine px-4 py-3 font-black text-forest shadow-sm" wire:navigate.hover>{{ strtoupper($alternateLocale) }}<span>→</span></a>
+                    <div class="grid gap-2">
+                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'home'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-black text-cocoa shadow-sm dark:bg-white/5 dark:text-cream" wire:navigate.hover>{{ __('home.nav.home') }}<span class="text-leaf">→</span></a>
+                        <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'products'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-leaf px-4 py-3 font-black text-white shadow-sm" wire:navigate.hover>{{ __('home.nav.shop') }}<span>→</span></a>
+                        <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'about'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-black text-cocoa shadow-sm dark:bg-white/5 dark:text-cream" wire:navigate.hover>{{ __('home.nav.about') }}<span class="text-leaf">→</span></a>
+                        <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" x-on:click="closeMobileMenu(); activeMenu = 'blog'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-black text-cocoa shadow-sm dark:bg-white/5 dark:text-cream" wire:navigate.hover>{{ __('home.nav.blog') }}<span class="text-leaf">→</span></a>
+                        <a href="{{ $accountUrl }}" x-on:click="closeMobileMenu(); activeMenu = 'account'" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-white px-4 py-3 font-black text-cocoa shadow-sm dark:bg-white/5 dark:text-cream" wire:navigate.hover>{{ __('home.account.nav') }}<span class="text-leaf">→</span></a>
+                        <a href="{{ $alternateUrl }}" x-on:click="closeMobileMenu()" class="flex min-h-[46px] items-center justify-between rounded-2xl bg-sunshine px-4 py-3 font-black text-forest shadow-sm" wire:navigate.hover>{{ strtoupper($alternateLocale) }}<span>→</span></a>
                     </div>
                 </div>
             </header>
@@ -168,61 +121,18 @@
                 @include('partials.product-reviews', ['product' => $product, 'currentLocale' => $currentLocale])
             @endif
 
-            <footer class="bg-forest px-4 pb-24 pt-14 text-sm text-cream sm:px-8 sm:pb-12 lg:pb-0">
-                <div class="mx-auto grid max-w-7xl gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.35fr_0.85fr_0.95fr_1fr]">
+            <footer class="border-t border-leaf/10 bg-forest px-4 pb-24 pt-12 text-sm text-cream sm:px-8 sm:pb-12 sm:pt-14 lg:pb-0">
+                <div class="mx-auto grid max-w-7xl gap-8 pb-10 sm:grid-cols-2 lg:grid-cols-[1.15fr_0.85fr_0.95fr_1.05fr]">
                     <div>
-                        <div class="flex items-center gap-3">
-                            <span class="inline-grid h-10 w-10 place-items-center rounded-full bg-cream text-forest">
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 11.5 12 4l9 7.5"></path>
-                                    <path d="M5.5 10.5V20h13v-9.5"></path>
-                                </svg>
-                            </span>
-                            <p class="brand-display text-2xl uppercase leading-none text-cream">DEN & FILS</p>
-                        </div>
-                        <p class="mt-5 max-w-sm text-base font-semibold leading-7 text-cream/72">{{ __('home.footer.line') }}</p>
-                        <div class="mt-6 flex flex-wrap gap-2">
-                            @foreach (['Visa', 'Mastercard', 'Apple Pay', 'Google Pay', 'PayPal'] as $method)
-                                <span class="rounded-full border border-cream/15 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-cream/65">{{ $method }}</span>
-                            @endforeach
-                        </div>
+                        <p class="brand-display text-4xl uppercase leading-none text-sunshine">Marché<span class="text-cream">.</span>Peyi</p>
+                        <p class="mt-2 text-xs font-black uppercase tracking-[0.18em] text-cream/70">Exotic & Tropical Tastes</p>
+                        <p class="mt-5 max-w-sm leading-7 text-cream/72">{{ __('home.footer.line') }}</p>
                     </div>
-
-                    <div>
-                        <h3 class="text-base font-black text-cream">{{ __('home.footer.products_title') }}</h3>
-                        <ul class="mt-4 space-y-2 text-cream/72">
-                            <li><a class="transition hover:text-sunshine" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#products">{{ $currentLocale === 'fr' ? 'Tous les produits' : 'All products' }}</a></li>
-                            <li><a class="transition hover:text-sunshine" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#categories">{{ $currentLocale === 'fr' ? 'Catégories' : 'Categories' }}</a></li>
-                            <li><a class="transition hover:text-sunshine" href="{{ route('home.localized', ['locale' => $currentLocale]) }}#best-sellers">{{ __('home.footer.best_sellers') }}</a></li>
-                            <li><a class="transition hover:text-sunshine" href="{{ route('blog.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ __('home.nav.blog') }}</a></li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 class="text-base font-black text-cream">{{ $currentLocale === 'fr' ? 'Service client' : 'Customer service' }}</h3>
-                        <ul class="mt-4 space-y-2 text-cream/72">
-                            <li><a class="transition hover:text-sunshine" href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ __('home.footer.delivery') }}</a></li>
-                            <li><a class="transition hover:text-sunshine" href="{{ route('pages.payment', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ __('home.footer.secure_payment') }}</a></li>
-                            <li><a class="transition hover:text-sunshine" href="{{ route('pages.terms', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ __('home.footer.terms') }}</a></li>
-                            <li><a class="transition hover:text-sunshine" href="{{ route('pages.legal', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ __('home.footer.legal') }}</a></li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 class="text-base font-black text-cream">{{ __('home.footer.information_title') }}</h3>
-                        <div class="mt-4 space-y-3 text-cream/72">
-                            <p class="font-black text-cream">{{ __('home.contact.company') }}</p>
-                            <p>{{ __('home.contact.address') }}</p>
-                            <p>{{ __('home.contact.phone') }}</p>
-                            <p>{{ __('home.contact.email') }}</p>
-                        </div>
-                    </div>
+                    <div><h3 class="text-base font-black uppercase tracking-wide text-sunshine">{{ __('home.footer.products_title') }}</h3><ul class="mt-4 space-y-1 text-cream/72"><li><a class="block rounded-lg py-2 transition hover:text-sunshine" href="{{ route('shop.index', ['locale' => $currentLocale]) }}">{{ $currentLocale === 'fr' ? 'Tous les produits' : 'All products' }}</a></li><li><a class="block rounded-lg py-2 transition hover:text-sunshine" href="{{ route('shop.index', ['locale' => $currentLocale]) }}">{{ $currentLocale === 'fr' ? 'Sauces & Pikliz' : 'Sauces & Pikliz' }}</a></li><li><a class="block rounded-lg py-2 transition hover:text-sunshine" href="{{ route('shop.index', ['locale' => $currentLocale]) }}">{{ __('home.footer.best_sellers') }}</a></li></ul></div>
+                    <div><h3 class="text-base font-black uppercase tracking-wide text-sunshine">{{ $currentLocale === 'fr' ? 'Maison' : 'House' }}</h3><ul class="mt-4 space-y-1 text-cream/72"><li><a class="block rounded-lg py-2 transition hover:text-sunshine" href="{{ route('pages.about', ['locale' => $currentLocale]) }}">{{ __('home.nav.about') }}</a></li><li><a class="block rounded-lg py-2 transition hover:text-sunshine" href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}">{{ $currentLocale === 'fr' ? 'Contact' : 'Contact' }}</a></li><li><a class="block rounded-lg py-2 transition hover:text-sunshine" href="{{ route('blog.index', ['locale' => $currentLocale]) }}">{{ __('home.nav.blog') }}</a></li></ul></div>
+                    <div><h3 class="text-base font-black uppercase tracking-wide text-sunshine">{{ $currentLocale === 'fr' ? 'Paiement sécurisé' : 'Secure payment' }}</h3><div class="mt-5 flex flex-wrap items-center justify-center gap-3 rounded-[1.5rem] bg-white/10 p-4 text-center"><span class="inline-flex h-12 min-w-20 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-forest shadow-sm">▣ Visa</span><span class="inline-flex h-12 min-w-24 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-forest shadow-sm">▣ Mastercard</span><span class="inline-flex h-12 min-w-24 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-forest shadow-sm">▣ Apple Pay</span><span class="inline-flex h-12 min-w-24 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-forest shadow-sm">▣ Google Pay</span><span class="inline-flex h-12 min-w-20 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-forest shadow-sm">▣ PayPal</span></div></div>
                 </div>
-
-                <div class="mx-auto flex max-w-7xl flex-col gap-2 border-t border-cream/15 py-5 text-xs text-cream/58 sm:flex-row sm:items-center sm:justify-between">
-                    <p>© 2026 DEN & FILS — {{ $currentLocale === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.' }}</p>
-                    <p>{{ $currentLocale === 'fr' ? 'CGV · Mentions légales · Politique de confidentialité' : 'Terms · Legal notice · Privacy policy' }}</p>
-                </div>
+                <div class="mx-auto flex max-w-7xl flex-col gap-2 border-t border-cream/15 py-5 text-xs text-cream/58 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Marché Peyi — Tous droits réservés.</p><p>CGV · Mentions légales · Politique de confidentialité</p></div>
             </footer>
         </div>
 
