@@ -6,135 +6,205 @@
 
 @section('content')
     @php
-        $spotlightProducts = array_slice($products ?? [], 0, 3);
-        $newProducts = array_slice($products ?? [], 3, 2);
-        $marketImages = [
-            'https://moodboard-to-shop.lovable.app/assets/hero-market-B__fWu60.jpg',
-            'https://moodboard-to-shop.lovable.app/assets/peppers-w9B84COi.jpg',
-            'https://moodboard-to-shop.lovable.app/assets/product-epis-C1D47KI3.jpg',
-            'https://moodboard-to-shop.lovable.app/assets/product-rice-BcMjvpU2.jpg',
-            'https://moodboard-to-shop.lovable.app/assets/product-plantain-CnKnHz17.jpg',
-            'https://moodboard-to-shop.lovable.app/assets/product-spices-DL1CC1Hd.jpg',
-            'https://moodboard-to-shop.lovable.app/assets/leaves-D-dPOddf.jpg',
+        $productImages = [
+            asset('assets/products/product-pikliz.jpg'),
+            asset('assets/products/product-epis.jpg'),
+            asset('assets/products/product-rice.jpg'),
+            asset('assets/products/product-mango.jpg'),
+            asset('assets/products/product-plantain.jpg'),
+            asset('assets/products/product-spices.jpg'),
         ];
-        $recipes = $locale === 'fr'
-            ? [
-                ['meta' => '45 min · facile', 'title' => 'Riz djon djon maison', 'body' => 'Le classique haïtien, parfumé aux champignons noirs.', 'image' => $marketImages[3]],
-                ['meta' => 'Astuces · 3 min', 'title' => 'Comment utiliser le pikliz ?', 'body' => 'Cinq façons d’ajouter du peps à vos plats du quotidien.', 'image' => $marketImages[1]],
-                ['meta' => '20 min · facile', 'title' => 'Sauce créole épicée', 'body' => 'La sauce qui transforme un simple poisson grillé.', 'image' => $marketImages[2]],
-            ]
-            : [
-                ['meta' => '45 min · easy', 'title' => 'Homemade djon djon rice', 'body' => 'The Haitian classic, fragrant with black mushrooms.', 'image' => $marketImages[3]],
-                ['meta' => 'Tips · 3 min', 'title' => 'How to use pikliz', 'body' => 'Five ways to add a bright kick to everyday dishes.', 'image' => $marketImages[1]],
-                ['meta' => '20 min · easy', 'title' => 'Spicy Creole sauce', 'body' => 'The sauce that transforms simple grilled fish.', 'image' => $marketImages[2]],
-            ];
-        $reviews = $locale === 'fr'
-            ? [
-                ['name' => 'Mireille', 'text' => 'Les produits sont bien emballés et le goût est vraiment authentique. Je recommande à 100%.'],
-                ['name' => 'Samuel', 'text' => 'J’ai retrouvé les saveurs de chez moi. C’est exactement ce que je cherchais depuis des années.'],
-                ['name' => 'Nadia', 'text' => 'Livraison rapide et très bonne qualité. Les saveurs sont incroyables.'],
-            ]
-            : [
-                ['name' => 'Mireille', 'text' => 'Products are well packed and the taste is truly authentic. I recommend it 100%.'],
-                ['name' => 'Samuel', 'text' => 'I found the flavors of home again. This is exactly what I had been looking for.'],
-                ['name' => 'Nadia', 'text' => 'Fast delivery and very good quality. The flavors are incredible.'],
-            ];
+
+        $heroImage = asset('assets/products/hero-basket.jpg');
+        $harvestImage = asset('assets/products/hero-market.jpg');
+        $leavesImage = asset('assets/products/hero-market.jpg');
+        $peppersImage = asset('assets/products/peppers.jpg');
+        $recipeImages = [asset('assets/products/recipe-djondjon.jpg'), asset('assets/products/recipe-pikliz.jpg'), asset('assets/products/recipe-sauce.jpg')];
+
+        $spotlightProducts = array_values(array_slice($products ?? [], 0, 6));
+        $newProducts = array_values(array_slice($products ?? [], 2, 2));
+
+        $fallbackProducts = [
+            ['id' => null, 'slug' => null, 'name' => 'Pikliz Piment Bonda', 'formatted_price' => '8.90€', 'short_description' => 'Le condiment qui réveille tout', 'origin' => 'Haïti', 'category' => ['name' => 'Sauces']],
+            ['id' => null, 'slug' => null, 'name' => 'Épis Créole Vert', 'formatted_price' => '7.50€', 'short_description' => 'La base de toutes les recettes', 'origin' => 'Martinique', 'category' => ['name' => 'Épices']],
+            ['id' => null, 'slug' => null, 'name' => 'Riz & Pois Rouges', 'formatted_price' => '5.20€', 'short_description' => 'Sélection 1ère qualité', 'origin' => 'Guadeloupe', 'category' => ['name' => 'Épicerie']],
+            ['id' => null, 'slug' => null, 'name' => 'Nectar de Mangue', 'formatted_price' => '4.90€', 'short_description' => '100% fruit, 0% sucre ajouté', 'origin' => "Côte d’Ivoire", 'category' => ['name' => 'Boissons']],
+            ['id' => null, 'slug' => null, 'name' => 'Bananes Plantains', 'formatted_price' => '3.40€', 'short_description' => 'À frire, bouillir, écraser', 'origin' => 'Cameroun', 'category' => ['name' => 'Produits frais']],
+            ['id' => null, 'slug' => null, 'name' => 'Mélange Colombo', 'formatted_price' => '9.80€', 'short_description' => 'Curry des îles', 'origin' => 'Guadeloupe', 'category' => ['name' => 'Épices']],
+        ];
+
+        if (count($spotlightProducts) < 6) {
+            $spotlightProducts = array_replace($fallbackProducts, $spotlightProducts);
+        }
+
+        if (count($newProducts) < 2) {
+            $newProducts = array_slice($fallbackProducts, 2, 2);
+        }
+
+        $categoryCards = [
+            ['title' => 'Sauces & Pikliz', 'body' => 'Pikliz, sauces piquantes et condiments du pays.', 'icon' => '🌶️', 'class' => 'bg-[#fb5a4e] text-white'],
+            ['title' => 'Épices Créoles', 'body' => 'Colombo, épis, mélanges traditionnels.', 'icon' => '🧂', 'class' => 'bg-[#f4668d] text-white'],
+            ['title' => 'Boissons Tropicales', 'body' => 'Nectars, jus pressés et boissons des îles.', 'icon' => '🥭', 'class' => 'bg-[#ff9817] text-forest'],
+            ['title' => 'Produits Frais', 'body' => 'Plantains, ignames, légumes pays de saison.', 'icon' => '🍌', 'class' => 'bg-forest text-white'],
+            ['title' => 'Épicerie Sèche', 'body' => 'Riz, légumineuses, farines essentielles.', 'icon' => '🌾', 'class' => 'bg-caribbean text-white'],
+            ['title' => 'Coffrets Cadeaux', 'body' => 'Sélections gourmandes à offrir.', 'icon' => '🎁', 'class' => 'bg-sunshine text-forest'],
+        ];
+
+        $recipes = [
+            ['meta' => '45 min · facile', 'title' => 'Riz djon djon maison', 'body' => 'Le classique haïtien, parfumé aux champignons noirs.', 'image' => $recipeImages[0]],
+            ['meta' => 'Astuces · 3 min', 'title' => 'Comment utiliser le pikliz ?', 'body' => '5 façons d’ajouter du peps à vos plats du quotidien.', 'image' => $recipeImages[1]],
+            ['meta' => '20 min · facile', 'title' => 'Sauce créole épicée', 'body' => 'La sauce qui transforme un simple poisson grillé.', 'image' => $recipeImages[2]],
+        ];
+
+        $reviews = [
+            ['name' => 'Naïma', 'product' => 'Pikliz Piment Bonda', 'text' => 'Les produits sont bien emballés et le goût est vraiment authentique. Je recommande à 100%.'],
+            ['name' => 'Jean-Marc', 'product' => 'Mélange Colombo', 'text' => 'J’ai retrouvé les saveurs de chez moi. C’est exactement ce que je cherchais depuis des années.'],
+            ['name' => 'Sandra', 'product' => 'Nectar de Mangue', 'text' => 'Livraison rapide et très bonne qualité. Le nectar de mangue est incroyable.'],
+        ];
     @endphp
 
-    <section id="home" class="tropical-pattern relative overflow-hidden px-4 py-12 sm:px-8 lg:py-20">
-        <div class="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-            <div class="animate-rise">
-                <p class="inline-flex rounded-full bg-forest/10 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-forest dark:bg-white/10 dark:text-meadow">{{ __('home.hero.eyebrow') }}</p>
-                <h1 class="brand-display mt-6 max-w-4xl text-5xl uppercase leading-none text-forest sm:text-7xl lg:text-8xl">
-                    {{ __('home.hero.title_1') }}
-                    <span class="block text-coral">{{ __('home.hero.title_accent') }}</span>
-                    <span class="block">{{ __('home.hero.title_2') }}</span>
+    <section id="home" class="relative overflow-hidden bg-cream px-4 py-14 sm:px-8 lg:py-24">
+        <div class="absolute inset-0 opacity-45" style="background-image: radial-gradient(#124c20 1px, transparent 1px); background-size: 24px 24px;"></div>
+        <div class="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-coral/20 blur-3xl"></div>
+        <div class="absolute right-0 top-0 h-96 w-96 rounded-full bg-sunshine/25 blur-3xl"></div>
+
+        <div class="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <div>
+                <p class="inline-flex rounded-full bg-forest/10 px-5 py-2 text-xs font-black uppercase tracking-[0.24em] text-forest">✣ Exotic & Tropical Tastes</p>
+                <h1 class="mt-7 max-w-4xl text-6xl font-black leading-[0.95] tracking-tight text-forest sm:text-7xl lg:text-8xl">
+                    Le marché
+                    <span class="block text-coral">tropical</span>
+                    <span class="block">livré chez vous.</span>
                 </h1>
-                <p class="mt-6 max-w-2xl text-base font-semibold leading-8 text-cocoa/70 dark:text-cream/74 sm:text-lg">{{ __('home.hero.body') }}</p>
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="btn-primary" wire:navigate.hover>{{ __('home.hero.primary_cta') }} <span class="ml-2">→</span></a>
-                    <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="btn-secondary" wire:navigate.hover>{{ __('home.hero.secondary_cta') }}</a>
+                <p class="mt-7 max-w-2xl text-lg font-semibold leading-8 text-forest/70">
+                    Retrouvez vos essentiels haïtiens, caribéens et africains : sauces, épices, boissons, produits frais et coffrets gourmands.
+                </p>
+                <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                    <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="rounded-full bg-forest px-8 py-4 text-sm font-black uppercase tracking-wide text-cream transition hover:bg-leaf" wire:navigate.hover>Découvrir la boutique <span class="ml-2">→</span></a>
+                    <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="rounded-full border-2 border-forest px-8 py-4 text-sm font-black uppercase tracking-wide text-forest transition hover:bg-forest hover:text-cream" wire:navigate.hover>Voir les best-sellers</a>
                 </div>
-                <div class="mt-10 grid gap-4 border-t border-leaf/10 pt-6 sm:grid-cols-3">
-                    <div><p class="brand-display text-4xl text-forest">120+</p><p class="text-xs font-black uppercase tracking-wide text-cocoa/60">Producteurs</p></div>
-                    <div><p class="brand-display text-4xl text-forest">48h</p><p class="text-xs font-black uppercase tracking-wide text-cocoa/60">Livraison</p></div>
-                    <div><p class="brand-display text-4xl text-forest">4,9★</p><p class="text-xs font-black uppercase tracking-wide text-cocoa/60">Avis clients</p></div>
+                <div class="mt-12 grid gap-4 border-t border-forest/10 pt-7 sm:grid-cols-3">
+                    <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-full bg-forest text-cream">↦</span><p class="text-xs font-black uppercase tracking-wide text-forest">Livraison rapide</p></div>
+                    <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-full bg-forest text-cream">✓</span><p class="text-xs font-black uppercase tracking-wide text-forest">Paiement sécurisé</p></div>
+                    <div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-full bg-forest text-cream">✣</span><p class="text-xs font-black uppercase tracking-wide text-forest">Produits authentiques</p></div>
                 </div>
             </div>
 
-            <div class="relative animate-rise">
-                <div class="relative overflow-hidden rounded-[2rem] border-[6px] border-forest bg-white shadow-tropical">
-                    <img class="aspect-[4/3] w-full object-cover" src="{{ $marketImages[0] }}" alt="{{ __('home.hero.image_alt') }}" fetchpriority="high" decoding="async">
-                    <div class="absolute bottom-4 left-4 right-4 rounded-[1.25rem] bg-cream/95 p-5 shadow-xl backdrop-blur">
-                        <p class="text-xs font-black uppercase tracking-[0.18em] text-coral">{{ __('home.hero.chef_pick') }}</p>
-                        <div class="mt-2 flex items-end justify-between gap-4"><h2 class="text-xl font-black text-forest sm:text-2xl">{{ __('home.hero.chef_title') }}</h2><p class="brand-display text-3xl text-forest">39€</p></div>
+            <div class="relative">
+                <div class="absolute -left-8 -top-8 z-10 rotate-[-8deg] rounded-2xl bg-sunshine px-6 py-5 text-center text-forest shadow-xl">
+                    <p class="text-3xl font-black leading-none">-15%</p>
+                    <p class="mt-1 text-xs font-black uppercase tracking-wide">1ère cmd</p>
+                </div>
+                <div class="overflow-hidden rounded-[2rem] border-[6px] border-forest bg-white shadow-tropical">
+                    <img class="aspect-[4/3] w-full object-cover" src="{{ $heroImage }}" alt="Panier de produits tropicaux Marché Peyi" fetchpriority="high" decoding="async">
+                    <div class="m-4 -mt-24 relative rounded-[1.25rem] bg-cream/95 p-5 shadow-xl backdrop-blur">
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-coral">Sélection du chef</p>
+                        <div class="mt-2 flex items-end justify-between gap-4"><h2 class="text-xl font-black text-forest sm:text-2xl">Coffret Créole #001</h2><p class="text-3xl font-black text-forest">39€</p></div>
                     </div>
                 </div>
-                <div class="brand-display absolute -left-3 top-8 rotate-[-8deg] rounded-2xl bg-sunshine px-5 py-4 text-2xl uppercase text-forest shadow-lg sm:-left-8">{{ __('home.hero.discount') }}</div>
             </div>
         </div>
     </section>
 
-    <section id="categories" class="bg-linen px-4 py-14 dark:bg-[#163319] sm:px-8 lg:py-20">
+    <section id="categories" class="bg-cream px-4 py-16 sm:px-8 lg:py-24">
         <div class="mx-auto max-w-7xl">
-            <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><p class="section-kicker">{{ __('home.categories.eyebrow') }}</p><h2 class="section-title mt-3">{{ __('home.categories.title') }}</h2></div><p class="section-copy">{{ __('home.categories.body') }}</p></div>
-            <livewire:shop.category-grid :locale="$locale" :categories="$categories" />
-        </div>
-    </section>
-
-    <section id="best-sellers" class="bg-cream px-4 py-14 dark:bg-ink sm:px-8 lg:py-20">
-        <div class="mx-auto max-w-7xl">
-            <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div><p class="section-kicker">{{ __('home.spotlight.eyebrow') }}</p><h2 class="section-title mt-3">{{ $locale === 'fr' ? 'Les produits les plus aimés' : 'Most loved products' }}</h2><p class="section-copy mt-3">{{ $locale === 'fr' ? 'Les essentiels que nos clients commandent encore et encore.' : 'Essentials customers come back to again and again.' }}</p></div>
-                <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit" wire:navigate.hover>{{ $locale === 'fr' ? 'Toute la boutique' : 'All products' }} <span class="ml-2">→</span></a>
+            <div class="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div><p class="text-xs font-black uppercase tracking-[0.35em] text-coral">Rayons</p><h2 class="mt-3 text-5xl font-black tracking-tight text-forest sm:text-6xl">Explorez le marché</h2><p class="mt-4 text-base font-semibold text-forest/65">Choisissez votre rayon et retrouvez les saveurs du pays en quelques clics.</p></div>
+                <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="text-sm font-black uppercase tracking-wide text-forest" wire:navigate.hover>Voir tout →</a>
             </div>
-
-            <div class="grid gap-5 lg:grid-cols-3">
-                @forelse ($spotlightProducts as $index => $product)
-                    @php
-                        $imageUrl = $marketImages[($index + 1) % count($marketImages)];
-                        $ratingValue = number_format((float) data_get($product, 'commerce.rating.average', 4.8), 1, ',', ' ');
-                    @endphp
-                    <article class="market-card group overflow-hidden bg-white dark:bg-white/5">
-                        <a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="relative block overflow-hidden" wire:navigate.hover>
-                            <img class="product-card-image" src="{{ $imageUrl }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async">
-                            <span class="badge-tropical absolute left-4 top-4 bg-forest text-cream">{{ $index === 0 ? 'Best-seller' : ($locale === 'fr' ? 'Sélection' : 'Selection') }}</span>
-                        </a>
-                        <div class="p-5">
-                            <p class="text-xs font-black uppercase tracking-[0.18em] text-coral">{{ $product['category']['name'] ?? ($locale === 'fr' ? 'Épicerie' : 'Grocery') }} · {{ $product['origin'] ?? 'Marché Peyi' }}</p>
-                            <h3 class="mt-2 line-clamp-2 text-2xl font-black leading-tight text-forest">{{ $product['name'] }}</h3>
-                            <p class="mt-2 line-clamp-2 text-sm leading-6 text-cocoa/65 dark:text-cream/68">{{ $product['short_description'] ?? $product['description'] }}</p>
-                            <div class="mt-4 flex items-center gap-2 text-xs font-bold text-cocoa/60 dark:text-cream/60"><span class="text-sunshine">★★★★★</span><span>{{ $ratingValue }} · {{ $locale === 'fr' ? 'en stock' : 'in stock' }}</span></div>
-                            <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><strong class="brand-display text-3xl text-forest">{{ $product['formatted_price'] }}</strong><div class="flex gap-2"><button class="btn-primary px-4 py-2 text-xs" type="button" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="$dispatchTo('shop.cart-manager', 'cart:add', { productId: {{ (int) $product['id'] }} })" wire:loading.attr="disabled">{{ __('home.products.cta') }}</button><a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="btn-secondary px-4 py-2 text-xs" wire:navigate.hover>{{ $locale === 'fr' ? 'Voir' : 'View' }}</a></div></div>
-                        </div>
-                    </article>
-                @empty
-                    <div class="utility-section lg:col-span-3">{{ __('home.products.empty') }}</div>
-                @endforelse
-            </div>
-        </div>
-    </section>
-
-    <section id="offers" class="bg-linen px-4 py-14 dark:bg-[#163319] sm:px-8 lg:py-20">
-        <div class="mx-auto max-w-7xl">
-            <div class="mb-8 max-w-2xl"><p class="section-kicker">{{ __('home.offers.main_eyebrow') }}</p><h2 class="section-title mt-3">{{ __('home.offers.main_title') }}</h2><p class="section-copy mt-4">{{ __('home.offers.body') }}</p></div>
-            <div class="grid gap-5 lg:grid-cols-3">
-                <article class="relative overflow-hidden rounded-[1.5rem] bg-coral p-8 text-cream shadow-tropical lg:min-h-[420px]"><img class="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-multiply" src="{{ $marketImages[1] }}" alt="" loading="lazy" decoding="async"><div class="relative z-10 flex h-full flex-col justify-between"><div><span class="rounded-full bg-cream px-4 py-2 text-xs font-black uppercase tracking-wide text-coral">{{ data_get(trans('home.offers.cards'), '0.eyebrow') }}</span><h3 class="brand-display mt-8 text-4xl uppercase text-cream">{{ data_get(trans('home.offers.cards'), '0.title') }}</h3><p class="mt-4 max-w-sm text-base font-semibold leading-7">{{ data_get(trans('home.offers.cards'), '0.body') }}</p></div><a href="{{ route('shop.index', ['locale' => $locale]) }}" class="btn-sunshine mt-8 w-fit" wire:navigate.hover>{{ __('home.offers.cta') }} <span class="ml-2">→</span></a></div></article>
-                @foreach ($newProducts as $product)
-                    @php $imageUrl = $marketImages[($loop->index + 4) % count($marketImages)]; @endphp
-                    <article class="market-card group overflow-hidden bg-white dark:bg-white/5"><a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="relative block overflow-hidden" wire:navigate.hover><img class="product-card-image" src="{{ $imageUrl }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async"><span class="badge-tropical absolute left-4 top-4 bg-forest text-cream">{{ $locale === 'fr' ? 'Nouveau' : 'New' }}</span></a><div class="p-5"><p class="text-xs font-black uppercase tracking-[0.18em] text-coral">{{ $product['category']['name'] ?? ($locale === 'fr' ? 'Épicerie' : 'Grocery') }}</p><h3 class="mt-2 line-clamp-2 text-2xl font-black leading-tight text-forest">{{ $product['name'] }}</h3><p class="mt-2 line-clamp-2 text-sm leading-6 text-cocoa/65 dark:text-cream/68">{{ $product['short_description'] ?? $product['description'] }}</p><div class="mt-5 flex items-center justify-between gap-3"><strong class="brand-display text-3xl text-forest">{{ $product['formatted_price'] }}</strong><a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" class="btn-primary px-4 py-2 text-xs" wire:navigate.hover>{{ $locale === 'fr' ? 'Voir' : 'View' }}</a></div></div></article>
+            <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                @foreach ($categoryCards as $card)
+                    <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="group min-h-[180px] rounded-[1.5rem] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical {{ $card['class'] }}" wire:navigate.hover>
+                        <span class="text-3xl">{{ $card['icon'] }}</span>
+                        <h3 class="mt-8 text-2xl font-black leading-tight">{{ $card['title'] }}</h3>
+                        <p class="mt-3 text-sm font-semibold leading-6 opacity-80">{{ $card['body'] }}</p>
+                        <span class="mt-5 inline-flex text-sm font-black uppercase tracking-wide">Découvrir →</span>
+                    </a>
                 @endforeach
             </div>
         </div>
     </section>
 
-    <livewire:shop.product-catalog :locale="$locale" :categories="$categories" :products="$products" :filters="$filters" :api-error="$apiError" />
+    <section id="best-sellers" class="bg-cream px-4 py-16 sm:px-8 lg:py-20">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div><p class="text-xs font-black uppercase tracking-[0.35em] text-coral">Sélection</p><h2 class="mt-3 text-5xl font-black tracking-tight text-forest sm:text-6xl">Les produits les plus aimés</h2><p class="mt-4 text-base font-semibold text-forest/65">Les essentiels que nos clients commandent encore et encore.</p></div>
+                <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="text-sm font-black uppercase tracking-wide text-forest" wire:navigate.hover>Toute la boutique →</a>
+            </div>
+            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                @foreach (array_slice($spotlightProducts, 0, 6) as $index => $product)
+                    @php
+                        $href = ! empty($product['slug'] ?? null) ? route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) : route('shop.index', ['locale' => $locale]);
+                        $productId = (int) ($product['id'] ?? 0);
+                    @endphp
+                    <article class="group overflow-hidden rounded-[1.6rem] border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical">
+                        <a href="{{ $href }}" class="relative block overflow-hidden bg-sunshine" wire:navigate.hover>
+                            <img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $productImages[$index % count($productImages)] }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async">
+                            <span class="absolute left-4 top-4 rounded-full bg-forest px-4 py-2 text-[11px] font-black uppercase tracking-wide text-cream">{{ $index < 3 ? 'Best-seller' : 'Nouveau' }}</span>
+                            @if ($index === 0 || $index === 1 || $index === 5)<span class="absolute right-4 top-4 rounded-full bg-cream px-3 py-1 text-xs font-black text-coral">🔥🔥</span>@endif
+                        </a>
+                        <div class="p-6">
+                            <p class="text-xs font-black uppercase tracking-[0.22em] text-coral">{{ data_get($product, 'category.name', 'Épicerie') }} · {{ $product['origin'] ?? 'Marché Peyi' }}</p>
+                            <h3 class="mt-2 text-2xl font-black leading-tight text-forest">{{ $product['name'] }}</h3>
+                            <p class="mt-1 line-clamp-1 text-sm font-semibold text-forest/65">{{ $product['short_description'] ?? $product['description'] ?? 'Produit authentique du marché.' }}</p>
+                            <div class="mt-4 flex items-center gap-2 text-xs font-semibold text-forest/65"><span class="text-sunshine">★★★★★</span><span>4.{{ 9 - ($index % 3) }} · {{ 98 + ($index * 23) }} avis</span></div>
+                            <div class="mt-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-forest"><span class="h-2 w-2 rounded-full bg-forest"></span><span>En stock</span></div>
+                            <div class="mt-7 flex items-center justify-between gap-4"><strong class="text-3xl font-black tracking-tight text-forest">{{ $product['formatted_price'] }}</strong><button class="rounded-full bg-forest px-5 py-3 text-xs font-black text-cream transition hover:bg-leaf disabled:opacity-50" type="button" @if($productId > 0) x-on:click="window.Livewire?.dispatch('cart:add', { productId: {{ $productId }} }); window.dispatchEvent(new CustomEvent('cart-opening'))" @else disabled @endif>+ Ajouter</button></div>
+                            <a href="{{ $href }}" class="mt-5 block text-center text-xs font-black uppercase tracking-[0.22em] text-forest/65 transition hover:text-forest" wire:navigate.hover>Voir le produit</a>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
 
-    <section id="recipes" class="bg-cream px-4 py-14 dark:bg-ink sm:px-8 lg:py-20"><div class="mx-auto max-w-7xl"><div class="mb-8 max-w-2xl"><p class="section-kicker">{{ __('home.blog.eyebrow') }}</p><h2 class="section-title mt-3">{{ __('home.blog.title') }}</h2><p class="section-copy mt-4">{{ __('home.blog.body') }}</p></div><div class="grid gap-5 lg:grid-cols-3">@foreach ($recipes as $recipe)<article class="market-card overflow-hidden bg-white dark:bg-white/5"><img class="h-60 w-full object-cover" src="{{ $recipe['image'] }}" alt="{{ $recipe['title'] }}" loading="lazy" decoding="async"><div class="p-6"><p class="text-xs font-black uppercase tracking-[0.18em] text-coral">{{ $recipe['meta'] }}</p><h3 class="mt-3 text-2xl font-black leading-tight text-forest">{{ $recipe['title'] }}</h3><p class="mt-3 text-sm leading-6 text-cocoa/65 dark:text-cream/68">{{ $recipe['body'] }}</p><a href="{{ route('blog.index', ['locale' => $locale]) }}" class="mt-5 inline-flex font-black uppercase tracking-wide text-forest" wire:navigate.hover>{{ $locale === 'fr' ? 'Voir la recette' : 'View recipe' }} <span class="ml-2">→</span></a></div></article>@endforeach</div></div></section>
+    <section id="offers" class="bg-cream px-4 py-16 sm:px-8 lg:py-20">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-10 max-w-2xl"><p class="text-xs font-black uppercase tracking-[0.35em] text-coral">Nouveautés</p><h2 class="mt-3 text-5xl font-black tracking-tight text-forest sm:text-6xl">Les arrivages du moment</h2><p class="mt-4 text-base font-semibold leading-7 text-forest/65">Des produits sélectionnés chaque semaine pour retrouver les vraies saveurs du pays.</p></div>
+            <div class="grid gap-8 lg:grid-cols-3">
+                <article class="relative min-h-[520px] overflow-hidden rounded-[1.6rem] bg-coral p-8 text-cream shadow-sm">
+                    <img class="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-multiply" src="{{ $harvestImage }}" alt="Récolte de la semaine" loading="lazy" decoding="async">
+                    <div class="relative z-10 flex h-full flex-col justify-between"><div><span class="rounded-full bg-cream px-4 py-2 text-xs font-black uppercase tracking-wide text-coral">Drop hebdo</span><h3 class="mt-8 text-4xl font-black leading-tight text-cream">Récolte de la semaine</h3><p class="mt-4 text-base font-semibold leading-7">Mangues, ignames, gombo, piments bonda et plus encore.</p></div><a href="{{ route('shop.index', ['locale' => $locale]) }}" class="mt-8 w-fit rounded-full bg-cream px-6 py-3 text-sm font-black uppercase tracking-wide text-forest" wire:navigate.hover>Voir les arrivages →</a></div>
+                </article>
+                @foreach ($newProducts as $index => $product)
+                    @php
+                        $href = ! empty($product['slug'] ?? null) ? route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) : route('shop.index', ['locale' => $locale]);
+                        $productId = (int) ($product['id'] ?? 0);
+                    @endphp
+                    <article class="group overflow-hidden rounded-[1.6rem] border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical">
+                        <a href="{{ $href }}" class="relative block overflow-hidden" wire:navigate.hover><img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $productImages[($index + 2) % count($productImages)] }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async"><span class="absolute left-4 top-4 rounded-full bg-forest px-4 py-2 text-[11px] font-black uppercase tracking-wide text-cream">Nouveau</span></a>
+                        <div class="p-6"><p class="text-xs font-black uppercase tracking-[0.22em] text-coral">{{ data_get($product, 'category.name', 'Épicerie') }} · {{ $product['origin'] ?? 'Marché Peyi' }}</p><h3 class="mt-2 text-2xl font-black leading-tight text-forest">{{ $product['name'] }}</h3><p class="mt-1 line-clamp-1 text-sm font-semibold text-forest/65">{{ $product['short_description'] ?? $product['description'] ?? 'Produit authentique du marché.' }}</p><div class="mt-4 flex items-center gap-2 text-xs font-semibold text-forest/65"><span class="text-sunshine">★★★★★</span><span>4.{{ 7 + $index }} · {{ 64 + ($index * 34) }} avis</span></div><div class="mt-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-forest"><span class="h-2 w-2 rounded-full bg-forest"></span><span>En stock</span></div><div class="mt-7 flex items-center justify-between gap-4"><strong class="text-3xl font-black tracking-tight text-forest">{{ $product['formatted_price'] }}</strong><button class="rounded-full bg-forest px-5 py-3 text-xs font-black text-cream transition hover:bg-leaf disabled:opacity-50" type="button" @if($productId > 0) x-on:click="window.Livewire?.dispatch('cart:add', { productId: {{ $productId }} }); window.dispatchEvent(new CustomEvent('cart-opening'))" @else disabled @endif>+ Ajouter</button></div><a href="{{ $href }}" class="mt-5 block text-center text-xs font-black uppercase tracking-[0.22em] text-forest/65" wire:navigate.hover>Voir le produit</a></div>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
 
-    <section id="about" class="bg-cream px-4 py-14 dark:bg-ink sm:px-8 lg:py-20"><div class="luxury-gradient mx-auto grid max-w-[96rem] gap-8 rounded-[2rem] px-6 py-12 text-cream sm:px-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-24 lg:py-20"><div><p class="text-xs font-black uppercase tracking-[0.24em] text-sunshine">{{ $locale === 'fr' ? 'Manifeste' : 'Manifesto' }}</p><h2 class="brand-display mt-5 text-5xl uppercase text-cream sm:text-6xl lg:text-7xl">{{ __('home.about.title') }}</h2></div><div><p class="max-w-2xl text-lg font-semibold leading-9 text-cream/85">{{ __('home.about.body') }}</p><a href="{{ route('pages.about', ['locale' => $locale]) }}" class="btn-sunshine mt-8" wire:navigate.hover>{{ $locale === 'fr' ? 'Découvrir notre histoire' : 'Discover our story' }} <span class="ml-2">→</span></a></div></div></section>
+    <section id="recipes" class="bg-cream px-4 py-16 sm:px-8 lg:py-20">
+        <div class="mx-auto max-w-7xl"><div class="mb-10 max-w-2xl"><p class="text-xs font-black uppercase tracking-[0.35em] text-coral">Cuisine</p><h2 class="mt-3 text-5xl font-black tracking-tight text-forest sm:text-6xl">Recettes & inspirations</h2><p class="mt-4 text-base font-semibold leading-7 text-forest/65">Découvrez comment utiliser nos produits dans des plats simples, généreux et pleins de goût.</p></div><div class="grid gap-8 lg:grid-cols-3">@foreach ($recipes as $recipe)<article class="overflow-hidden rounded-[1.6rem] border border-forest/10 bg-white shadow-sm"><img class="h-64 w-full object-cover" src="{{ $recipe['image'] }}" alt="{{ $recipe['title'] }}" loading="lazy" decoding="async"><div class="p-6"><p class="text-xs font-black uppercase tracking-[0.22em] text-coral">{{ $recipe['meta'] }}</p><h3 class="mt-3 text-2xl font-black leading-tight text-forest">{{ $recipe['title'] }}</h3><p class="mt-3 text-sm font-semibold leading-6 text-forest/65">{{ $recipe['body'] }}</p><a href="{{ route('blog.index', ['locale' => $locale]) }}" class="mt-5 inline-flex text-sm font-black uppercase tracking-wide text-forest" wire:navigate.hover>Voir la recette →</a></div></article>@endforeach</div></div>
+    </section>
 
-    <section class="bg-linen px-4 py-14 dark:bg-[#163319] sm:px-8 lg:py-20"><div class="mx-auto max-w-7xl"><div class="mb-8"><p class="section-kicker">{{ $locale === 'fr' ? 'Avis vérifiés' : 'Verified reviews' }}</p><h2 class="section-title mt-3">{{ $locale === 'fr' ? 'Ce que disent nos clients' : 'What customers say' }}</h2></div><div class="grid gap-5 lg:grid-cols-3">@foreach ($reviews as $review)<article class="utility-section relative pt-8"><span class="absolute -top-4 left-6 inline-grid h-10 w-10 place-items-center rounded-full bg-coral text-lg font-black text-cream">”</span><p class="text-sunshine">★★★★★</p><p class="mt-4 text-base font-semibold leading-8 text-cocoa/75 dark:text-cream/75">“{{ $review['text'] }}”</p><p class="mt-5 font-black text-forest dark:text-meadow">{{ $review['name'] }}</p></article>@endforeach</div></div></section>
+    <section id="about" class="bg-cream px-4 py-16 sm:px-8 lg:py-20">
+        <div class="mx-auto grid max-w-[96rem] gap-8 overflow-hidden rounded-[2rem] bg-forest px-6 py-12 text-cream shadow-tropical sm:px-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-24 lg:py-20" style="background-image: linear-gradient(90deg, rgba(18,76,32,.88), rgba(18,76,32,.92)), url('{{ $leavesImage }}'); background-size: cover; background-position: center;">
+            <div><p class="text-xs font-black uppercase tracking-[0.35em] text-sunshine">Manifeste</p><h2 class="mt-5 text-5xl font-black leading-tight text-cream sm:text-6xl">Le goût vrai,<br>sans détour.</h2></div>
+            <div><p class="max-w-2xl text-lg font-semibold leading-9 text-cream/90">Marché Peyi est une épicerie en ligne pleine de couleurs, de parfums et d’histoires. Chaque bocal, chaque sachet et chaque produit racontent un savoir-faire, une origine et une manière de partager la cuisine.</p><p class="mt-6 max-w-2xl text-lg font-semibold leading-9 text-cream/90">Sourcés auprès de producteurs et artisans, livrés chez vous rapidement.</p><a href="{{ route('pages.about', ['locale' => $locale]) }}" class="mt-8 inline-flex rounded-full bg-[#ff9817] px-7 py-4 text-sm font-black uppercase tracking-wide text-forest" wire:navigate.hover>Découvrir notre histoire →</a></div>
+        </div>
+    </section>
 
-    <section class="bg-cream px-4 py-14 dark:bg-ink sm:px-8 lg:py-20"><div class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-4">@foreach (trans('home.hero.trust') as $item)<article class="utility-section"><span class="inline-grid h-11 w-11 place-items-center rounded-full bg-sunshine text-forest">{{ $loop->iteration }}</span><h3 class="mt-6 text-xl font-black text-forest">{{ $item['title'] }}</h3><p class="mt-3 text-sm leading-6 text-cocoa/65 dark:text-cream/68">{{ $item['body'] }}</p></article>@endforeach</div><div class="mx-auto mt-12 grid max-w-7xl overflow-hidden rounded-[1.75rem] bg-coral text-cream shadow-tropical lg:grid-cols-[1fr_1fr]"><div class="p-8 sm:p-12"><p class="text-xs font-black uppercase tracking-[0.24em] text-sunshine">Newsletter</p><h2 class="brand-display mt-4 max-w-xl text-4xl uppercase sm:text-5xl">{{ $locale === 'fr' ? 'Recettes, drops & promos.' : 'Recipes, drops & deals.' }}</h2><p class="mt-4 text-base font-semibold text-cream/85">{{ $locale === 'fr' ? 'Une fois par mois. Pas de spam, juste du goût.' : 'Once a month. No spam, only flavor.' }}</p><form class="mt-7 flex max-w-lg overflow-hidden rounded-full bg-cream p-1"><input class="min-w-0 flex-1 bg-transparent px-5 text-sm font-semibold text-cocoa outline-none placeholder:text-cocoa/45" type="email" placeholder="{{ $locale === 'fr' ? 'votre@email.com' : 'your@email.com' }}"><button class="btn-primary min-h-[42px] px-5 py-2 text-xs" type="button">{{ $locale === 'fr' ? 'Je m’inscris' : 'Sign me up' }}</button></form></div><img class="h-full min-h-[320px] w-full object-cover" src="{{ $marketImages[1] }}" alt="{{ $locale === 'fr' ? 'Piments tropicaux colorés' : 'Colorful tropical peppers' }}" loading="lazy" decoding="async"></div></section>
+    <section class="bg-cream px-4 py-16 sm:px-8 lg:py-20">
+        <div class="mx-auto max-w-7xl"><div class="mb-10"><p class="text-xs font-black uppercase tracking-[0.35em] text-coral">Avis vérifiés</p><h2 class="mt-3 text-5xl font-black tracking-tight text-forest sm:text-6xl">Ce que disent nos clients</h2></div><div class="grid gap-8 lg:grid-cols-3">@foreach ($reviews as $review)<article class="relative rounded-[1.6rem] border border-forest/10 bg-white p-8 shadow-sm"><span class="absolute -top-4 left-8 grid h-10 w-10 place-items-center rounded-full bg-coral text-lg font-black text-cream">”</span><p class="text-sunshine">★★★★★</p><p class="mt-4 text-base font-semibold leading-8 text-forest/70">“{{ $review['text'] }}”</p><div class="mt-6 border-t border-forest/10 pt-5"><p class="text-xl font-black text-forest">{{ $review['name'] }}</p><p class="text-xs font-black uppercase tracking-wide text-forest/35">{{ $review['product'] }}</p></div></article>@endforeach</div></div>
+    </section>
+
+    <section class="bg-cream px-4 py-10 sm:px-8 lg:py-14">
+        <div class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-4">
+            <article class="rounded-[1.5rem] border border-forest/10 bg-white p-7"><span class="grid h-12 w-12 place-items-center rounded-full bg-sunshine text-forest">↦</span><h3 class="mt-6 text-xl font-black text-forest">Livraison rapide</h3><p class="mt-3 text-sm font-semibold leading-6 text-forest/65">Partout en France, offerte dès 49€ d’achats.</p></article>
+            <article class="rounded-[1.5rem] border border-forest/10 bg-white p-7"><span class="grid h-12 w-12 place-items-center rounded-full bg-sunshine text-forest">✓</span><h3 class="mt-6 text-xl font-black text-forest">Paiement sécurisé</h3><p class="mt-3 text-sm font-semibold leading-6 text-forest/65">Carte, Apple Pay, Google Pay. Données chiffrées.</p></article>
+            <article class="rounded-[1.5rem] border border-forest/10 bg-white p-7"><span class="grid h-12 w-12 place-items-center rounded-full bg-sunshine text-forest">✣</span><h3 class="mt-6 text-xl font-black text-forest">Produits authentiques</h3><p class="mt-3 text-sm font-semibold leading-6 text-forest/65">Sélectionnés auprès de producteurs et artisans.</p></article>
+            <article class="rounded-[1.5rem] border border-forest/10 bg-white p-7"><span class="grid h-12 w-12 place-items-center rounded-full bg-sunshine text-forest">☏</span><h3 class="mt-6 text-xl font-black text-forest">Service client</h3><p class="mt-3 text-sm font-semibold leading-6 text-forest/65">Une équipe disponible du lundi au samedi.</p></article>
+        </div>
+    </section>
+
+    <section class="bg-cream px-4 pb-20 pt-12 sm:px-8 lg:pb-28">
+        <div class="mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] bg-coral text-cream shadow-tropical lg:grid-cols-[1fr_1fr]"><div class="p-8 sm:p-12"><p class="text-xs font-black uppercase tracking-[0.35em] text-sunshine">Newsletter</p><h2 class="mt-4 max-w-xl text-4xl font-black leading-tight sm:text-5xl">Recevez nos recettes, nouveautés et offres du marché.</h2><p class="mt-4 text-base font-semibold text-cream/90">Une fois par mois. Pas de spam, uniquement des saveurs.</p><form class="mt-7 flex max-w-lg overflow-hidden rounded-full bg-cream p-1"><input class="min-w-0 flex-1 bg-transparent px-5 text-sm font-semibold text-forest outline-none placeholder:text-forest/45" type="email" placeholder="votre@email.com"><button class="rounded-full bg-forest px-6 py-3 text-xs font-black uppercase tracking-wide text-cream" type="button">Je m’inscris</button></form></div><img class="h-full min-h-[320px] w-full object-cover" src="{{ $peppersImage }}" alt="Piments tropicaux" loading="lazy" decoding="async"></div>
+    </section>
 @endsection
