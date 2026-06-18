@@ -10,6 +10,10 @@ Route::get('/sitemap.xml', [ShopController::class, 'sitemap'])->name('seo.sitema
 
 Route::get('/', [ShopController::class, 'home'])->name('home');
 
+Route::get('/{locale}/boutique', [ShopController::class, 'shop'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('shop.index');
+
 Route::get('/{locale}/about', [ShopController::class, 'about'])
     ->whereIn('locale', ['fr', 'en'])
     ->name('pages.about');
