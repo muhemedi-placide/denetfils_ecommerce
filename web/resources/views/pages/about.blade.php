@@ -53,20 +53,22 @@
         </div>
     </section>
 
-    <section class="bg-cream px-4 pb-24 dark:bg-ink sm:px-8 lg:pb-32">
-        <div class="mx-auto grid max-w-[96rem] overflow-hidden rounded-[2rem] bg-coral text-cream shadow-tropical lg:grid-cols-[1fr_1fr]">
-            <div class="p-8 sm:p-12 lg:p-16">
-                <h2 class="max-w-xl text-5xl font-black leading-tight text-cream sm:text-6xl">
+    <section class="bg-cream px-4 pb-16 dark:bg-ink sm:px-8 lg:pb-20">
+        <div class="mx-auto grid max-w-[112rem] overflow-hidden rounded-[2rem] bg-coral text-cream shadow-tropical lg:grid-cols-2">
+            <div class="flex min-h-[300px] flex-col justify-center p-8 sm:min-h-[340px] sm:p-12 lg:h-[390px] lg:p-16">
+                <h2 class="max-w-xl text-4xl font-black leading-tight text-cream sm:text-5xl lg:text-6xl">
                     {{ $locale === 'fr' ? 'Envie de cuisiner avec nous ?' : 'Want to cook with us?' }}
                 </h2>
                 <p class="mt-5 max-w-xl text-base font-semibold leading-8 text-cream/90">
                     {{ $locale === 'fr' ? 'Découvrez la boutique et trouvez vos prochains essentiels.' : 'Explore the shop and find your next essentials.' }}
                 </p>
-                <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="mt-8 inline-flex rounded-full bg-cream px-7 py-4 text-sm font-black uppercase tracking-wide text-forest transition hover:bg-sunshine" wire:navigate.hover>
+                <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="mt-8 inline-flex w-fit rounded-full bg-cream px-7 py-4 text-sm font-black uppercase tracking-wide text-forest transition hover:bg-sunshine" wire:navigate.hover>
                     {{ $locale === 'fr' ? 'Aller à la boutique' : 'Go to the shop' }}
                 </a>
             </div>
-            <img class="h-full min-h-[360px] w-full object-cover" src="{{ $peppersImage }}" alt="{{ $locale === 'fr' ? 'Piments tropicaux Marché Peyi' : 'Marché Peyi tropical peppers' }}" loading="lazy" decoding="async">
+            <div class="h-[300px] overflow-hidden sm:h-[340px] lg:h-[390px]">
+                <img class="h-full w-full object-cover" src="{{ $peppersImage }}" alt="{{ $locale === 'fr' ? 'Piments tropicaux Marché Peyi' : 'Marché Peyi tropical peppers' }}" loading="lazy" decoding="async">
+            </div>
         </div>
     </section>
 @endsection
