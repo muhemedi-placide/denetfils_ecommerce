@@ -99,32 +99,42 @@
         </div>
     </section>
 
-    <section id="categories" class="relative overflow-hidden bg-white px-4 pb-16 pt-32 text-black dark:bg-ink dark:text-cream sm:px-8 lg:pb-24 lg:pt-40">
-        <div class="absolute inset-x-0 top-0 h-24 bg-sunshine dark:bg-sunshine"></div>
-        <svg class="absolute inset-x-0 top-20 h-10 w-full text-white dark:text-ink" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+    <section id="categories" class="relative overflow-hidden bg-cream px-4 pb-16 pt-32 text-forest dark:bg-ink dark:text-cream sm:px-8 lg:pb-24 lg:pt-40">
+        <div class="absolute inset-x-0 top-0 h-24 bg-sunshine"></div>
+        <svg class="absolute inset-x-0 top-20 h-10 w-full text-cream dark:text-ink" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
             <path fill="currentColor" d="M0,28 C30,58 60,58 90,28 C120,-2 150,-2 180,28 C210,58 240,58 270,28 C300,-2 330,-2 360,28 C390,58 420,58 450,28 C480,-2 510,-2 540,28 C570,58 600,58 630,28 C660,-2 690,-2 720,28 C750,58 780,58 810,28 C840,-2 870,-2 900,28 C930,58 960,58 990,28 C1020,-2 1050,-2 1080,28 C1110,58 1140,58 1170,28 C1200,-2 1230,-2 1260,28 C1290,58 1320,58 1350,28 C1380,-2 1410,-2 1440,28 L1440,80 L0,80 Z" />
         </svg>
 
-        <div class="pointer-events-none absolute left-8 top-10 z-10 hidden text-8xl lg:block" style="transform: rotate(369deg);">🥄</div>
-        <img class="pointer-events-none absolute right-10 top-40 z-10 hidden w-44 drop-shadow-2xl lg:block" style="transform: rotate(369deg);" src="{{ $productImages[0] }}" alt="Produit Marché Peyi" loading="lazy" decoding="async">
+        <svg class="pointer-events-none absolute left-8 top-8 z-10 hidden h-28 w-28 text-forest drop-shadow-xl lg:block" style="transform: rotate(369deg);" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+            <ellipse cx="38" cy="28" rx="18" ry="25" fill="currentColor" opacity="0.95" />
+            <rect x="50" y="45" width="14" height="70" rx="7" fill="#ff7047" transform="rotate(-28 50 45)" />
+            <ellipse cx="36" cy="28" rx="11" ry="16" fill="#ffc829" opacity="0.55" />
+        </svg>
+        <div class="pointer-events-none absolute right-8 top-36 z-10 hidden rotate-[369deg] rounded-[1.25rem] border-4 border-sunshine bg-sunshine/40 p-3 shadow-[18px_18px_0_rgba(15,95,34,0.16)] lg:block">
+            <img class="w-36 rounded-[1rem] object-cover" src="{{ $productImages[0] }}" alt="Produit Marché Peyi" loading="lazy" decoding="async">
+        </div>
 
         <div class="relative mx-auto max-w-7xl text-center">
-            <h2 class="mx-auto max-w-5xl text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-                {{ $locale === 'fr' ? 'Des saveurs caribéennes puissantes quand la maison vous manque ou pour relever vos plats.' : 'Bold Caribbean flavors for when you’re missing home or looking to spice things up.' }}
+            <p class="text-xs font-black uppercase tracking-[0.35em] text-coral">{{ $locale === 'fr' ? 'Le goût vrai' : 'Real flavor' }}</p>
+            <h2 class="mx-auto mt-5 max-w-5xl text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+                {{ $locale === 'fr' ? 'Les saveurs du pays, sourcées chez les producteurs et livrées dans votre cuisine.' : 'Real peyi flavors, sourced from producers and delivered to your kitchen.' }}
             </h2>
-            <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="mt-8 inline-flex rounded-full border-2 border-black bg-[#4cff1f] px-6 py-3 text-sm font-black uppercase tracking-wide text-black shadow-[0_7px_0_#000] transition hover:-translate-y-1 hover:shadow-[0_10px_0_#000] dark:border-cream dark:shadow-[0_7px_0_#fff]" wire:navigate.hover>
-                {{ $locale === 'fr' ? 'Shop now' : 'Shop now' }}
+            <p class="mx-auto mt-6 max-w-3xl text-base font-semibold leading-8 text-forest/70 dark:text-cream/75">
+                {{ $locale === 'fr' ? 'Chaque pot raconte une origine, un savoir-faire et une manière de partager la cuisine. Marché Peyi rapproche les vrais goûts, les vrais gens et votre table.' : 'Every jar carries an origin, a know-how and a way to share food. Marché Peyi brings real flavors, real people and your table closer together.' }}
+            </p>
+            <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="mt-8 inline-flex rounded-full border-2 border-forest bg-forest px-6 py-3 text-sm font-black uppercase tracking-wide text-cream shadow-[0_7px_0_#ffc829] transition hover:-translate-y-1 hover:bg-leaf hover:shadow-[0_10px_0_#ffc829] dark:border-sunshine" wire:navigate.hover>
+                {{ $locale === 'fr' ? 'Découvrir le marché' : 'Shop now' }}
             </a>
 
             <div class="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
                 @foreach ($flavorBadges as $badge)
-                    <div class="mx-auto grid h-44 w-44 place-items-center rounded-full border-2 border-black bg-[#f5ff2f] p-5 text-center text-2xl font-black uppercase leading-[0.9] text-black shadow-[8px_8px_0_#000] sm:h-52 sm:w-52 sm:text-3xl">
+                    <div class="mx-auto grid h-44 w-44 place-items-center rounded-full border-2 border-forest bg-sunshine p-5 text-center text-2xl font-black uppercase leading-[0.9] text-forest shadow-[8px_8px_0_#0f5f22] sm:h-52 sm:w-52 sm:text-3xl">
                         {{ $badge }}
                     </div>
                 @endforeach
             </div>
 
-            <p class="mt-16 text-4xl font-black uppercase tracking-tight sm:text-5xl">Saucy Tings</p>
+            <p class="mt-16 text-4xl font-black uppercase tracking-tight text-coral sm:text-5xl">{{ $locale === 'fr' ? 'Le goût du pays' : 'Saucy Peyi Tings' }}</p>
         </div>
     </section>
 
