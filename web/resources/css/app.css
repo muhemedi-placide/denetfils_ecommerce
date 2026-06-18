@@ -8,6 +8,16 @@
 
 :root {
     color-scheme: light;
+    --mp-green: #207a1f;
+    --mp-forest: #0f5f22;
+    --mp-cream: #fff7df;
+    --mp-linen: #f8ecd0;
+    --mp-sunshine: #ffc829;
+    --mp-mango: #ff9f2e;
+    --mp-coral: #ff7047;
+    --mp-tomato: #d51f12;
+    --mp-blue: #1eb9d3;
+    --mp-pink: #f36aa5;
 }
 
 html.dark {
@@ -16,7 +26,7 @@ html.dark {
 
 html {
     scroll-behavior: smooth;
-    scroll-padding-top: 9.5rem;
+    scroll-padding-top: 10.5rem;
 }
 
 body {
@@ -42,7 +52,7 @@ img {
 }
 
 ::selection {
-    background: rgba(79, 176, 0, 0.18);
+    background: rgba(255, 200, 41, 0.32);
 }
 
 .surface-transition {
@@ -69,10 +79,46 @@ img {
     display: block;
 }
 
+.brand-display {
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', Arial, sans-serif;
+    letter-spacing: 0.025em;
+}
+
+.tropical-pattern {
+    background-image:
+        radial-gradient(circle at 12% 18%, rgba(255, 200, 41, 0.22), transparent 22%),
+        radial-gradient(circle at 84% 12%, rgba(30, 185, 211, 0.16), transparent 25%),
+        radial-gradient(circle at 82% 76%, rgba(255, 112, 71, 0.17), transparent 24%),
+        linear-gradient(135deg, #fff7df 0%, #fffaf0 52%, #f8ecd0 100%);
+}
+
+.tropical-leaf-pattern {
+    position: relative;
+    overflow: hidden;
+}
+
+.tropical-leaf-pattern::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.22;
+    background-image:
+        radial-gradient(ellipse at 16% 20%, transparent 0 46%, rgba(32, 122, 31, 0.18) 47% 50%, transparent 51%),
+        radial-gradient(ellipse at 86% 18%, transparent 0 45%, rgba(15, 95, 34, 0.16) 46% 50%, transparent 51%),
+        radial-gradient(ellipse at 60% 82%, transparent 0 45%, rgba(255, 200, 41, 0.16) 46% 50%, transparent 51%);
+    background-size: 320px 220px, 360px 240px, 300px 220px;
+}
+
+.market-ticker {
+    white-space: nowrap;
+    animation: ticker 28s linear infinite;
+}
+
 .glass-panel {
-    background: rgba(255, 255, 255, 0.94);
-    border: 1px solid rgba(47, 125, 27, 0.10);
-    box-shadow: 0 18px 55px rgba(37, 51, 34, 0.08);
+    background: rgba(255, 247, 223, 0.88);
+    border: 1px solid rgba(32, 122, 31, 0.16);
+    box-shadow: 0 18px 55px rgba(15, 95, 34, 0.10);
     backdrop-filter: blur(18px);
 }
 
@@ -82,20 +128,29 @@ img {
 
 .premium-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 24px 60px rgba(47, 125, 27, 0.13);
+    box-shadow: 0 24px 60px rgba(15, 95, 34, 0.16);
 }
 
 .btn-primary {
-    @apply inline-flex min-h-[44px] items-center justify-center rounded-full bg-terracotta px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-white transition duration-200 hover:bg-clay disabled:cursor-wait disabled:opacity-70 sm:px-5;
-    box-shadow: 0 12px 28px rgba(79, 176, 0, 0.18);
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-full bg-leaf px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-white transition duration-200 hover:bg-forest disabled:cursor-wait disabled:opacity-70;
+    box-shadow: 0 14px 28px rgba(15, 95, 34, 0.22);
 }
 
 .btn-secondary {
-    @apply inline-flex min-h-[44px] items-center justify-center rounded-full border border-leaf/20 bg-white px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-cocoa transition duration-200 hover:border-terracotta hover:bg-mint hover:text-leaf sm:px-5;
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-full border border-leaf/20 bg-white px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-leaf transition duration-200 hover:border-leaf hover:bg-mint hover:text-forest;
+}
+
+.btn-sunshine {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-full bg-sunshine px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-forest transition duration-200 hover:bg-mango;
+    box-shadow: 0 14px 28px rgba(255, 159, 46, 0.22);
 }
 
 .input-premium {
-    @apply min-h-[44px] rounded-full border border-leaf/20 bg-white px-4 py-3 text-sm text-cocoa outline-none transition placeholder:text-cocoa/40 focus:border-terracotta focus:ring-4 focus:ring-terracotta/10;
+    @apply min-h-[44px] rounded-full border border-leaf/20 bg-white px-4 py-3 text-sm text-cocoa outline-none transition placeholder:text-cocoa/40 focus:border-leaf focus:ring-4 focus:ring-leaf/10;
+}
+
+.badge-tropical {
+    @apply rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-wide;
 }
 
 .admin-card {
@@ -179,7 +234,7 @@ img {
 }
 
 .admin-dialog::backdrop {
-    background: rgba(18, 26, 16, 0.62);
+    background: rgba(15, 33, 16, 0.62);
     backdrop-filter: blur(14px);
 }
 
@@ -189,9 +244,9 @@ img {
 
 .admin-shell-backdrop {
     background:
-        radial-gradient(circle at 12% 8%, rgba(79, 176, 0, 0.10), transparent 28%),
-        radial-gradient(circle at 88% 0%, rgba(142, 217, 87, 0.12), transparent 26%),
-        linear-gradient(180deg, #ffffff 0%, #f7fbf4 100%);
+        radial-gradient(circle at 12% 8%, rgba(255, 200, 41, 0.16), transparent 28%),
+        radial-gradient(circle at 88% 0%, rgba(32, 122, 31, 0.12), transparent 26%),
+        linear-gradient(180deg, #fff7df 0%, #f8ecd0 100%);
 }
 
 .mobile-scrollbarless {
@@ -209,19 +264,19 @@ img {
 
 .soft-grid {
     background-image:
-        radial-gradient(circle at 18% 18%, rgba(79, 176, 0, 0.055), transparent 28%),
-        radial-gradient(circle at 82% 10%, rgba(142, 217, 87, 0.08), transparent 30%),
-        linear-gradient(135deg, #ffffff 0%, #fffaf0 54%, #ffffff 100%);
+        radial-gradient(circle at 18% 18%, rgba(255, 200, 41, 0.18), transparent 28%),
+        radial-gradient(circle at 82% 10%, rgba(32, 122, 31, 0.12), transparent 30%),
+        linear-gradient(135deg, #fff7df 0%, #fffaf0 54%, #f8ecd0 100%);
 }
 
 .luxury-gradient {
     background:
-        radial-gradient(circle at top left, rgba(142, 217, 87, 0.18), transparent 34%),
-        linear-gradient(135deg, rgba(18, 26, 16, 0.96), rgba(37, 51, 34, 0.92));
+        radial-gradient(circle at top left, rgba(255, 200, 41, 0.2), transparent 34%),
+        linear-gradient(135deg, rgba(15, 33, 16, 0.98), rgba(15, 95, 34, 0.96));
 }
 
 .product-image-overlay {
-    background: linear-gradient(180deg, transparent 42%, rgba(18, 26, 16, 0.72) 100%);
+    background: linear-gradient(180deg, transparent 42%, rgba(15, 33, 16, 0.72) 100%);
 }
 
 .animate-rise {
@@ -236,87 +291,46 @@ img {
     animation: confetti-float 1.8s ease-in-out infinite;
 }
 
-.confetti-dot:nth-child(2) {
-    animation-delay: 0.18s;
-}
-
-.confetti-dot:nth-child(3) {
-    animation-delay: 0.34s;
-}
-
-.confetti-dot:nth-child(4) {
-    animation-delay: 0.5s;
-}
+.confetti-dot:nth-child(2) { animation-delay: 0.18s; }
+.confetti-dot:nth-child(3) { animation-delay: 0.34s; }
+.confetti-dot:nth-child(4) { animation-delay: 0.5s; }
 
 @keyframes rise {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
 }
 
 @keyframes medal-pop {
-    0%, 100% {
-        transform: scale(1) rotate(0deg);
-        box-shadow: 0 0 0 rgba(79, 176, 0, 0);
-    }
-    35% {
-        transform: scale(1.12) rotate(-6deg);
-        box-shadow: 0 14px 34px rgba(79, 176, 0, 0.24);
-    }
-    70% {
-        transform: scale(1.04) rotate(4deg);
-    }
+    0%, 100% { transform: scale(1) rotate(0deg); box-shadow: 0 0 0 rgba(32, 122, 31, 0); }
+    35% { transform: scale(1.12) rotate(-6deg); box-shadow: 0 14px 34px rgba(32, 122, 31, 0.24); }
+    70% { transform: scale(1.04) rotate(4deg); }
 }
 
 @keyframes confetti-float {
-    0%, 100% {
-        opacity: 0.45;
-        transform: translateY(0) scale(1);
-    }
-    50% {
-        opacity: 1;
-        transform: translateY(-12px) scale(1.14);
-    }
+    0%, 100% { opacity: 0.45; transform: translateY(0) scale(1); }
+    50% { opacity: 1; transform: translateY(-12px) scale(1.14); }
 }
 
 @media (max-width: 1023px) {
-    html {
-        scroll-padding-top: 8.75rem;
-    }
-
-    main {
-        padding-bottom: 5.5rem;
-    }
+    html { scroll-padding-top: 8.75rem; }
+    main { padding-bottom: 5.5rem; }
 }
 
 @media (max-width: 767px) {
-    html {
-        scroll-padding-top: 8.25rem;
-    }
-
+    html { scroll-padding-top: 8.25rem; }
     #home,
-    #home > div {
-        min-height: 68svh;
-    }
-
-    .premium-card:hover {
-        transform: none;
-    }
+    #home > div { min-height: 68svh; }
+    .premium-card:hover { transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
@@ -326,111 +340,75 @@ img {
 
 html.dark body,
 html.dark .theme-page {
-    background-color: #121a10;
-    color: #ffffff;
+    background-color: #0f2110;
+    color: #fff7df;
 }
 
-html.dark .theme-band {
-    background-color: #121a10;
-}
-
-html.dark .theme-band-soft {
-    background-color: #172414;
-}
+html.dark .theme-band { background-color: #0f2110; }
+html.dark .theme-band-soft { background-color: #163319; }
 
 html.dark .theme-card,
 html.dark .premium-card,
 html.dark .glass-panel {
-    background-color: rgba(234, 247, 223, 0.06);
-    border-color: rgba(234, 247, 223, 0.12);
-    color: #ffffff;
+    background-color: rgba(255, 247, 223, 0.06);
+    border-color: rgba(255, 247, 223, 0.12);
+    color: #fff7df;
     box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
 }
 
-html.dark .theme-title {
-    color: #ffffff;
-}
-
-html.dark .theme-muted {
-    color: rgba(255, 255, 255, 0.72);
-}
-
-html.dark .theme-subtle {
-    color: rgba(255, 255, 255, 0.62);
-}
+html.dark .theme-title { color: #fff7df; }
+html.dark .theme-muted { color: rgba(255, 247, 223, 0.72); }
+html.dark .theme-subtle { color: rgba(255, 247, 223, 0.62); }
 
 html.dark .theme-invert-button {
-    background-color: #ffffff;
-    color: #121a10;
-}
-
-html.dark .theme-invert-button:hover {
-    background-color: #ffffff;
+    background-color: #fff7df;
+    color: #0f2110;
 }
 
 html.dark .soft-grid {
     background-image:
-        radial-gradient(circle at 18% 18%, rgba(79, 176, 0, 0.14), transparent 30%),
-        radial-gradient(circle at 82% 10%, rgba(142, 217, 87, 0.10), transparent 32%),
-        linear-gradient(135deg, #121a10 0%, #172414 52%, #121a10 100%);
+        radial-gradient(circle at 18% 18%, rgba(255, 200, 41, 0.14), transparent 30%),
+        radial-gradient(circle at 82% 10%, rgba(32, 122, 31, 0.16), transparent 32%),
+        linear-gradient(135deg, #0f2110 0%, #163319 52%, #0f2110 100%);
+}
+
+html.dark .tropical-pattern {
+    background-image:
+        radial-gradient(circle at 12% 18%, rgba(255, 200, 41, 0.12), transparent 22%),
+        radial-gradient(circle at 84% 12%, rgba(30, 185, 211, 0.10), transparent 25%),
+        linear-gradient(135deg, #0f2110 0%, #163319 52%, #0f2110 100%);
 }
 
 html.dark .btn-secondary,
 html.dark .input-premium {
-    background-color: rgba(234, 247, 223, 0.06);
-    border-color: rgba(234, 247, 223, 0.12);
-    color: #ffffff;
+    background-color: rgba(255, 247, 223, 0.06);
+    border-color: rgba(255, 247, 223, 0.12);
+    color: #fff7df;
 }
 
 html.dark .admin-card,
-html.dark .admin-modal-card {
-    background-color: rgba(234, 247, 223, 0.06);
-    border-color: rgba(234, 247, 223, 0.12);
-    color: #ffffff;
-}
-
+html.dark .admin-modal-card,
 html.dark .admin-panel,
 html.dark .admin-input,
 html.dark .admin-select,
-html.dark .admin-textarea {
-    background-color: rgba(234, 247, 223, 0.06);
-    border-color: rgba(234, 247, 223, 0.12);
-    color: #ffffff;
+html.dark .admin-textarea,
+html.dark .admin-btn-secondary,
+html.dark .admin-icon-btn {
+    background-color: rgba(255, 247, 223, 0.06);
+    border-color: rgba(255, 247, 223, 0.12);
+    color: #fff7df;
 }
 
 html.dark .admin-input::placeholder,
-html.dark .admin-textarea::placeholder {
-    color: rgba(255, 255, 255, 0.45);
-}
-
-html.dark .admin-heading {
-    color: #ffffff;
-}
-
-html.dark .admin-muted {
-    color: rgba(255, 255, 255, 0.68);
-}
-
-html.dark .admin-btn-secondary,
-html.dark .admin-icon-btn {
-    background-color: rgba(234, 247, 223, 0.06);
-    border-color: rgba(234, 247, 223, 0.12);
-    color: #ffffff;
-}
-
-html.dark .admin-table thead {
-    background-color: rgba(234, 247, 223, 0.06);
-    color: rgba(255, 255, 255, 0.58);
-}
-
+html.dark .admin-textarea::placeholder { color: rgba(255, 247, 223, 0.45); }
+html.dark .admin-heading { color: #fff7df; }
+html.dark .admin-muted { color: rgba(255, 247, 223, 0.68); }
+html.dark .admin-table thead { background-color: rgba(255, 247, 223, 0.06); color: rgba(255, 247, 223, 0.58); }
 html.dark .admin-table,
-html.dark .admin-table tbody {
-    border-color: rgba(234, 247, 223, 0.12);
-}
-
+html.dark .admin-table tbody { border-color: rgba(255, 247, 223, 0.12); }
 html.dark .admin-shell-backdrop {
     background:
-        radial-gradient(circle at 12% 8%, rgba(79, 176, 0, 0.18), transparent 28%),
-        radial-gradient(circle at 88% 0%, rgba(142, 217, 87, 0.12), transparent 26%),
-        linear-gradient(180deg, #121a10 0%, #172414 100%);
+        radial-gradient(circle at 12% 8%, rgba(255, 200, 41, 0.12), transparent 28%),
+        radial-gradient(circle at 88% 0%, rgba(32, 122, 31, 0.16), transparent 26%),
+        linear-gradient(180deg, #0f2110 0%, #163319 100%);
 }
