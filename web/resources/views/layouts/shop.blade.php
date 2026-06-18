@@ -8,6 +8,8 @@
         $alternateUrl = route('shop.index', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('pages.about')) {
         $alternateUrl = route('pages.about', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.contact')) {
+        $alternateUrl = route('pages.contact', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('blog.index')) {
         $alternateUrl = route('blog.index', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('blog.show')) {
@@ -73,7 +75,7 @@
                             <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow" wire:navigate.hover>Catégories</a>
                             <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('blog.index') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Recettes</a>
                             <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('pages.about') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Notre histoire</a>
-                            <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow" wire:navigate.hover>Contact</a>
+                            <a href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('pages.contact') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Contact</a>
                         </nav>
 
                         <div class="flex items-center justify-end gap-2 sm:gap-3">
@@ -83,13 +85,8 @@
                             <a href="{{ $accountUrl }}" class="hidden h-10 w-10 items-center justify-center rounded-full text-forest transition hover:bg-mint dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="Compte" wire:navigate.hover>
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"></path></svg>
                             </a>
-                            <a href="{{ $alternateUrl }}" class="hidden h-10 items-center justify-center rounded-full border border-forest/20 px-3 text-xs font-black uppercase tracking-wide text-forest transition hover:bg-mint dark:border-white/15 dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="{{ $currentLocale === 'fr' ? 'Switch to English' : 'Passer en français' }}" wire:navigate.hover>
-                                {{ strtoupper($alternateLocale) }}
-                            </a>
-                            <button type="button" class="hidden h-10 w-10 items-center justify-center rounded-full border border-forest/20 text-forest transition hover:bg-mint dark:border-white/15 dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="Changer le thème" x-on:click="toggleTheme()">
-                                <span x-show="theme !== 'dark'" aria-hidden="true">☀</span>
-                                <span x-show="theme === 'dark'" aria-hidden="true">☾</span>
-                            </button>
+                            <a href="{{ $alternateUrl }}" class="hidden h-10 items-center justify-center rounded-full border border-forest/20 px-3 text-xs font-black uppercase tracking-wide text-forest transition hover:bg-mint dark:border-white/15 dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="{{ $currentLocale === 'fr' ? 'Switch to English' : 'Passer en français' }}" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a>
+                            <button type="button" class="hidden h-10 w-10 items-center justify-center rounded-full border border-forest/20 text-forest transition hover:bg-mint dark:border-white/15 dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="Changer le thème" x-on:click="toggleTheme()"><span x-show="theme !== 'dark'" aria-hidden="true">☀</span><span x-show="theme === 'dark'" aria-hidden="true">☾</span></button>
                             @persist('cart-manager-'.$currentLocale)
                                 <livewire:shop.cart-manager :locale="$currentLocale" />
                             @endpersist
@@ -104,14 +101,8 @@
                         <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-forest px-4 py-3 font-black text-cream" wire:navigate.hover>Boutique</a>
                         <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Recettes</a>
                         <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Notre histoire</a>
-                        <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Contact</a>
-                        <div class="grid grid-cols-2 gap-2">
-                            <a href="{{ $alternateUrl }}" class="rounded-2xl bg-sunshine px-4 py-3 text-center font-black text-forest" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a>
-                            <button type="button" class="rounded-2xl border border-forest/20 bg-white px-4 py-3 font-black text-forest dark:border-white/10 dark:bg-white/5 dark:text-cream" x-on:click="toggleTheme(); closeMobileMenu()">
-                                <span x-show="theme !== 'dark'">Mode sombre</span>
-                                <span x-show="theme === 'dark'">Mode clair</span>
-                            </button>
-                        </div>
+                        <a href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Contact</a>
+                        <div class="grid grid-cols-2 gap-2"><a href="{{ $alternateUrl }}" class="rounded-2xl bg-sunshine px-4 py-3 text-center font-black text-forest" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a><button type="button" class="rounded-2xl border border-forest/20 bg-white px-4 py-3 font-black text-forest dark:border-white/10 dark:bg-white/5 dark:text-cream" x-on:click="toggleTheme(); closeMobileMenu()"><span x-show="theme !== 'dark'">Mode sombre</span><span x-show="theme === 'dark'">Mode clair</span></button></div>
                     </div>
                 </div>
             </header>
@@ -131,17 +122,10 @@
                         <div class="flex items-center gap-3"><span class="grid h-9 w-9 place-items-center rounded-t-xl bg-cream text-xs font-black text-forest">MP</span><p class="text-2xl font-black text-cream">Marché<span class="text-sunshine">.</span>Peyi</p></div>
                         <p class="mt-6 max-w-sm leading-7 text-cream/75">L'épicerie en ligne des saveurs caribéennes et tropicales. Produits authentiques, sourcés directement chez les producteurs.</p>
                         <div class="mt-6 space-y-2 text-cream/75"><p>bonjour@marchepeyi.com</p><p>+33 1 23 45 67 89</p><p>Paris · Pointe-à-Pitre</p></div>
-                        <div class="mt-7 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                            <span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Visa</span>
-                            <span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Mastercard</span>
-                            <span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Apple Pay</span>
-                            <span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Google Pay</span>
-                            <span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">PayPal</span>
-                        </div>
+                        <div class="mt-7 flex flex-wrap items-center justify-center gap-2 sm:justify-start"><span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Visa</span><span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Mastercard</span><span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Apple Pay</span><span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">Google Pay</span><span class="rounded-full border border-cream/20 px-3 py-1 text-[11px] font-black uppercase text-cream/80">PayPal</span></div>
                     </div>
-
                     <div><h3 class="text-lg font-black text-cream">Boutique</h3><ul class="mt-5 space-y-3 text-cream/75"><li><a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>Tous les produits</a></li><li><a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>Sauces & Pikliz</a></li><li><a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>Épices</a></li><li><a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>Boissons tropicales</a></li><li><a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>Produits frais</a></li></ul></div>
-                    <div><h3 class="text-lg font-black text-cream">Service client</h3><ul class="mt-5 space-y-3 text-cream/75"><li><a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" wire:navigate.hover>Contact</a></li><li><a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" wire:navigate.hover>Livraison & retours</a></li><li><a href="{{ route('checkout.show', ['locale' => $currentLocale]) }}" wire:navigate.hover>Suivi de commande</a></li><li><a href="{{ route('pages.payment', ['locale' => $currentLocale]) }}" wire:navigate.hover>FAQ</a></li></ul></div>
+                    <div><h3 class="text-lg font-black text-cream">Service client</h3><ul class="mt-5 space-y-3 text-cream/75"><li><a href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" wire:navigate.hover>Contact</a></li><li><a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" wire:navigate.hover>Livraison & retours</a></li><li><a href="{{ route('checkout.show', ['locale' => $currentLocale]) }}" wire:navigate.hover>Suivi de commande</a></li><li><a href="{{ route('pages.payment', ['locale' => $currentLocale]) }}" wire:navigate.hover>FAQ</a></li></ul></div>
                     <div><h3 class="text-lg font-black text-cream">Informations</h3><ul class="mt-5 space-y-3 text-cream/75"><li><a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" wire:navigate.hover>Notre histoire</a></li><li><a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>Recettes</a></li><li><a href="{{ route('pages.terms', ['locale' => $currentLocale]) }}" wire:navigate.hover>Engagements</a></li><li><a href="{{ route('pages.legal', ['locale' => $currentLocale]) }}" wire:navigate.hover>Mentions légales</a></li></ul></div>
                 </div>
                 <div class="mx-auto flex max-w-7xl flex-col gap-3 border-t border-cream/10 py-6 text-xs text-cream/60 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Marché Peyi — Tous droits réservés.</p><p>CGV · Mentions légales · Politique de confidentialité</p></div>
