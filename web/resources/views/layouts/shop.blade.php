@@ -123,61 +123,54 @@
                 @include('partials.product-reviews', ['product' => $product, 'currentLocale' => $currentLocale])
             @endif
 
-            <footer class="bg-[#020202] text-white">
-                <section class="relative overflow-hidden bg-cream px-4 py-16 text-center text-forest dark:bg-ink dark:text-cream sm:px-8 lg:py-20">
-                    <div class="absolute inset-x-0 top-0 h-6 bg-sunshine"></div>
-                    <svg class="absolute inset-x-0 top-4 h-10 w-full text-cream dark:text-ink" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
-                        <path fill="currentColor" d="M0,28 C30,58 60,58 90,28 C120,-2 150,-2 180,28 C210,58 240,58 270,28 C300,-2 330,-2 360,28 C390,58 420,58 450,28 C480,-2 510,-2 540,28 C570,58 600,58 630,28 C660,-2 690,-2 720,28 C750,58 780,58 810,28 C840,-2 870,-2 900,28 C930,58 960,58 990,28 C1020,-2 1050,-2 1080,28 C1110,58 1140,58 1170,28 C1200,-2 1230,-2 1260,28 C1290,58 1320,58 1350,28 C1380,-2 1410,-2 1440,28 L1440,80 L0,80 Z" />
-                    </svg>
-                    <div class="relative mx-auto max-w-3xl pt-8">
-                        <h2 class="text-4xl font-black uppercase leading-none tracking-tight sm:text-5xl">
+            <footer class="bg-forest text-cream">
+                <section class="border-y border-forest/10 bg-cream px-4 py-16 text-center text-forest dark:border-white/10 dark:bg-ink dark:text-cream sm:px-8 lg:py-20">
+                    <div class="mx-auto max-w-3xl">
+                        <p class="text-xs font-black uppercase tracking-[0.35em] text-coral">Newsletter</p>
+                        <h2 class="mt-4 text-4xl font-black uppercase leading-none tracking-tight sm:text-5xl">
                             {{ $currentLocale === 'fr' ? 'Ne ratez rien du marché !' : 'Nuh miss ah ting!' }}
                         </h2>
-                        <p class="mt-4 text-base font-semibold text-forest/80 dark:text-cream/80">
+                        <p class="mt-4 text-base font-semibold text-forest/75 dark:text-cream/80">
                             {{ $currentLocale === 'fr' ? 'Pas de spam. Juste des saveurs. 10% de réduction sur votre première commande 👀.' : 'No spam. Just spice. 10% off your first order 👀.' }}
                         </p>
                         <form class="mx-auto mt-9 flex max-w-xl flex-col items-center justify-center gap-3 sm:flex-row" action="#" method="POST">
                             <label class="sr-only" for="footer-newsletter-email">Email</label>
                             <input id="footer-newsletter-email" type="email" required placeholder="email@example.com" class="h-14 w-full rounded-full border-2 border-forest bg-white px-6 text-base font-bold text-forest outline-none placeholder:text-forest/55 focus:ring-4 focus:ring-sunshine/40 dark:bg-cream dark:text-forest sm:flex-1">
-                            <button type="submit" class="h-14 rounded-full border-2 border-forest bg-leaf px-7 text-sm font-black uppercase tracking-wide text-cream shadow-[0_7px_0_#0f5f22] transition hover:-translate-y-0.5 hover:bg-forest">
+                            <button type="submit" class="h-14 rounded-full border-2 border-forest bg-forest px-7 text-sm font-black uppercase tracking-wide text-cream shadow-[0_7px_0_#ffc829] transition hover:-translate-y-0.5 hover:bg-leaf">
                                 {{ $currentLocale === 'fr' ? 'S’abonner' : 'Subscribe' }}
                             </button>
                         </form>
                     </div>
                 </section>
 
-                <div class="relative bg-[#020202] px-4 pb-8 pt-20 sm:px-8 lg:pt-28">
-                    <svg class="absolute inset-x-0 -top-8 h-12 w-full text-[#020202]" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
-                        <path fill="currentColor" d="M0,28 C30,58 60,58 90,28 C120,-2 150,-2 180,28 C210,58 240,58 270,28 C300,-2 330,-2 360,28 C390,58 420,58 450,28 C480,-2 510,-2 540,28 C570,58 600,58 630,28 C660,-2 690,-2 720,28 C750,58 780,58 810,28 C840,-2 870,-2 900,28 C930,58 960,58 990,28 C1020,-2 1050,-2 1080,28 C1110,58 1140,58 1170,28 C1200,-2 1230,-2 1260,28 C1290,58 1320,58 1350,28 C1380,-2 1410,-2 1440,28 L1440,80 L0,80 Z" />
-                    </svg>
-
+                <div class="bg-forest px-4 pb-8 pt-16 sm:px-8 lg:pt-20">
                     <div class="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.1fr_1.15fr_0.55fr_0.75fr]">
                         <div>
-                            <div class="inline-block text-5xl font-black uppercase leading-[0.78] tracking-[-0.08em] text-white sm:text-7xl">
+                            <div class="inline-block text-5xl font-black uppercase leading-[0.78] tracking-[-0.08em] text-cream sm:text-7xl">
                                 <span class="block">Marché</span>
                                 <span class="block">Peyi</span>
                             </div>
                         </div>
 
                         <div>
-                            <p class="max-w-xl text-base font-bold leading-8 text-white">
+                            <p class="max-w-xl text-base font-bold leading-8 text-cream">
                                 {{ $currentLocale === 'fr' ? 'Marché Peyi rend les saveurs caribéennes, haïtiennes et africaines faciles à retrouver, à cuisiner et à partager au quotidien.' : 'Marché Peyi makes Caribbean, Haitian and African flavors easy to find, cook and share every day.' }}
                             </p>
-                            <div class="mt-8 flex items-center gap-5 text-xl text-white">
+                            <div class="mt-8 flex items-center gap-5 text-xl text-cream">
                                 <a href="#" aria-label="Facebook" class="transition hover:text-sunshine">f</a>
                                 <a href="#" aria-label="Instagram" class="transition hover:text-sunshine">◎</a>
                                 <a href="#" aria-label="TikTok" class="transition hover:text-sunshine">♪</a>
                             </div>
                         </div>
 
-                        <nav class="space-y-4 text-base font-black text-white" aria-label="Footer primary">
+                        <nav class="space-y-4 text-base font-black text-cream" aria-label="Footer primary">
                             <a class="block hover:text-sunshine" href="{{ route('home.localized', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Accueil' : 'Home' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('shop.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Boutique' : 'Shop' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('blog.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Recettes' : 'Recipes' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Nous trouver' : 'Find us' }}</a>
                         </nav>
 
-                        <nav class="space-y-4 text-base font-black text-white" aria-label="Footer secondary">
+                        <nav class="space-y-4 text-base font-black text-cream" aria-label="Footer secondary">
                             <a class="block hover:text-sunshine" href="{{ route('pages.about', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Notre histoire' : 'Our story' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Livraison & retours' : 'Shipping & returns' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" wire:navigate.hover>Contact</a>
@@ -185,15 +178,15 @@
                         </nav>
                     </div>
 
-                    <div class="mx-auto mt-20 flex max-w-7xl flex-col gap-6 text-sm font-bold text-white sm:flex-row sm:items-end sm:justify-between">
+                    <div class="mx-auto mt-20 flex max-w-7xl flex-col gap-6 border-t border-cream/10 pt-8 text-sm font-bold text-cream sm:flex-row sm:items-end sm:justify-between">
                         <p>© 2026, Marché Peyi.</p>
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded bg-white px-2 py-1 text-[11px] font-black text-[#020202]">AMEX</span>
-                            <span class="rounded bg-white px-2 py-1 text-[11px] font-black text-[#020202]">Apple Pay</span>
-                            <span class="rounded bg-white px-2 py-1 text-[11px] font-black text-[#020202]">Visa</span>
-                            <span class="rounded bg-white px-2 py-1 text-[11px] font-black text-[#020202]">G Pay</span>
-                            <span class="rounded bg-white px-2 py-1 text-[11px] font-black text-[#020202]">Mastercard</span>
-                            <span class="rounded bg-white px-2 py-1 text-[11px] font-black text-[#020202]">PayPal</span>
+                            <span class="rounded bg-cream px-2 py-1 text-[11px] font-black text-forest">AMEX</span>
+                            <span class="rounded bg-cream px-2 py-1 text-[11px] font-black text-forest">Apple Pay</span>
+                            <span class="rounded bg-cream px-2 py-1 text-[11px] font-black text-forest">Visa</span>
+                            <span class="rounded bg-cream px-2 py-1 text-[11px] font-black text-forest">G Pay</span>
+                            <span class="rounded bg-cream px-2 py-1 text-[11px] font-black text-forest">Mastercard</span>
+                            <span class="rounded bg-cream px-2 py-1 text-[11px] font-black text-forest">PayPal</span>
                         </div>
                     </div>
                 </div>
