@@ -10,8 +10,22 @@
         $alternateUrl = route('pages.about', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('blog.index')) {
         $alternateUrl = route('blog.index', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('blog.show')) {
+        $alternateUrl = route('blog.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     } elseif (request()->routeIs('pages.delivery')) {
         $alternateUrl = route('pages.delivery', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.legal')) {
+        $alternateUrl = route('pages.legal', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.terms')) {
+        $alternateUrl = route('pages.terms', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.payment')) {
+        $alternateUrl = route('pages.payment', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('account.login')) {
+        $alternateUrl = route('account.login', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('account.register')) {
+        $alternateUrl = route('account.register', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('account.show')) {
+        $alternateUrl = route('account.show', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('products.show')) {
         $alternateUrl = route('products.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     }
@@ -50,41 +64,54 @@
                     <div class="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-6">
                         <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="flex items-center gap-3" wire:navigate.hover>
                             <span class="grid h-8 w-8 place-items-center rounded-t-xl bg-forest text-sm font-black text-sunshine">MP</span>
-                            <span class="text-2xl font-black tracking-tight text-forest">Marché<span class="text-coral">.</span>Peyi</span>
+                            <span class="text-2xl font-black tracking-tight text-forest dark:text-meadow">Marché<span class="text-coral">.</span>Peyi</span>
                         </a>
 
-                        <nav class="hidden items-center justify-center gap-7 text-sm font-bold uppercase tracking-wide text-forest/75 lg:flex">
-                            <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="transition hover:text-forest {{ request()->routeIs('home') || request()->routeIs('home.localized') ? 'text-forest' : '' }}" wire:navigate.hover>Accueil</a>
-                            <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest {{ request()->routeIs('shop.index') ? 'text-forest' : '' }}" wire:navigate.hover>Boutique</a>
-                            <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest" wire:navigate.hover>Catégories</a>
-                            <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest {{ request()->routeIs('blog.index') ? 'text-forest' : '' }}" wire:navigate.hover>Recettes</a>
-                            <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="transition hover:text-forest {{ request()->routeIs('pages.about') ? 'text-forest' : '' }}" wire:navigate.hover>Notre histoire</a>
-                            <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" class="transition hover:text-forest" wire:navigate.hover>Contact</a>
+                        <nav class="hidden items-center justify-center gap-7 text-sm font-bold uppercase tracking-wide text-forest/75 dark:text-cream/75 lg:flex">
+                            <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('home') || request()->routeIs('home.localized') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Accueil</a>
+                            <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('shop.index') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Boutique</a>
+                            <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow" wire:navigate.hover>Catégories</a>
+                            <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('blog.index') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Recettes</a>
+                            <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('pages.about') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Notre histoire</a>
+                            <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow" wire:navigate.hover>Contact</a>
                         </nav>
 
-                        <div class="flex items-center justify-end gap-3">
-                            <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="hidden h-10 w-10 items-center justify-center rounded-full text-forest transition hover:bg-mint sm:inline-flex" aria-label="Recherche" wire:navigate.hover>
+                        <div class="flex items-center justify-end gap-2 sm:gap-3">
+                            <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="hidden h-10 w-10 items-center justify-center rounded-full text-forest transition hover:bg-mint dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="Recherche" wire:navigate.hover>
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
                             </a>
-                            <a href="{{ $accountUrl }}" class="hidden h-10 w-10 items-center justify-center rounded-full text-forest transition hover:bg-mint sm:inline-flex" aria-label="Compte" wire:navigate.hover>
+                            <a href="{{ $accountUrl }}" class="hidden h-10 w-10 items-center justify-center rounded-full text-forest transition hover:bg-mint dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="Compte" wire:navigate.hover>
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"></path></svg>
                             </a>
+                            <a href="{{ $alternateUrl }}" class="hidden h-10 items-center justify-center rounded-full border border-forest/20 px-3 text-xs font-black uppercase tracking-wide text-forest transition hover:bg-mint dark:border-white/15 dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="{{ $currentLocale === 'fr' ? 'Switch to English' : 'Passer en français' }}" wire:navigate.hover>
+                                {{ strtoupper($alternateLocale) }}
+                            </a>
+                            <button type="button" class="hidden h-10 w-10 items-center justify-center rounded-full border border-forest/20 text-forest transition hover:bg-mint dark:border-white/15 dark:text-meadow dark:hover:bg-white/10 sm:inline-flex" aria-label="Changer le thème" x-on:click="toggleTheme()">
+                                <span x-show="theme !== 'dark'" aria-hidden="true">☀</span>
+                                <span x-show="theme === 'dark'" aria-hidden="true">☾</span>
+                            </button>
                             @persist('cart-manager-'.$currentLocale)
                                 <livewire:shop.cart-manager :locale="$currentLocale" />
                             @endpersist
-                            <label for="mobile-menu-state" data-mobile-menu-toggle class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-forest/20 text-forest lg:hidden" role="button" tabindex="0" aria-label="Menu"><span data-mobile-menu-icon="open">Menu</span><span data-mobile-menu-icon="close" class="hidden">x</span></label>
+                            <label for="mobile-menu-state" data-mobile-menu-toggle class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-forest/20 text-forest dark:border-white/15 dark:text-meadow lg:hidden" role="button" tabindex="0" aria-label="Menu"><span data-mobile-menu-icon="open">Menu</span><span data-mobile-menu-icon="close" class="hidden">x</span></label>
                         </div>
                     </div>
                 </div>
 
-                <div id="mobile-menu" data-mobile-menu class="mobile-menu-panel border-t border-forest/10 bg-cream px-4 py-4 shadow-lg dark:bg-ink lg:hidden">
+                <div id="mobile-menu" data-mobile-menu class="mobile-menu-panel border-t border-forest/10 bg-cream px-4 py-4 shadow-lg dark:border-white/10 dark:bg-ink lg:hidden">
                     <div class="grid gap-2">
-                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest" wire:navigate.hover>Accueil</a>
+                        <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Accueil</a>
                         <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-forest px-4 py-3 font-black text-cream" wire:navigate.hover>Boutique</a>
-                        <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest" wire:navigate.hover>Recettes</a>
-                        <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest" wire:navigate.hover>Notre histoire</a>
-                        <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest" wire:navigate.hover>Contact</a>
-                        <a href="{{ $alternateUrl }}" class="rounded-2xl bg-sunshine px-4 py-3 font-black text-forest" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a>
+                        <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Recettes</a>
+                        <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Notre histoire</a>
+                        <a href="{{ route('pages.delivery', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Contact</a>
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="{{ $alternateUrl }}" class="rounded-2xl bg-sunshine px-4 py-3 text-center font-black text-forest" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a>
+                            <button type="button" class="rounded-2xl border border-forest/20 bg-white px-4 py-3 font-black text-forest dark:border-white/10 dark:bg-white/5 dark:text-cream" x-on:click="toggleTheme(); closeMobileMenu()">
+                                <span x-show="theme !== 'dark'">Mode sombre</span>
+                                <span x-show="theme === 'dark'">Mode clair</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
