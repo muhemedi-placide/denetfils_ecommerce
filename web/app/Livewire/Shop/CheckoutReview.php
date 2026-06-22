@@ -25,9 +25,15 @@ class CheckoutReview extends Component
 
     public string $carrier = 'mondial_relay_pickup';
 
-    public ?string $selectedPickupPoint = 'mr-paris-11';
+    public ?string $selectedPickupPoint = null;
 
     public string $pickupQuery = '';
+
+    public array $pickupPointOptions = [];
+
+    public array $pickupMapCenter = ['latitude' => 48.8627, 'longitude' => 2.3726, 'zoom' => 13];
+
+    public ?string $pickupPointError = null;
 
     public bool $orderConfirmed = false;
 
@@ -47,11 +53,13 @@ class CheckoutReview extends Component
         $this->countries = $countries;
         $this->selectedAddressId = $this->defaultAddressId();
         $this->initializeCart();
+        $this->refreshPickupPoints();
     }
 
     public function restoreFromBrowser(?string $token): void
     {
         $this->restoreCart($token);
+        $this->refreshPickupPoints();
         $this->refreshQuote();
     }
 
@@ -85,7 +93,7 @@ class CheckoutReview extends Component
 
         if (! $this->token()) {
             $this->checkoutError = $this->locale === 'fr'
-                ? 'Session expiree. Reconnectez-vous pour continuer.'
+                ? 'Session expirée. Reconnectez-vous pour continuer.'
                 : 'Session expired. Sign in again to continue.';
 
             return;
@@ -109,8 +117,8 @@ class CheckoutReview extends Component
 
         if ($this->delivery === 'relay' && ! $this->selectedPickupPointDetails()) {
             $this->checkoutError = $this->locale === 'fr'
-                ? 'Choisissez un point relais avant de confirmer.'
-                : 'Choose a pickup point before confirming.';
+                ? 'Choisissez un point relais sur la liste ou sur la carte avant de confirmer.'
+                : 'Choose a pickup point from the list or map before confirming.';
 
             return;
         }
@@ -120,7 +128,7 @@ class CheckoutReview extends Component
         if (! $response['ok']) {
             $this->checkoutError = $this->firstApiError($response)
                 ?: ($this->locale === 'fr'
-                    ? 'Impossible de creer la commande pour le moment.'
+                    ? 'Impossible de créer la commande pour le moment.'
                     : 'Unable to create the order right now.');
 
             return;
@@ -142,7 +150,7 @@ class CheckoutReview extends Component
     {
         if ($value === 'relay') {
             $this->carrier = 'mondial_relay_pickup';
-            $this->selectedPickupPoint = $this->selectedPickupPoint ?: 'mr-paris-11';
+            $this->refreshPickupPoints();
             $this->refreshQuote();
 
             return;
@@ -150,6 +158,8 @@ class CheckoutReview extends Component
 
         $this->carrier = 'chronopost_home';
         $this->selectedPickupPoint = null;
+        $this->pickupPointOptions = [];
+        $this->pickupPointError = null;
         $this->refreshQuote();
     }
 
@@ -162,21 +172,33 @@ class CheckoutReview extends Component
         }
 
         $this->delivery = $option['type'] === 'relay' ? 'relay' : 'home';
-        $this->selectedPickupPoint = $this->delivery === 'relay'
-            ? ($this->selectedPickupPoint ?: 'mr-paris-11')
-            : null;
+
+        if ($this->delivery === 'relay') {
+            $this->refreshPickupPoints();
+        } else {
+            $this->selectedPickupPoint = null;
+            $this->pickupPointOptions = [];
+        }
+
         $this->refreshQuote();
     }
 
     public function updatedSelectedAddressId(): void
     {
+        $this->refreshPickupPoints();
         $this->refreshQuote();
+    }
+
+    public function updatedPickupQuery(): void
+    {
+        $this->refreshPickupPoints();
     }
 
     public function selectPickupPoint(string $code): void
     {
         if (collect($this->allPickupPoints())->contains('code', $code)) {
             $this->selectedPickupPoint = $code;
+            $this->refreshQuote();
         }
     }
 
@@ -189,6 +211,7 @@ class CheckoutReview extends Component
             'selectedCarrier' => $this->carrierOptions()[$this->carrier] ?? null,
             'pickupPoints' => $this->pickupPoints(),
             'selectedPickupPointDetails' => $this->selectedPickupPointDetails(),
+            'pickupMapCenter' => $this->pickupMapCenter,
             'displayQuote' => $this->displayQuote(),
         ]);
     }
@@ -218,6 +241,46 @@ class CheckoutReview extends Component
         $this->quote = $response['data'];
     }
 
+    private function refreshPickupPoints(): void
+    {
+        if ($this->delivery !== 'relay') {
+            $this->pickupPointOptions = [];
+            $this->pickupPointError = null;
+
+            return;
+        }
+
+        if (! $this->token() || ! $this->selectedAddressId) {
+            $this->pickupPointOptions = $this->fallbackPickupPoints();
+            $this->ensureSelectedPickupPointExists();
+
+            return;
+        }
+
+        $response = app(AccountApiClient::class)->pickupPoints($this->token(), [
+            'shipping_address_id' => (int) $this->selectedAddressId,
+            'locale' => $this->locale,
+            'carrier' => $this->carrier,
+            'query' => $this->pickupQuery,
+        ]);
+
+        if (! $response['ok']) {
+            $this->pickupPointOptions = $this->filteredFallbackPickupPoints();
+            $this->pickupPointError = $this->firstApiError($response)
+                ?: ($this->locale === 'fr'
+                    ? 'La recherche des points relais est indisponible, affichage des relais de secours.'
+                    : 'Pickup search is unavailable, fallback pickup points are displayed.');
+            $this->ensureSelectedPickupPointExists();
+
+            return;
+        }
+
+        $this->pickupPointError = null;
+        $this->pickupPointOptions = $response['data']['points'] ?? [];
+        $this->pickupMapCenter = $response['data']['center'] ?? $this->pickupMapCenter;
+        $this->ensureSelectedPickupPointExists();
+    }
+
     private function checkoutPayload(): array
     {
         $payload = [
@@ -226,12 +289,16 @@ class CheckoutReview extends Component
             'locale' => $this->locale,
             'delivery_method' => $this->deliveryMethodForApi(),
             'carrier' => $this->carrier,
+            'metadata' => [
+                'delivery_choice' => [
+                    'type' => $this->delivery,
+                    'carrier' => $this->carrier,
+                ],
+            ],
         ];
 
         if ($this->delivery === 'relay' && $this->selectedPickupPointDetails()) {
-            $payload['metadata'] = [
-                'pickup_point' => $this->selectedPickupPointDetails(),
-            ];
+            $payload['metadata']['pickup_point'] = $this->selectedPickupPointDetails();
         }
 
         return $payload;
@@ -246,8 +313,8 @@ class CheckoutReview extends Component
     {
         return array_replace([
             'formatted_subtotal' => $this->cart['formatted_subtotal'] ?? $this->formattedTotal(),
-            'formatted_shipping' => $this->locale === 'fr' ? 'A calculer' : 'To calculate',
-            'formatted_tax' => $this->locale === 'fr' ? 'A calculer' : 'To calculate',
+            'formatted_shipping' => $this->locale === 'fr' ? 'À calculer' : 'To calculate',
+            'formatted_tax' => $this->locale === 'fr' ? 'À calculer' : 'To calculate',
             'formatted_total' => $this->formattedTotal(),
         ], $this->quote);
     }
@@ -304,7 +371,32 @@ class CheckoutReview extends Component
             return [];
         }
 
-        $points = $this->allPickupPoints();
+        return $this->pickupPointOptions ?: $this->filteredFallbackPickupPoints();
+    }
+
+    private function allPickupPoints(): array
+    {
+        return $this->pickupPointOptions ?: $this->fallbackPickupPoints();
+    }
+
+    private function ensureSelectedPickupPointExists(): void
+    {
+        $points = $this->pickupPoints();
+
+        if (empty($points)) {
+            $this->selectedPickupPoint = null;
+
+            return;
+        }
+
+        if (! $this->selectedPickupPoint || ! collect($points)->contains('code', $this->selectedPickupPoint)) {
+            $this->selectedPickupPoint = (string) ($points[0]['code'] ?? '');
+        }
+    }
+
+    private function filteredFallbackPickupPoints(): array
+    {
+        $points = $this->fallbackPickupPoints();
         $query = trim(mb_strtolower($this->pickupQuery));
 
         if ($query === '') {
@@ -317,59 +409,107 @@ class CheckoutReview extends Component
             ->all();
     }
 
-    private function allPickupPoints(): array
+    private function fallbackPickupPoints(): array
     {
         return $this->locale === 'fr'
             ? [
                 [
-                    'code' => 'mr-paris-11',
+                    'code' => 'mr-paris-oberkampf',
+                    'carrier_code' => 'mondial_relay_pickup',
+                    'provider' => 'mondial_relay',
                     'carrier' => 'Mondial Relay',
-                    'name' => 'Commerce partenaire - Paris 11',
+                    'type' => 'pickup',
+                    'name' => 'Commerce partenaire - Oberkampf',
                     'address' => '12 rue Oberkampf, 75011 Paris',
                     'hours' => 'Lun-Sam 09:00-19:30',
                     'distance' => '450 m',
+                    'distance_meters' => 450,
+                    'latitude' => 48.86512,
+                    'longitude' => 2.37764,
+                    'map_x' => 22,
+                    'map_y' => 42,
                 ],
                 [
-                    'code' => 'chrono-pickup-poste',
-                    'carrier' => 'Chrono Relais',
-                    'name' => 'Relais Pickup - Bureau de poste',
-                    'address' => '6 avenue de la Republique, 75011 Paris',
-                    'hours' => 'Lun-Ven 08:30-18:00',
-                    'distance' => '700 m',
-                ],
-                [
-                    'code' => 'mr-locker-centre',
+                    'code' => 'mr-locker-voltaire',
+                    'carrier_code' => 'mondial_relay_pickup',
+                    'provider' => 'mondial_relay',
                     'carrier' => 'Mondial Relay',
+                    'type' => 'locker',
                     'name' => 'Locker centre-ville',
                     'address' => '24 boulevard Voltaire, 75011 Paris',
                     'hours' => 'Ouvert 7j/7',
                     'distance' => '1,1 km',
+                    'distance_meters' => 1100,
+                    'latitude' => 48.85756,
+                    'longitude' => 2.38133,
+                    'map_x' => 68,
+                    'map_y' => 31,
+                ],
+                [
+                    'code' => 'chrono-poste-paris-11',
+                    'carrier_code' => 'chrono_relais_pickup',
+                    'provider' => 'chrono_relais',
+                    'carrier' => 'Chrono Relais',
+                    'type' => 'pickup',
+                    'name' => 'Bureau de poste Paris 11',
+                    'address' => '6 avenue de la République, 75011 Paris',
+                    'hours' => 'Lun-Ven 08:30-18:00',
+                    'distance' => '730 m',
+                    'distance_meters' => 730,
+                    'latitude' => 48.86588,
+                    'longitude' => 2.36741,
+                    'map_x' => 53,
+                    'map_y' => 63,
                 ],
             ]
             : [
                 [
-                    'code' => 'mr-paris-11',
+                    'code' => 'mr-paris-oberkampf',
+                    'carrier_code' => 'mondial_relay_pickup',
+                    'provider' => 'mondial_relay',
                     'carrier' => 'Mondial Relay',
-                    'name' => 'Partner shop - Paris 11',
+                    'type' => 'pickup',
+                    'name' => 'Partner shop - Oberkampf',
                     'address' => '12 rue Oberkampf, 75011 Paris',
                     'hours' => 'Mon-Sat 09:00-19:30',
                     'distance' => '450 m',
+                    'distance_meters' => 450,
+                    'latitude' => 48.86512,
+                    'longitude' => 2.37764,
+                    'map_x' => 22,
+                    'map_y' => 42,
                 ],
                 [
-                    'code' => 'chrono-pickup-poste',
-                    'carrier' => 'Chrono Relais',
-                    'name' => 'Pickup relay - Post office',
-                    'address' => '6 avenue de la Republique, 75011 Paris',
-                    'hours' => 'Mon-Fri 08:30-18:00',
-                    'distance' => '700 m',
-                ],
-                [
-                    'code' => 'mr-locker-centre',
+                    'code' => 'mr-locker-voltaire',
+                    'carrier_code' => 'mondial_relay_pickup',
+                    'provider' => 'mondial_relay',
                     'carrier' => 'Mondial Relay',
+                    'type' => 'locker',
                     'name' => 'City center locker',
                     'address' => '24 boulevard Voltaire, 75011 Paris',
                     'hours' => 'Open 7 days/week',
                     'distance' => '1.1 km',
+                    'distance_meters' => 1100,
+                    'latitude' => 48.85756,
+                    'longitude' => 2.38133,
+                    'map_x' => 68,
+                    'map_y' => 31,
+                ],
+                [
+                    'code' => 'chrono-poste-paris-11',
+                    'carrier_code' => 'chrono_relais_pickup',
+                    'provider' => 'chrono_relais',
+                    'carrier' => 'Chrono Relais',
+                    'type' => 'pickup',
+                    'name' => 'Paris 11 post office',
+                    'address' => '6 avenue de la République, 75011 Paris',
+                    'hours' => 'Mon-Fri 08:30-18:00',
+                    'distance' => '730 m',
+                    'distance_meters' => 730,
+                    'latitude' => 48.86588,
+                    'longitude' => 2.36741,
+                    'map_x' => 53,
+                    'map_y' => 63,
                 ],
             ];
     }
@@ -383,21 +523,21 @@ class CheckoutReview extends Component
                     'type' => 'relay',
                     'eta' => '3 à 5 jours ouvrés',
                     'price' => 'Calcul à venir',
-                    'description' => 'Point relais ou locker, prêt pour la recherche de relais et les étiquettes Mondial Relay.',
+                    'description' => 'Point relais ou locker. Le client choisit le relais depuis la liste ou directement sur la carte.',
                 ],
                 'chrono_relais_pickup' => [
                     'name' => 'Chrono Relais',
                     'type' => 'relay',
                     'eta' => '24 à 72 h ouvrées',
                     'price' => 'Calcul à venir',
-                    'description' => 'Relais Pickup Chronopost, prévu pour la sélection de relais et le suivi colis.',
+                    'description' => 'Relais Pickup Chronopost, sélectionnable depuis la même carte.',
                 ],
                 'chronopost_home' => [
                     'name' => 'Chronopost domicile',
                     'type' => 'home',
                     'eta' => '24 à 48 h ouvrées',
                     'price' => 'Calcul à venir',
-                    'description' => 'Option domicile gardée pour évoluer sans refaire le checkout.',
+                    'description' => 'Livraison à domicile sur l’adresse client sélectionnée.',
                 ],
             ];
         }
@@ -408,21 +548,21 @@ class CheckoutReview extends Component
                 'type' => 'relay',
                 'eta' => '3 to 5 business days',
                 'price' => 'To be calculated',
-                'description' => 'Pickup point or locker, ready for Mondial Relay pickup search and labels.',
+                'description' => 'Pickup point or locker. The customer picks it from the list or directly on the map.',
             ],
             'chrono_relais_pickup' => [
                 'name' => 'Chrono Relais',
                 'type' => 'relay',
                 'eta' => '24 to 72 business hours',
                 'price' => 'To be calculated',
-                'description' => 'Chronopost Pickup relay, ready for relay selection and parcel tracking.',
+                'description' => 'Chronopost Pickup relay selectable from the same map.',
             ],
             'chronopost_home' => [
                 'name' => 'Chronopost home',
                 'type' => 'home',
                 'eta' => '24 to 48 business hours',
                 'price' => 'To be calculated',
-                'description' => 'Home option kept so checkout can evolve without being rebuilt.',
+                'description' => 'Home delivery to the selected customer address.',
             ],
         ];
     }
