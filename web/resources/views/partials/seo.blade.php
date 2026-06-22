@@ -1,6 +1,6 @@
 @php
-    $siteName = 'DEN & FILS';
-    $siteUrl = rtrim((string) config('app.url', 'https://www.denetfils.fr'), '/');
+    $siteName = 'Marché Peyi';
+    $siteUrl = rtrim((string) config('app.url', 'https://www.marchepeyi.fr'), '/');
     $seoPayload = $seoPayload ?? [];
     $seoMeta = data_get($seoPayload, 'meta', []);
     $openGraph = data_get($seoPayload, 'open_graph', []);
@@ -16,7 +16,7 @@
     $canonicalUrl = trim($__env->yieldContent('canonical')) ?: data_get($seoPayload, 'canonical') ?: url()->current();
     $robots = trim($__env->yieldContent('robots')) ?: data_get($seoMeta, 'robots') ?: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
     $ogType = trim($__env->yieldContent('og_type')) ?: data_get($openGraph, 'type', 'website');
-    $ogImage = trim($__env->yieldContent('og_image')) ?: data_get($openGraph, 'image') ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=85';
+    $ogImage = trim($__env->yieldContent('og_image')) ?: data_get($openGraph, 'image') ?: asset('assets/products/hero-basket.jpg');
     $twitterImage = data_get($twitterCard, 'image') ?: $ogImage;
     $twitterCardType = data_get($twitterCard, 'card', 'summary_large_image');
     $preloadImage = trim($__env->yieldContent('preload_image'));
@@ -26,24 +26,18 @@
             [
                 '@type' => ['Organization', 'OnlineStore'],
                 '@id' => $siteUrl . '/#organization',
-                'name' => 'DEN & FILS',
-                'alternateName' => 'Denetfils',
+                'name' => 'Marché Peyi',
+                'alternateName' => 'Marche Peyi',
                 'url' => $siteUrl,
-                'slogan' => 'Poto mitan kizin ou',
-                'email' => __('home.contact.email'),
-                'telephone' => __('home.contact.phone'),
-                'vatID' => 'FR88 939445672',
+                'slogan' => 'Exotic & Tropical Tastes',
+                'email' => 'bonjour@marchepeyi.com',
+                'telephone' => '+33 1 23 45 67 89',
                 'address' => [
                     '@type' => 'PostalAddress',
-                    'streetAddress' => '4 Rue des Grands Champs',
-                    'postalCode' => '51520',
-                    'addressLocality' => 'Saint Martin sur le Pré',
+                    'streetAddress' => '12 rue des Tropiques',
+                    'postalCode' => '93500',
+                    'addressLocality' => 'Pantin',
                     'addressCountry' => 'FR',
-                ],
-                'sameAs' => [
-                    'https://www.facebook.com/denetfils',
-                    'https://www.instagram.com/denetfils',
-                    'https://www.tiktok.com/@denetfils',
                 ],
             ],
             [
@@ -55,7 +49,7 @@
                 'publisher' => ['@id' => $siteUrl . '/#organization'],
                 'potentialAction' => [
                     '@type' => 'SearchAction',
-                    'target' => route('home.localized', ['locale' => $currentLocale]) . '?q={search_term_string}#products',
+                    'target' => route('shop.index', ['locale' => $currentLocale]) . '?q={search_term_string}',
                     'query-input' => 'required name=search_term_string',
                 ],
             ],
@@ -65,11 +59,26 @@
 <title>{{ $metaTitle }}</title>
 <meta name="description" content="{{ $metaDescription }}">
 <meta name="robots" content="{{ $robots }}">
-<meta name="author" content="DEN & FILS">
-<meta name="application-name" content="DEN & FILS">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121a10" media="(prefers-color-scheme: dark)">
+<meta name="author" content="{{ $siteName }}">
+<meta name="application-name" content="{{ $siteName }}">
+<meta name="theme-color" content="#fff7df" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f2110" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
+<style>
+@media (max-width: 1023px) {
+#shop-app > header > div:nth-of-type(2) > div { position: relative; display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 0; }
+#shop-app > header > div:nth-of-type(2) > div > a:first-child { position: absolute; left: 50%; z-index: 1; max-width: min(58vw, 240px); transform: translateX(-50%); }
+#shop-app > header > div:nth-of-type(2) > div > div:last-child { z-index: 2; display: flex !important; width: 100%; flex-direction: row-reverse; align-items: center; justify-content: space-between !important; gap: .5rem; }
+#shop-app > header > div:nth-of-type(2) > div > div:last-child > a, #shop-app > header > div:nth-of-type(2) > div > div:last-child > button { display: none !important; }
+#shop-app > header > div:nth-of-type(2) [data-mobile-menu-toggle] { width: 2.75rem; height: 2.75rem; border: 0 !important; font-size: 0 !important; }
+#shop-app > header > div:nth-of-type(2) [data-mobile-menu-icon='open']::before { content: '☰'; font-size: 1.55rem; line-height: 1; }
+#shop-app > header > div:nth-of-type(2) [data-mobile-menu-icon='close'] { font-size: 1.9rem !important; line-height: 1; }
+#shop-app > header > div:nth-of-type(2) > div > a:first-child > span:first-child { width: 1.6rem !important; height: 1.6rem !important; background: transparent !important; color: var(--mp-forest) !important; font-size: 0 !important; box-shadow: none !important; }
+#shop-app > header > div:nth-of-type(2) > div > a:first-child > span:first-child::before { content: '⌂'; font-size: 1.55rem; line-height: 1; }
+#shop-app > header > div:nth-of-type(2) > div > a:first-child > span:last-child { font-size: 1.28rem; line-height: 1; }
+[data-testid='header-cart-open-button'] { min-height: 2.5rem; padding: .5rem .75rem; }
+}
+</style>
 <link rel="canonical" href="{{ $canonicalUrl }}">
 @if (! empty($hreflangLinks))
     @foreach ($hreflangLinks as $link)

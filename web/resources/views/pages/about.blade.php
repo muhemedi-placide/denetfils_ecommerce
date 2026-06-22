@@ -1,109 +1,73 @@
 @extends('layouts.shop')
 
-@section('title', __('home.about.title') . ' | Denetfils')
-@section('description', __('home.about.body'))
+@section('title', ($locale === 'fr' ? 'Notre histoire' : 'Our story') . ' | Marche Peyi')
+@section('description', $locale === 'fr' ? 'Découvrez l’histoire et la mission de Marche Peyi : un marché de saveurs authentiques, directement lié aux producteurs.' : 'Discover Marche Peyi story and mission: a market of authentic flavors directly connected to producers.')
+@section('canonical', route('pages.about', ['locale' => $locale]))
 
 @section('content')
-    <section class="soft-grid px-5 py-14 dark:bg-ink sm:px-8 lg:py-20">
-        <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+    @php
+        $leavesImage = asset('assets/products/hero-market.jpg');
+        $peppersImage = asset('assets/products/peppers.jpg');
+    @endphp
+
+    <section class="relative overflow-hidden bg-forest px-4 py-24 text-cream sm:px-8 lg:py-36" style="background-image: linear-gradient(90deg, rgba(18,76,32,.88), rgba(18,76,32,.92)), url('{{ $leavesImage }}'); background-size: cover; background-position: center;">
+        <div class="mx-auto max-w-7xl">
+            <p class="text-xs font-black uppercase tracking-[0.35em] text-[#ff9817]">{{ $locale === 'fr' ? 'Notre histoire' : 'Our story' }}</p>
+            <h1 class="mt-6 max-w-5xl text-6xl font-black leading-[0.98] tracking-tight text-cream sm:text-7xl lg:text-8xl">
+                {{ $locale === 'fr' ? 'Un marché. Mille saveurs. Une mission.' : 'One market. A thousand flavors. One mission.' }}
+            </h1>
+            <p class="mt-8 max-w-3xl text-lg font-semibold leading-9 text-cream/90">
+                {{ $locale === 'fr' ? 'Nous avons grandi entre deux cuisines : celle de la grand-mère qui mijote l’épis, et celle du supermarché aux rayons fades. Marché Peyi est né pour relier les deux.' : 'We grew up between two kitchens: the grandmother’s slow-cooked seasoning and the supermarket aisle without flavor. Marché Peyi was born to reconnect both worlds.' }}
+            </p>
+        </div>
+    </section>
+
+    <section class="bg-cream px-4 py-20 dark:bg-ink sm:px-8 lg:py-28">
+        <div class="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
             <div>
-                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.about.eyebrow') }}</p>
-                <h1 class="mt-3 max-w-3xl text-4xl font-extrabold leading-tight text-cocoa dark:text-cream sm:text-5xl">
-                    {{ __('home.about.title') }}
-                </h1>
-                <p class="mt-5 max-w-2xl text-base leading-8 text-cocoa/70 dark:text-cream/70">
-                    {{ __('home.about.body') }}
+                <p class="text-xs font-black uppercase tracking-[0.35em] text-coral">{{ $locale === 'fr' ? 'Manifeste' : 'Manifesto' }}</p>
+                <h2 class="mt-5 max-w-xl text-5xl font-black leading-[1.04] tracking-tight text-forest dark:text-meadow sm:text-6xl">
+                    {{ $locale === 'fr' ? 'Les vrais goûts, les vrais gens.' : 'Real flavors, real people.' }}
+                </h2>
+            </div>
+            <div class="max-w-2xl space-y-7 text-base font-semibold leading-8 text-forest/75 dark:text-cream/75">
+                <p>{{ $locale === 'fr' ? 'Chez Marché Peyi, chaque produit a un visage. Un nom. Une parcelle. Une recette.' : 'At Marché Peyi, every product has a face. A name. A field. A recipe.' }}</p>
+                <p>{{ $locale === 'fr' ? 'Nous travaillons directement avec des coopératives en Haïti, en Guadeloupe, en Martinique, au Cameroun, en Côte d’Ivoire. Pas d’intermédiaire, pas de marque blanche.' : 'We work directly with cooperatives in Haiti, Guadeloupe, Martinique, Cameroon and Côte d’Ivoire. No unnecessary middlemen, no white-label shortcut.' }}</p>
+                <p>{{ $locale === 'fr' ? 'Notre engagement : un prix juste pour le producteur, un produit authentique pour vous, et un colis qui voyage le moins possible.' : 'Our commitment: a fair price for producers, an authentic product for customers, and a parcel that travels as little as possible.' }}</p>
+            </div>
+        </div>
+
+        <div class="mx-auto mt-20 grid max-w-7xl gap-5 lg:grid-cols-3">
+            <article class="rounded-[1.5rem] bg-sunshine p-8 text-forest shadow-sm">
+                <p class="text-5xl font-black tracking-tight">120+</p>
+                <p class="mt-3 text-xs font-black uppercase tracking-[0.22em] text-forest/70">{{ $locale === 'fr' ? 'Producteurs partenaires' : 'Partner producers' }}</p>
+            </article>
+            <article class="rounded-[1.5rem] bg-sunshine p-8 text-forest shadow-sm">
+                <p class="text-5xl font-black tracking-tight">8</p>
+                <p class="mt-3 text-xs font-black uppercase tracking-[0.22em] text-forest/70">{{ $locale === 'fr' ? 'Pays sourcés' : 'Sourced countries' }}</p>
+            </article>
+            <article class="rounded-[1.5rem] bg-sunshine p-8 text-forest shadow-sm">
+                <p class="text-5xl font-black tracking-tight">0</p>
+                <p class="mt-3 text-xs font-black uppercase tracking-[0.22em] text-forest/70">{{ $locale === 'fr' ? 'Intermédiaires' : 'Middlemen' }}</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="bg-cream px-4 pb-16 dark:bg-ink sm:px-8 lg:pb-20">
+        <div class="mx-auto grid max-w-[112rem] overflow-hidden rounded-[2rem] bg-coral text-cream shadow-tropical lg:grid-cols-2">
+            <div class="flex min-h-[300px] flex-col justify-center p-8 sm:min-h-[340px] sm:p-12 lg:h-[390px] lg:p-16">
+                <h2 class="max-w-xl text-4xl font-black leading-tight text-cream sm:text-5xl lg:text-6xl">
+                    {{ $locale === 'fr' ? 'Envie de cuisiner avec nous ?' : 'Want to cook with us?' }}
+                </h2>
+                <p class="mt-5 max-w-xl text-base font-semibold leading-8 text-cream/90">
+                    {{ $locale === 'fr' ? 'Découvrez la boutique et trouvez vos prochains essentiels.' : 'Explore the shop and find your next essentials.' }}
                 </p>
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary" wire:navigate.hover>{{ __('home.hero.primary_cta') }}</a>
-                    <a href="{{ route('blog.index', ['locale' => $locale]) }}" class="btn-secondary" wire:navigate.hover>{{ __('home.nav.blog') }}</a>
-                </div>
+                <a href="{{ route('shop.index', ['locale' => $locale]) }}" class="mt-8 inline-flex w-fit rounded-full bg-cream px-7 py-4 text-sm font-black uppercase tracking-wide text-forest transition hover:bg-sunshine" wire:navigate.hover>
+                    {{ $locale === 'fr' ? 'Aller à la boutique' : 'Go to the shop' }}
+                </a>
             </div>
-
-            <div class="relative overflow-hidden rounded-[1.75rem] bg-linen p-3 shadow-sm dark:bg-white/5">
-                <img
-                    class="aspect-[4/3] w-full rounded-[1.25rem] object-cover"
-                    src="https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1200&q=84"
-                    alt="{{ __('home.about.image_alt') }}"
-                    loading="lazy"
-                >
-                <div class="absolute bottom-6 left-6 right-6 rounded-[1.25rem] border border-white/20 bg-forest/85 p-5 text-white shadow-xl backdrop-blur">
-                    <p class="text-xs font-bold uppercase tracking-[0.22em] text-meadow">DEN & FILS</p>
-                    <p class="mt-2 text-lg font-extrabold leading-snug">{{ __('home.about.image_caption') }}</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="bg-white px-5 py-14 dark:bg-[#172414] sm:px-8">
-        <div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3">
-            <article class="rounded-[1.5rem] border border-leaf/10 bg-linen p-6 dark:border-white/10 dark:bg-white/5 lg:col-span-2">
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">01</p>
-                <h2 class="mt-3 text-2xl font-extrabold text-cocoa dark:text-cream">{{ __('home.about.story_title') }}</h2>
-                <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.about.story_body') }}</p>
-            </article>
-
-            <article class="rounded-[1.5rem] border border-leaf/10 bg-forest p-6 text-white dark:border-white/10">
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-meadow">02</p>
-                <h2 class="mt-3 text-2xl font-extrabold">{{ __('home.about.reach_title') }}</h2>
-                <ul class="mt-5 space-y-3 text-sm leading-6 text-white/78">
-                    @foreach (trans('home.about.reach_items') as $item)
-                        <li class="flex gap-3"><span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-meadow"></span><span>{{ $item }}</span></li>
-                    @endforeach
-                </ul>
-            </article>
-        </div>
-    </section>
-
-    <section class="bg-linen px-5 py-14 dark:bg-ink sm:px-8">
-        <div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <article class="rounded-[1.5rem] border border-leaf/10 bg-white p-6 dark:border-white/10 dark:bg-white/5">
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">03</p>
-                <h2 class="mt-3 text-2xl font-extrabold text-cocoa dark:text-cream">{{ __('home.about.vision_title') }}</h2>
-                <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.about.vision_body') }}</p>
-            </article>
-
-            <article class="rounded-[1.5rem] border border-leaf/10 bg-white p-6 dark:border-white/10 dark:bg-white/5">
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">04</p>
-                <h2 class="mt-3 text-2xl font-extrabold text-cocoa dark:text-cream">{{ __('home.about.commitment_title') }}</h2>
-                <p class="mt-4 text-sm leading-7 text-cocoa/70 dark:text-cream/70">{{ __('home.about.commitment_body') }}</p>
-            </article>
-        </div>
-    </section>
-
-    <section class="bg-white px-5 py-14 dark:bg-[#172414] sm:px-8">
-        <div class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
-            @foreach (trans('home.about.points') as $point)
-                <article class="rounded-[1.25rem] border border-leaf/10 bg-linen p-6 dark:border-white/10 dark:bg-white/5">
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ $point['eyebrow'] }}</p>
-                    <h2 class="mt-3 text-xl font-extrabold text-cocoa dark:text-cream">{{ $point['title'] }}</h2>
-                    <p class="mt-2 text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $point['body'] }}</p>
-                </article>
-            @endforeach
-        </div>
-    </section>
-
-    <section class="bg-linen px-5 py-14 dark:bg-ink sm:px-8">
-        <div class="mx-auto grid max-w-7xl gap-6 rounded-[1.75rem] border border-leaf/10 bg-white p-6 dark:border-white/10 dark:bg-white/5 lg:grid-cols-[0.8fr_1.2fr] lg:p-8">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.contact.eyebrow') }}</p>
-                <h2 class="mt-3 text-2xl font-extrabold text-cocoa dark:text-cream">{{ __('home.contact.title') }}</h2>
-                <p class="mt-4 text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ __('home.footer.line') }}</p>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div class="rounded-[1.25rem] bg-linen p-5 dark:bg-white/5">
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">{{ __('home.contact.company') }}</p>
-                    <p class="mt-2 text-sm font-semibold text-cocoa dark:text-cream">{{ __('home.contact.address') }}</p>
-                </div>
-                <div class="rounded-[1.25rem] bg-linen p-5 dark:bg-white/5">
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">Contact</p>
-                    <p class="mt-2 text-sm font-semibold text-cocoa dark:text-cream">{{ __('home.contact.phone') }}</p>
-                    <p class="mt-1 text-sm text-cocoa/65 dark:text-cream/65">{{ __('home.contact.email') }}</p>
-                </div>
-                <div class="rounded-[1.25rem] bg-linen p-5 dark:bg-white/5 sm:col-span-2">
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-leaf dark:text-meadow">TVA</p>
-                    <p class="mt-2 text-sm font-semibold text-cocoa dark:text-cream">{{ __('home.contact.vat') }}</p>
-                </div>
+            <div class="h-[300px] overflow-hidden sm:h-[340px] lg:h-[390px]">
+                <img class="h-full w-full object-cover" src="{{ $peppersImage }}" alt="{{ $locale === 'fr' ? 'Piments tropicaux Marché Peyi' : 'Marché Peyi tropical peppers' }}" loading="lazy" decoding="async">
             </div>
         </div>
     </section>

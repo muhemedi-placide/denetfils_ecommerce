@@ -12,11 +12,24 @@ class ProductPurchasePanel extends Component
 
     public int|string|null $variantId = null;
 
+    public int $quantity = 1;
+
     public function mount(string $locale, array $product): void
     {
         $this->locale = in_array($locale, ['fr', 'en'], true) ? $locale : 'fr';
         $this->product = $product;
         $this->variantId = $product['variants'][0]['id'] ?? null;
+        $this->quantity = 1;
+    }
+
+    public function incrementQuantity(): void
+    {
+        $this->quantity++;
+    }
+
+    public function decrementQuantity(): void
+    {
+        $this->quantity = max(1, $this->quantity - 1);
     }
 
     public function addToCart(): void
@@ -24,7 +37,8 @@ class ProductPurchasePanel extends Component
         $this->dispatch(
             'cart:add',
             productId: (int) $this->product['id'],
-            variantId: $this->variantId ?: null
+            variantId: $this->variantId ?: null,
+            quantity: max(1, $this->quantity)
         )->to(CartManager::class);
     }
 
