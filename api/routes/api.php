@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PickupPointController;
 use App\Http\Controllers\Api\PrivacyConsentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SeoController;
@@ -68,6 +69,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders', [OrderController::class, 'store']);
         Route::get('/orders/{order}', [OrderController::class, 'show']);
         Route::post('/checkout/quote', [CheckoutQuoteController::class, 'store']);
+        Route::post('/checkout/pickup-points', [PickupPointController::class, 'store']);
 
         Route::prefix('admin')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:catalog.view');
