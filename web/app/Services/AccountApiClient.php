@@ -45,7 +45,7 @@ class AccountApiClient
 
     public function updateAddress(string $token, int|string $address, array $payload): array
     {
-        return $this->send('patch', "me/addresses/{$address}", $payload);
+        return $this->send('patch', "me/addresses/{$address}", $payload, $token);
     }
 
     public function deleteAddress(string $token, int|string $address): array
