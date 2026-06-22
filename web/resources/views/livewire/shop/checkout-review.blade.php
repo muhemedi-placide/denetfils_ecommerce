@@ -7,7 +7,7 @@
                 <div>
                     <p class="section-kicker">{{ $locale === 'fr' ? 'Commande rapide' : 'Fast checkout' }}</p>
                     <h1 class="section-title mt-3">{{ $locale === 'fr' ? 'Valider votre commande' : 'Confirm your order' }}</h1>
-                    <p class="section-copy mt-4">{{ $locale === 'fr' ? 'Un parcours court : compte, adresse, transporteur, point relais si nécessaire, puis confirmation.' : 'A short flow: account, address, carrier, pickup point if needed, then confirmation.' }}</p>
+                    <p class="section-copy mt-4">{{ $locale === 'fr' ? 'Choisissez votre adresse, puis décidez entre une livraison à domicile ou un point relais sélectionné sur la carte.' : 'Choose your address, then pick home delivery or a pickup point selected on the map.' }}</p>
                 </div>
                 <a href="{{ route('cart.show', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-auto" wire:navigate>
                     {{ $locale === 'fr' ? 'Modifier le panier' : 'Edit cart' }}
@@ -35,7 +35,7 @@
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div>
                                         <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Compte client' : 'Customer account' }}</h2>
-                                        <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Identifiez le client pour garder l’historique et les adresses.' : 'Identify the customer to keep history and addresses.' }}</p>
+                                        <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Le compte permet de garder l’historique, les adresses et les informations de livraison.' : 'The account keeps order history, addresses and delivery information.' }}</p>
                                     </div>
                                     @if (! $isAuthenticated)
                                         <div class="grid gap-2 sm:flex">
@@ -76,7 +76,7 @@
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div>
                                         <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Adresse de livraison' : 'Delivery address' }}</h2>
-                                        <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Elle sert au calcul transporteur et à la recherche de relais.' : 'Used for carrier pricing and pickup search.' }}</p>
+                                        <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Pour le domicile, elle sera l’adresse finale. Pour un relais, elle sert à trouver les points proches.' : 'For home delivery, it is the final address. For pickup delivery, it is used to find nearby pickup points.' }}</p>
                                     </div>
                                     @if ($isAuthenticated)
                                         <a href="{{ route('account.show', ['locale' => $locale]) }}" class="btn-secondary px-4 py-2 text-xs" wire:navigate>{{ $locale === 'fr' ? 'Gérer' : 'Manage' }}</a>
@@ -122,25 +122,25 @@
                             <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-forest text-xs font-black text-cream dark:bg-meadow dark:text-ink">3</span>
                             <div class="min-w-0 flex-1">
                                 <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Mode de livraison' : 'Delivery mode' }}</h2>
-                                <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Priorité aux relais utilisés par DEN & FILS : Mondial Relay et Chrono Relais.' : 'Priority to DEN & FILS carriers: Mondial Relay and Chrono Relais.' }}</p>
+                                <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Le client choisit soit son adresse de livraison, soit un relais/locker sur la carte.' : 'The customer chooses either the delivery address or a pickup/locker point on the map.' }}</p>
 
                                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                                    <label class="cursor-pointer rounded-xl border border-leaf/10 bg-linen p-4 transition dark:border-white/10 dark:bg-white/5 {{ $delivery === 'relay' ? 'ring-2 ring-leaf/35 dark:ring-meadow/40' : 'hover:border-leaf/25' }}">
-                                        <span class="flex items-start gap-3">
-                                            <input class="mt-1" type="radio" value="relay" wire:model.live="delivery">
-                                            <span>
-                                                <span class="block font-black text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Point relais' : 'Pickup point' }}</span>
-                                                <span class="mt-1 block text-xs leading-5 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Souvent plus flexible et économique.' : 'Often more flexible and cost-efficient.' }}</span>
-                                            </span>
-                                        </span>
-                                    </label>
-
                                     <label class="cursor-pointer rounded-xl border border-leaf/10 bg-linen p-4 transition dark:border-white/10 dark:bg-white/5 {{ $delivery === 'home' ? 'ring-2 ring-leaf/35 dark:ring-meadow/40' : 'hover:border-leaf/25' }}">
                                         <span class="flex items-start gap-3">
                                             <input class="mt-1" type="radio" value="home" wire:model.live="delivery">
                                             <span>
-                                                <span class="block font-black text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Domicile' : 'Home delivery' }}</span>
-                                                <span class="mt-1 block text-xs leading-5 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Prévu pour Chronopost domicile.' : 'Prepared for Chronopost home delivery.' }}</span>
+                                                <span class="block font-black text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Livraison à domicile' : 'Home delivery' }}</span>
+                                                <span class="mt-1 block text-xs leading-5 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Utilise l’adresse sélectionnée ci-dessus.' : 'Uses the address selected above.' }}</span>
+                                            </span>
+                                        </span>
+                                    </label>
+
+                                    <label class="cursor-pointer rounded-xl border border-leaf/10 bg-linen p-4 transition dark:border-white/10 dark:bg-white/5 {{ $delivery === 'relay' ? 'ring-2 ring-leaf/35 dark:ring-meadow/40' : 'hover:border-leaf/25' }}">
+                                        <span class="flex items-start gap-3">
+                                            <input class="mt-1" type="radio" value="relay" wire:model.live="delivery">
+                                            <span>
+                                                <span class="block font-black text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'Point relais / locker' : 'Pickup point / locker' }}</span>
+                                                <span class="mt-1 block text-xs leading-5 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Choix depuis la liste ou directement sur la carte.' : 'Choose from the list or directly on the map.' }}</span>
                                             </span>
                                         </span>
                                     </label>
@@ -154,7 +154,7 @@
                             <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-forest text-xs font-black text-cream dark:bg-meadow dark:text-ink">4</span>
                             <div class="min-w-0 flex-1">
                                 <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Transporteur' : 'Carrier' }}</h2>
-                                <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Le tarif exact sera branché à l’API transporteur.' : 'Exact price will be connected to the carrier API.' }}</p>
+                                <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $delivery === 'home' ? ($locale === 'fr' ? 'Le transporteur livrera à l’adresse client.' : 'The carrier will deliver to the customer address.') : ($locale === 'fr' ? 'Le transporteur affichera les relais disponibles près de l’adresse choisie.' : 'The carrier shows pickup points near the selected address.') }}</p>
 
                                 <div class="mt-4 grid gap-3">
                                     @foreach ($carriers as $key => $option)
@@ -186,16 +186,22 @@
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div>
-                                            <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Point relais' : 'Pickup point' }}</h2>
-                                            <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Recherche par ville, code postal ou nom du relais.' : 'Search by city, postal code or pickup name.' }}</p>
+                                            <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Choisir un point sur la carte' : 'Choose a point on the map' }}</h2>
+                                            <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Cliquez sur un relais dans la liste ou sur un marqueur de la carte.' : 'Click a pickup point in the list or a marker on the map.' }}</p>
                                         </div>
-                                        <input class="input-premium w-full sm:max-w-[220px]" type="search" wire:model.live.debounce.250ms="pickupQuery" placeholder="{{ $locale === 'fr' ? 'Rechercher' : 'Search' }}">
+                                        <input class="input-premium w-full sm:max-w-[240px]" type="search" wire:model.live.debounce.350ms="pickupQuery" placeholder="{{ $locale === 'fr' ? 'Ville, CP, relais' : 'City, ZIP, pickup' }}">
                                     </div>
 
-                                    <div class="mt-4 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-                                        <div class="space-y-2">
+                                    @if ($pickupPointError)
+                                        <div class="mt-4 rounded-xl border border-leaf/20 bg-mint px-4 py-3 text-xs font-semibold text-forest dark:bg-white/5 dark:text-meadow">
+                                            {{ $pickupPointError }}
+                                        </div>
+                                    @endif
+
+                                    <div class="mt-4 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+                                        <div class="max-h-[420px] space-y-2 overflow-y-auto pr-1">
                                             @forelse ($pickupPoints as $point)
-                                                <button type="button" class="w-full rounded-xl border border-leaf/10 bg-linen p-4 text-left transition dark:border-white/10 dark:bg-white/5 {{ $selectedPickupPoint === $point['code'] ? 'ring-2 ring-leaf/35 dark:ring-meadow/40' : 'hover:border-leaf/25' }}" wire:click="selectPickupPoint('{{ $point['code'] }}')" wire:key="pickup-point-{{ $point['code'] }}">
+                                                <button type="button" class="w-full rounded-xl border border-leaf/10 bg-linen p-4 text-left transition dark:border-white/10 dark:bg-white/5 {{ $selectedPickupPoint === $point['code'] ? 'ring-2 ring-leaf/35 dark:ring-meadow/40' : 'hover:border-leaf/25' }}" wire:click="selectPickupPoint('{{ $point['code'] }}')" wire:key="pickup-point-list-{{ $point['code'] }}">
                                                     <span class="flex items-start justify-between gap-3">
                                                         <span class="min-w-0">
                                                             <span class="block text-xs font-black uppercase tracking-wide text-forest dark:text-meadow">{{ $point['carrier'] }}</span>
@@ -213,14 +219,35 @@
                                             @endforelse
                                         </div>
 
-                                        <div class="overflow-hidden rounded-xl border border-leaf/10 bg-linen dark:border-white/10 dark:bg-white/5">
-                                            <div class="relative min-h-[230px] bg-[linear-gradient(135deg,#fff7df_0%,#e8f5dc_56%,#f8ecd0_100%)] dark:bg-[linear-gradient(135deg,#172414_0%,#121a10_100%)]">
-                                                <div class="absolute inset-4 rounded-xl border border-leaf/15 bg-white/70 dark:border-white/10 dark:bg-white/5"></div>
-                                                <div class="absolute left-[18%] top-[38%] h-4 w-4 rounded-full bg-forest shadow-[0_0_0_8px_rgba(15,95,34,0.13)] dark:bg-meadow"></div>
-                                                <div class="absolute left-[55%] top-[54%] h-4 w-4 rounded-full bg-coral shadow-[0_0_0_8px_rgba(255,112,71,0.16)]"></div>
-                                                <div class="absolute left-[74%] top-[27%] h-4 w-4 rounded-full bg-forest shadow-[0_0_0_8px_rgba(15,95,34,0.13)] dark:bg-meadow"></div>
-                                                <div class="absolute bottom-4 left-4 right-4 rounded-xl bg-white/90 p-3 text-xs font-semibold text-cocoa shadow-sm dark:bg-ink/90 dark:text-cream">
-                                                    {{ $locale === 'fr' ? 'La carte réelle sera branchée avec l’API Mondial Relay / Chrono Relais.' : 'The real map will be connected to the Mondial Relay / Chrono Relais API.' }}
+                                        <div class="overflow-hidden rounded-2xl border border-leaf/10 bg-linen dark:border-white/10 dark:bg-white/5">
+                                            <div class="relative min-h-[360px] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.9),transparent_24%),linear-gradient(135deg,#fff7df_0%,#e8f5dc_55%,#f8ecd0_100%)] dark:bg-[linear-gradient(135deg,#172414_0%,#121a10_100%)]">
+                                                <div class="absolute left-[12%] top-[18%] h-[1px] w-[76%] rotate-6 bg-leaf/20"></div>
+                                                <div class="absolute left-[8%] top-[52%] h-[1px] w-[84%] -rotate-12 bg-leaf/20"></div>
+                                                <div class="absolute bottom-[18%] left-[20%] h-[1px] w-[70%] rotate-3 bg-leaf/20"></div>
+                                                <div class="absolute inset-4 rounded-2xl border border-leaf/15 bg-white/45 dark:border-white/10 dark:bg-white/5"></div>
+
+                                                @foreach ($pickupPoints as $point)
+                                                    <button
+                                                        type="button"
+                                                        class="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white text-xs font-black shadow-lg transition hover:scale-110 {{ $selectedPickupPoint === $point['code'] ? 'h-9 w-9 bg-coral text-white ring-8 ring-coral/20' : 'h-7 w-7 bg-forest text-cream ring-4 ring-forest/15 dark:bg-meadow dark:text-ink' }}"
+                                                        style="left: {{ (int) ($point['map_x'] ?? 50) }}%; top: {{ (int) ($point['map_y'] ?? 50) }}%;"
+                                                        wire:click="selectPickupPoint('{{ $point['code'] }}')"
+                                                        wire:key="pickup-point-map-{{ $point['code'] }}"
+                                                        title="{{ $point['name'] }}"
+                                                    >
+                                                        {{ $loop->iteration }}
+                                                    </button>
+                                                @endforeach
+
+                                                <div class="absolute bottom-4 left-4 right-4 rounded-xl bg-white/92 p-3 text-xs font-semibold text-cocoa shadow-sm dark:bg-ink/92 dark:text-cream">
+                                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                        <span>
+                                                            {{ $locale === 'fr' ? 'Centre carte' : 'Map center' }} · {{ number_format((float) ($pickupMapCenter['latitude'] ?? 0), 4) }}, {{ number_format((float) ($pickupMapCenter['longitude'] ?? 0), 4) }}
+                                                        </span>
+                                                        <span class="rounded-full bg-mint px-2 py-1 text-forest dark:bg-white/10 dark:text-meadow">
+                                                            {{ $locale === 'fr' ? 'Cliquez un marqueur' : 'Click a marker' }}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -235,8 +262,8 @@
                             <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-forest text-xs font-black text-cream dark:bg-meadow dark:text-ink">{{ $delivery === 'relay' ? '6' : '5' }}</span>
                             <div class="min-w-0 flex-1">
                                 <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Paiement et confirmation' : 'Payment and confirmation' }}</h2>
-                                <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'La commande sera créée dans l’API avant le paiement réel Stripe/PayPal.' : 'The order will be created in the API before real Stripe/PayPal payment.' }}</p>
-                                <button type="submit" class="btn-primary mt-5 w-full py-3 text-sm disabled:pointer-events-none disabled:opacity-50" wire:loading.attr="disabled" @disabled(count($this->cartItems()) === 0 || ! $isAuthenticated || ! $selectedAddressId)>
+                                <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'La commande garde le mode de livraison, le transporteur et le point relais sélectionné.' : 'The order keeps the delivery mode, carrier and selected pickup point.' }}</p>
+                                <button type="submit" class="btn-primary mt-5 w-full py-3 text-sm disabled:pointer-events-none disabled:opacity-50" wire:loading.attr="disabled" @disabled(count($this->cartItems()) === 0 || ! $isAuthenticated || ! $selectedAddressId || ($delivery === 'relay' && ! $selectedPickupPointDetails))>
                                     <span wire:loading.remove>{{ $locale === 'fr' ? 'Créer la commande' : 'Create order' }}</span>
                                     <span wire:loading>{{ __('home.cart.loading') }}</span>
                                 </button>
@@ -290,12 +317,18 @@
                             <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Sous-total' : 'Subtotal' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_subtotal'] }}</strong></div>
                             <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Livraison' : 'Shipping' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_shipping'] }}</strong></div>
                             <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'TVA' : 'VAT' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_tax'] }}</strong></div>
+                            <div class="flex items-center justify-between gap-3"><span>{{ $locale === 'fr' ? 'Mode' : 'Mode' }}</span><span class="truncate text-right font-semibold">{{ $delivery === 'relay' ? ($locale === 'fr' ? 'Point relais' : 'Pickup point') : ($locale === 'fr' ? 'Domicile' : 'Home') }}</span></div>
                             <div class="flex items-center justify-between gap-3"><span>{{ $locale === 'fr' ? 'Transporteur' : 'Carrier' }}</span><span class="truncate text-right font-semibold">{{ $selectedCarrier['name'] ?? '-' }}</span></div>
                             <div class="flex items-center justify-between gap-3"><span>{{ $locale === 'fr' ? 'Délai' : 'ETA' }}</span><span class="text-right font-semibold">{{ $selectedCarrier['eta'] ?? '-' }}</span></div>
                             @if ($selectedPickupPointDetails)
                                 <div class="rounded-lg bg-mint p-3 text-xs leading-5 text-forest dark:bg-white/5 dark:text-meadow">
                                     <strong class="block">{{ $locale === 'fr' ? 'Relais choisi' : 'Selected pickup' }}</strong>
                                     {{ $selectedPickupPointDetails['name'] }} · {{ $selectedPickupPointDetails['address'] }}
+                                </div>
+                            @elseif ($delivery === 'home' && $selectedAddressId)
+                                <div class="rounded-lg bg-mint p-3 text-xs leading-5 text-forest dark:bg-white/5 dark:text-meadow">
+                                    <strong class="block">{{ $locale === 'fr' ? 'Adresse choisie' : 'Selected address' }}</strong>
+                                    {{ $locale === 'fr' ? 'Livraison à domicile sur l’adresse sélectionnée.' : 'Home delivery to the selected address.' }}
                                 </div>
                             @endif
                             <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Paiement' : 'Payment' }}</span><span class="font-semibold">{{ $locale === 'fr' ? 'Étape prête' : 'Ready step' }}</span></div>
@@ -322,7 +355,7 @@
                     </p>
                 @endif
                 <p class="mx-auto mt-4 max-w-md text-sm leading-6 text-cocoa/65 dark:text-cream/65">
-                    {{ $locale === 'fr' ? 'Votre panier a été vidé. Le parcours est prêt pour la prochaine étape de paiement réel et création d’expédition.' : 'Your cart has been cleared. The flow is ready for real payment and shipment creation.' }}
+                    {{ $locale === 'fr' ? 'Votre panier a été vidé. Le mode de livraison et le point relais sont conservés dans la commande.' : 'Your cart has been cleared. The delivery mode and pickup point are saved in the order.' }}
                 </p>
                 <div class="mt-7 grid gap-2 sm:grid-cols-2">
                     <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary w-full" wire:navigate>{{ $locale === 'fr' ? 'Retour à la boutique' : 'Back to shop' }}</a>
