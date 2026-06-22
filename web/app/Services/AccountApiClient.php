@@ -45,7 +45,7 @@ class AccountApiClient
 
     public function updateAddress(string $token, int|string $address, array $payload): array
     {
-        return $this->send('patch', "me/addresses/{$address}", $payload, $token);
+        return $this->send('patch', "me/addresses/{$address}", $payload);
     }
 
     public function deleteAddress(string $token, int|string $address): array
@@ -56,6 +56,11 @@ class AccountApiClient
     public function checkoutQuote(string $token, array $payload): array
     {
         return $this->send('post', 'checkout/quote', $payload, $token);
+    }
+
+    public function pickupPoints(string $token, array $payload): array
+    {
+        return $this->send('post', 'checkout/pickup-points', $payload, $token);
     }
 
     public function createOrder(string $token, array $payload): array
