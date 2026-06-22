@@ -65,21 +65,21 @@ class ShippingCarrierController extends Controller
 
     public function activate(Request $request, ShippingCarrier $shippingCarrier, ShippingCarrierManagementService $carriers): ShippingCarrierAdminResource
     {
-        abort_unless($request->user()?->can('shipping.manage'), 403);
+        abort_unless($request->user()?->can('payments.manage'), 403);
 
         return new ShippingCarrierAdminResource($carriers->setEnabled($shippingCarrier, true, $request->user(), $request));
     }
 
     public function deactivate(Request $request, ShippingCarrier $shippingCarrier, ShippingCarrierManagementService $carriers): ShippingCarrierAdminResource
     {
-        abort_unless($request->user()?->can('shipping.manage'), 403);
+        abort_unless($request->user()?->can('payments.manage'), 403);
 
         return new ShippingCarrierAdminResource($carriers->setEnabled($shippingCarrier, false, $request->user(), $request));
     }
 
     public function testConnection(Request $request, ShippingCarrier $shippingCarrier, ShippingCarrierManagementService $carriers): JsonResponse
     {
-        abort_unless($request->user()?->can('shipping.manage'), 403);
+        abort_unless($request->user()?->can('payments.manage'), 403);
 
         return response()->json(['data' => $carriers->testConfiguration($shippingCarrier, $request->user(), $request)]);
     }
