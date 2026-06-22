@@ -1,15 +1,29 @@
-<div class="mobile-scrollbarless flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
+@php
+    $cards = [
+        ['class' => 'bg-coral text-cream', 'icon' => 'P'],
+        ['class' => 'bg-flamingo text-cream', 'icon' => 'E'],
+        ['class' => 'bg-mango text-forest', 'icon' => 'B'],
+        ['class' => 'bg-forest text-cream', 'icon' => 'F'],
+        ['class' => 'bg-caribbean text-cream', 'icon' => 'S'],
+        ['class' => 'bg-sunshine text-forest', 'icon' => 'C'],
+    ];
+@endphp
+
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     @foreach ($categories as $category)
+        @php($style = $cards[$loop->index % count($cards)])
         <a
-            href="#products"
+            href="{{ route('shop.index', ['locale' => $locale, 'category' => $category['slug']]) }}"
             wire:click.prevent="selectCategory('{{ $category['slug'] }}')"
-            class="group min-w-[190px] rounded-[1.15rem] border border-leaf/10 bg-white p-4 text-left transition hover:border-leaf/30 hover:shadow-lg dark:border-white/10 dark:bg-white/5 sm:min-w-0 sm:p-5"
+            class="group relative min-h-[190px] overflow-hidden rounded-[1.5rem] p-6 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical {{ $style['class'] }}"
         >
-            <div class="flex items-center justify-between gap-4">
-                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-mint text-base font-extrabold text-leaf transition group-hover:bg-terracotta group-hover:text-white">{{ str($category['name'])->substr(0, 1) }}</span>
-                <span class="text-xs font-bold text-cocoa/50 dark:text-cream/50">{{ __('home.categories.count', ['count' => $category['products_count']]) }}</span>
+            <span class="inline-grid h-12 w-12 place-items-center rounded-full bg-cream/20 text-2xl font-black backdrop-blur" aria-hidden="true">{{ $style['icon'] }}</span>
+            <div class="mt-7">
+                <h3 class="text-2xl font-black leading-tight">{{ $category['name'] }}</h3>
+                <p class="mt-3 max-w-sm text-sm font-semibold leading-6 opacity-80">{{ $locale === 'fr' ? 'Découvrez ce rayon et ajoutez vos essentiels au panier.' : 'Explore this aisle and add your essentials to the cart.' }}</p>
+                <span class="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-wide">{{ $locale === 'fr' ? 'Découvrir' : 'Explore' }} <span class="transition group-hover:translate-x-1">→</span></span>
             </div>
-            <h3 class="mt-4 text-base font-extrabold text-cocoa dark:text-cream">{{ $category['name'] }}</h3>
+            <span class="absolute right-5 top-5 rounded-full bg-cream/20 px-3 py-1 text-xs font-black uppercase tracking-wide backdrop-blur">{{ __('home.categories.count', ['count' => $category['products_count']]) }}</span>
         </a>
     @endforeach
 </div>

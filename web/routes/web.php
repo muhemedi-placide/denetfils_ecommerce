@@ -1,25 +1,56 @@
 <?php
 
 use App\Http\Controllers\Admin\BackOfficeController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\ShopController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\ShopIndexController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
 
 Route::get('/robots.txt', [ShopController::class, 'robots'])->name('seo.robots');
 Route::get('/sitemap.xml', [ShopController::class, 'sitemap'])->name('seo.sitemap');
 
 Route::get('/', [ShopController::class, 'home'])->name('home');
 
-Route::get('/{locale}/about', [ShopController::class, 'about'])->whereIn('locale', ['fr', 'en'])->name('pages.about');
-Route::get('/{locale}/blog', [ShopController::class, 'blog'])->whereIn('locale', ['fr', 'en'])->name('blog.index');
-Route::get('/{locale}/blog/{slug}', [ShopController::class, 'blogShow'])->whereIn('locale', ['fr', 'en'])->name('blog.show');
-Route::get('/{locale}/livraison', [ShopController::class, 'delivery'])->whereIn('locale', ['fr', 'en'])->name('pages.delivery');
-Route::get('/{locale}/mentions-legales', [ShopController::class, 'legalNotice'])->whereIn('locale', ['fr', 'en'])->name('pages.legal');
-Route::get('/{locale}/conditions-utilisation', [ShopController::class, 'terms'])->whereIn('locale', ['fr', 'en'])->name('pages.terms');
-Route::get('/{locale}/paiement-securise', [ShopController::class, 'securePayment'])->whereIn('locale', ['fr', 'en'])->name('pages.payment');
+Route::get('/{locale}/boutique', ShopIndexController::class)
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('shop.index');
+
+Route::get('/{locale}/about', [ShopController::class, 'about'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('pages.about');
+
+Route::get('/{locale}/contact', ContactController::class)
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('pages.contact');
+
+Route::get('/{locale}/blog', [ShopController::class, 'blog'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('blog.index');
+
+Route::get('/{locale}/blog/{slug}', [ShopController::class, 'blogShow'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('blog.show');
+
+Route::get('/{locale}/livraison', [ShopController::class, 'delivery'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('pages.delivery');
+
+Route::get('/{locale}/mentions-legales', [ShopController::class, 'legalNotice'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('pages.legal');
+
+Route::get('/{locale}/conditions-utilisation', [ShopController::class, 'terms'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('pages.terms');
+
+Route::get('/{locale}/paiement-securise', [ShopController::class, 'securePayment'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->name('pages.payment');
 
 Route::prefix('/{locale}/admin')
     ->whereIn('locale', ['fr', 'en'])
@@ -104,7 +135,7 @@ Route::prefix('/{locale}/admin')
             ]);
 
             $countries = collect(preg_split('/[,;\s]+/', (string) ($validated['countries'] ?? '')) ?: [])
-                ->map(fn ($country) => strtoupper(trim((string) $country)))
+                ->map(fn($country) => strtoupper(trim((string) $country)))
                 ->filter()
                 ->values()
                 ->all();
@@ -128,7 +159,7 @@ Route::prefix('/{locale}/admin')
                     'api_endpoint' => data_get($validated, 'credentials.api_endpoint'),
                     'tracking_url' => 'https://www.mondialrelay.fr/suivi-de-colis/',
                 ],
-                'credentials' => array_filter(data_get($validated, 'credentials', []), fn ($value) => filled($value)),
+                'credentials' => array_filter(data_get($validated, 'credentials', []), fn($value) => filled($value)),
             ];
 
             $response = Http::baseUrl(rtrim((string) config('services.denetfils_api.base_url'), '/'))
@@ -146,7 +177,101 @@ Route::prefix('/{locale}/admin')
                 ->withErrors($response->json('errors', ['carrier' => $response->json('message', 'Action impossible.')]))
                 ->withInput($request->except('credentials.private_key'));
         })->name('admin.delivery.carriers.store');
+        Route::get('/modules/livraison', function (Request $request, string $locale) {
+            $token = $request->session()->get('admin_api_token');
 
+            if (! $token) {
+                return redirect()->route('admin.login', ['locale' => $locale]);
+            }
+
+            $response = Http::baseUrl(rtrim((string) config('services.denetfils_api.base_url'), '/'))
+                ->acceptJson()
+                ->withToken($token)
+                ->timeout(10)
+                ->get('admin/shipping-carriers', ['per_page' => 50]);
+
+            return view('admin.delivery', [
+                'locale' => $locale,
+                'adminUser' => $request->session()->get('admin_user', []),
+                'activeAdmin' => 'customize.delivery',
+                'filters' => $request->only(['q', 'provider', 'environment', 'status']),
+                'carriers' => [
+                    'ok' => $response->successful(),
+                    'data' => $response->json('data', []),
+                    'meta' => $response->json('meta', []),
+                ],
+                'carrierSchemas' => ['ok' => true, 'data' => []],
+            ]);
+        })->name('admin.delivery');
+
+        Route::post('/modules/livraison/transporteurs', function (Request $request, string $locale) {
+            $token = $request->session()->get('admin_api_token');
+
+            if (! $token) {
+                return redirect()->route('admin.login', ['locale' => $locale]);
+            }
+
+            $validated = $request->validate([
+                'code' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9_-]*$/'],
+                'provider' => ['required', Rule::in(['mondial_relay'])],
+                'display_name.fr' => ['required', 'string', 'max:120'],
+                'display_name.en' => ['nullable', 'string', 'max:120'],
+                'environment' => ['required', Rule::in(['sandbox', 'live'])],
+                'status' => ['required', Rule::in(['draft', 'active', 'inactive'])],
+                'countries' => ['nullable', 'string', 'max:255'],
+                'delivery_modes' => ['nullable', 'array'],
+                'delivery_modes.*' => ['string', Rule::in(['24R', '24L', 'HOM'])],
+                'max_weight_grams' => ['nullable', 'integer', 'min:1', 'max:70000'],
+                'credentials.enseigne' => ['required', 'string', 'max:120'],
+                'credentials.private_key' => ['required', 'string', 'max:255'],
+                'credentials.brand_code' => ['nullable', 'string', 'max:120'],
+                'credentials.account_number' => ['nullable', 'string', 'max:120'],
+                'credentials.api_endpoint' => ['nullable', 'url', 'max:2048'],
+            ]);
+
+            $countries = collect(preg_split('/[,;\s]+/', (string) ($validated['countries'] ?? '')) ?: [])
+                ->map(fn($country) => strtoupper(trim((string) $country)))
+                ->filter()
+                ->values()
+                ->all();
+
+            $payload = [
+                'code' => $validated['code'],
+                'provider' => $validated['provider'],
+                'display_name' => [
+                    'fr' => data_get($validated, 'display_name.fr'),
+                    'en' => data_get($validated, 'display_name.en') ?: data_get($validated, 'display_name.fr'),
+                ],
+                'environment' => $validated['environment'],
+                'status' => $validated['status'],
+                'is_enabled' => $request->boolean('is_enabled'),
+                'delivery_modes' => array_values($validated['delivery_modes'] ?? ['24R']),
+                'countries' => $countries,
+                'max_weight_grams' => isset($validated['max_weight_grams']) ? (int) $validated['max_weight_grams'] : null,
+                'supports_relay_points' => $request->boolean('supports_relay_points', true),
+                'supports_home_delivery' => $request->boolean('supports_home_delivery'),
+                'public_config' => [
+                    'api_endpoint' => data_get($validated, 'credentials.api_endpoint'),
+                    'tracking_url' => 'https://www.mondialrelay.fr/suivi-de-colis/',
+                ],
+                'credentials' => array_filter(data_get($validated, 'credentials', []), fn($value) => filled($value)),
+            ];
+
+            $response = Http::baseUrl(rtrim((string) config('services.denetfils_api.base_url'), '/'))
+                ->acceptJson()
+                ->withToken($token)
+                ->timeout(10)
+                ->post('admin/shipping-carriers', $payload);
+
+            if ($response->successful()) {
+                return redirect()->route('admin.delivery', ['locale' => $locale])
+                    ->with('admin_success', $locale === 'en' ? 'Carrier added.' : 'Transporteur ajouté.');
+            }
+
+            return back()
+                ->withErrors($response->json('errors', ['carrier' => $response->json('message', 'Action impossible.')]))
+                ->withInput($request->except('credentials.private_key'));
+        })->name('admin.delivery.carriers.store');
         Route::get('/modules/{module}', [BackOfficeController::class, 'modulePage'])->name('admin.modules.show');
     });
 

@@ -2,46 +2,34 @@
     $ratingLabel = number_format($ratingAverage, 1, ',', ' ');
 @endphp
 
-<aside class="glass-panel mt-6 rounded-[1.35rem] p-4 sm:rounded-[1.6rem] sm:p-5">
-    <div class="flex items-start justify-between gap-4">
-        <div>
-            <p class="theme-subtle text-xs font-bold uppercase tracking-[0.2em] text-leaf dark:text-cream/60">{{ __('home.product.price') }}</p>
-            <p class="theme-title mt-2 text-3xl font-extrabold text-forest dark:text-cream sm:text-4xl">{{ $product['formatted_price'] }}</p>
-            <p class="mt-2 text-xs font-bold text-cocoa/55 dark:text-cream/55">
-                <span class="text-leaf dark:text-meadow">*****</span>
-                <span class="ml-1">{{ $ratingLabel }} &middot; {{ $ratingCount }} {{ $locale === 'fr' ? 'avis' : 'reviews' }}</span>
-            </p>
-        </div>
-        <span class="rounded-full bg-mint px-3 py-2 text-xs font-bold text-leaf dark:bg-white/10 dark:text-cream">
-            {{ $isAvailable ? __('home.product.available', ['count' => $product['stock_quantity']]) : ($locale === 'fr' ? 'Rupture de stock' : 'Out of stock') }}
-        </span>
-    </div>
-
+<div class="mt-8">
     @if (! empty($product['variants']))
-        <label class="theme-title mt-5 block text-sm font-bold text-cocoa dark:text-cream" for="variant">{{ __('home.product.variant') }}</label>
-        <select id="variant" class="input-premium mt-2 w-full" wire:model="variantId">
+        <label class="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-forest/45 dark:text-cream/50" for="variant">{{ __('home.product.variant') }}</label>
+        <select id="variant" class="min-h-[50px] w-full rounded-full border-2 border-forest/20 bg-cream px-5 text-sm font-black text-forest outline-none transition focus:border-forest dark:bg-ink dark:text-cream" wire:model="variantId">
             @foreach ($product['variants'] as $variant)
                 <option value="{{ $variant['id'] }}">{{ $variant['name'] }} - {{ $variant['formatted_price'] }}</option>
             @endforeach
         </select>
     @endif
 
-    <div class="mt-5 grid gap-2">
-        <button type="button" data-testid="product-detail-add-button" class="btn-primary w-full py-4 text-base disabled:pointer-events-none disabled:opacity-50" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="addToCart" wire:loading.attr="disabled" @disabled(! $isAvailable)>
-            <span wire:loading.remove wire:target="addToCart">{{ __('home.products.cta') }}</span>
+    <p class="text-xs font-black uppercase tracking-[0.22em] text-forest/35 dark:text-cream/45">{{ __('home.product.price') }}</p>
+    <p class="mt-1 text-5xl font-black tracking-tight text-forest dark:text-meadow">{{ $product['formatted_price'] }}</p>
+
+    <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div class="grid h-[54px] w-full grid-cols-[54px_64px_54px] overflow-hidden rounded-full border-2 border-forest bg-cream text-center text-forest dark:bg-ink dark:text-cream sm:w-auto">
+            <button type="button" class="text-xl font-black transition hover:bg-mint dark:hover:bg-white/10" wire:click="decrementQuantity" @disabled($quantity <= 1)>-</button>
+            <input class="w-full bg-transparent text-center text-base font-black outline-none" type="number" min="1" wire:model.live="quantity">
+            <button type="button" class="text-xl font-black transition hover:bg-mint dark:hover:bg-white/10" wire:click="incrementQuantity">+</button>
+        </div>
+        <button type="button" data-testid="product-detail-add-button" class="min-h-[54px] w-full rounded-full bg-forest px-8 py-4 text-sm font-black uppercase tracking-wide text-cream transition hover:bg-leaf disabled:pointer-events-none disabled:opacity-50 sm:w-auto" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="addToCart" wire:loading.attr="disabled" @disabled(! $isAvailable)>
+            <span wire:loading.remove wire:target="addToCart">{{ $locale === 'fr' ? 'Ajouter au panier' : 'Add to cart' }}</span>
             <span wire:loading wire:target="addToCart">{{ __('home.cart.loading') }}</span>
         </button>
-        <a href="{{ route('cart.show', ['locale' => $locale]) }}" class="btn-secondary w-full" wire:navigate>{{ $locale === 'fr' ? 'Voir mon panier' : 'View my cart' }}</a>
     </div>
 
-    <div class="mt-4 grid gap-2 rounded-[1rem] bg-mint p-3 text-xs font-semibold leading-5 text-leaf dark:bg-white/5 dark:text-meadow sm:grid-cols-3">
-        <span>{{ $locale === 'fr' ? 'Ajout instantané' : 'Instant add' }}</span>
-        <span>{{ $locale === 'fr' ? 'Relais disponible' : 'Pickup ready' }}</span>
-        <span>{{ $locale === 'fr' ? 'Paiement sécurisé' : 'Secure payment' }}</span>
+    <div class="mt-8 grid gap-4 border-t border-forest/10 pt-6 text-sm font-semibold text-forest/70 dark:border-white/10 dark:text-cream/70 sm:grid-cols-3">
+        <span class="inline-flex items-center gap-2"><span class="text-coral">+</span>{{ $locale === 'fr' ? 'Livraison 48h' : '48h delivery' }}</span>
+        <span class="inline-flex items-center gap-2"><span class="text-coral">+</span>{{ $locale === 'fr' ? 'Paiement securise' : 'Secure payment' }}</span>
+        <span class="inline-flex items-center gap-2"><span class="text-coral">+</span>{{ $locale === 'fr' ? 'Source authentique' : 'Authentic source' }}</span>
     </div>
-
-    <p class="theme-muted mt-4 text-center text-xs leading-5 text-cocoa/60 dark:text-cream/60">
-        {{ data_get($shipping, 'dispatch_time', __('home.product.shipping_note')) }}
-        {{ $locale === 'fr' ? 'Mondial Relay et Chrono Relais seront proposés à la commande.' : 'Mondial Relay and Chrono Relais will be available at checkout.' }}
-    </p>
-</aside>
+</div>

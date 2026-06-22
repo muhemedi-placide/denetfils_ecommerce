@@ -21,10 +21,10 @@ class CartManager extends Component
     }
 
     #[On('cart:add')]
-    public function addToCart(int $productId, int|string|null $variantId = null): void
+    public function addToCart(int $productId, int|string|null $variantId = null, int $quantity = 1): void
     {
         $this->isOpen = true;
-        $this->addProductToCart($productId, $variantId);
+        $this->addProductToCart($productId, $variantId, max(1, $quantity));
     }
 
     #[On('cart:open')]
