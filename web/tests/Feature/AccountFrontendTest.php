@@ -82,6 +82,69 @@ class AccountFrontendTest extends TestCase
             && $request->hasHeader('Authorization', 'Bearer api-token-123'));
     }
 
+    public function test_order_detail_page_displays_status_tracking_and_discussion(): void
+    {
+        $this->withoutVite();
+        Http::fake([
+            '*/orders/21/conversation' => Http::response(['data' => $this->conversation()]),
+            '*/orders/21*' => Http::response(['data' => $this->order([
+                'status_label' => 'Confirmee',
+                'payment_status_label' => 'Payee',
+                'fulfillment_status_label' => 'Expediee',
+                'tracking' => [
+                    'number' => 'MR123456789FR',
+                    'url' => 'https://tracking.example.test/MR123456789FR',
+                    'shipment_status' => 'shipped',
+                ],
+                'items' => [
+                    [
+                        'product' => ['name' => 'Miel de montagne', 'sku' => 'MIEL-001'],
+                        'quantity' => 2,
+                        'formatted_line_total' => '25,86 EUR',
+                    ],
+                ],
+            ])]),
+            '*/me' => Http::response(['data' => $this->user()]),
+        ]);
+
+        $this->withSession(['customer_api_token' => 'api-token-123'])
+            ->get('/fr/mon-compte/commandes/21')
+            ->assertOk()
+            ->assertSee('DF-20260616-ABC123')
+            ->assertSee('Confirmee')
+            ->assertSee('Payee')
+            ->assertSee('Expediee')
+            ->assertSee('MR123456789FR')
+            ->assertSee('Discussion commande')
+            ->assertSee('Votre commande est en preparation.')
+            ->assertSee('Marquer comme lu');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/orders/21')
+            && $request->method() === 'GET'
+            && $request->hasHeader('Authorization', 'Bearer api-token-123'));
+    }
+
+    public function test_order_discussion_message_is_sent_to_api(): void
+    {
+        $this->withoutVite();
+        Http::fake([
+            '*/orders/21/conversation/messages' => Http::response(['data' => $this->conversation([
+                'customer_unread_count' => 0,
+            ])]),
+        ]);
+
+        $this->withSession(['customer_api_token' => 'api-token-123'])
+            ->post('/fr/mon-compte/commandes/21/discussion/messages', [
+                'body' => 'Bonjour, pouvez-vous verifier ma commande ?',
+            ])
+            ->assertRedirect(route('account.orders.show', ['locale' => 'fr', 'order' => 21]));
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/orders/21/conversation/messages')
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer api-token-123')
+            && $request['body'] === 'Bonjour, pouvez-vous verifier ma commande ?');
+    }
+
     public function test_livewire_login_posts_to_api_and_stores_token(): void
     {
         Http::fake([
@@ -255,10 +318,18 @@ class AccountFrontendTest extends TestCase
             'id' => 21,
             'order_number' => 'DF-20260616-ABC123',
             'status' => 'pending_payment',
+            'status_label' => 'Paiement en attente',
             'payment_status' => 'unpaid',
+            'payment_status_label' => 'Non payee',
             'fulfillment_status' => 'unfulfilled',
+            'fulfillment_status_label' => 'Non preparee',
             'formatted_total' => '25,86 EUR',
             'placed_at' => '2026-06-16T09:30:00+00:00',
+            'tracking' => [
+                'number' => null,
+                'url' => null,
+                'shipment_status' => null,
+            ],
             'items' => [
                 [
                     'product' => [
@@ -266,6 +337,27 @@ class AccountFrontendTest extends TestCase
                         'slug' => 'miel-de-montagne',
                     ],
                     'quantity' => 2,
+                ],
+            ],
+        ], $overrides);
+    }
+
+    private function conversation(array $overrides = []): array
+    {
+        return array_merge([
+            'id' => 5,
+            'order_id' => 21,
+            'status' => 'open',
+            'customer_unread_count' => 1,
+            'staff_unread_count' => 0,
+            'messages' => [
+                [
+                    'id' => 1,
+                    'sender_type' => 'staff',
+                    'body' => 'Votre commande est en preparation.',
+                    'status' => 'unread',
+                    'is_own' => false,
+                    'created_at' => '2026-06-16T10:00:00+00:00',
                 ],
             ],
         ], $overrides);

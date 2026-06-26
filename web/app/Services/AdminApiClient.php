@@ -130,6 +130,33 @@ class AdminApiClient
         return $this->send('patch', "admin/orders/{$order}", $this->clean($payload), $token);
     }
 
+    public function orderConversation(string $token, int|string $order): array
+    {
+        return $this->send('get', "admin/orders/{$order}/conversation", [], $token);
+    }
+
+    public function openOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/open", [], $token);
+    }
+
+    public function sendOrderMessage(string $token, int|string $order, string $body): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/messages", [
+            'body' => $body,
+        ], $token);
+    }
+
+    public function markOrderConversationRead(string $token, int|string $order): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/read", [], $token);
+    }
+
+    public function closeOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/close", [], $token);
+    }
+
     public function users(string $token, array $filters = []): array
     {
         return $this->send('get', 'admin/users', $this->clean([
@@ -179,6 +206,48 @@ class AdminApiClient
             'auditable_type' => $filters['auditable_type'] ?? null,
             'per_page' => $filters['per_page'] ?? 50,
         ]), $token);
+    }
+
+    public function paymentMethodSchemas(string $token): array
+    {
+        return $this->send('get', 'admin/payment-methods/schemas', [], $token);
+    }
+
+    public function paymentMethods(string $token, array $filters = []): array
+    {
+        return $this->send('get', 'admin/payment-methods', $this->clean([
+            'provider' => $filters['provider'] ?? null,
+            'environment' => $filters['environment'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'is_enabled' => $filters['is_enabled'] ?? null,
+            'q' => $filters['q'] ?? null,
+            'per_page' => $filters['per_page'] ?? 50,
+        ]), $token);
+    }
+
+    public function createPaymentMethod(string $token, array $payload): array
+    {
+        return $this->send('post', 'admin/payment-methods', $payload, $token);
+    }
+
+    public function updatePaymentMethod(string $token, int|string $paymentMethod, array $payload): array
+    {
+        return $this->send('patch', "admin/payment-methods/{$paymentMethod}", $payload, $token);
+    }
+
+    public function activatePaymentMethod(string $token, int|string $paymentMethod): array
+    {
+        return $this->send('post', "admin/payment-methods/{$paymentMethod}/activate", [], $token);
+    }
+
+    public function deactivatePaymentMethod(string $token, int|string $paymentMethod): array
+    {
+        return $this->send('post', "admin/payment-methods/{$paymentMethod}/deactivate", [], $token);
+    }
+
+    public function testPaymentMethod(string $token, int|string $paymentMethod): array
+    {
+        return $this->send('post', "admin/payment-methods/{$paymentMethod}/test-connection", [], $token);
     }
 
     private function send(string $method, string $uri, array $payload = [], ?string $token = null): array

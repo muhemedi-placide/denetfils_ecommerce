@@ -16,6 +16,8 @@
         $alternateUrl = route('blog.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     } elseif (request()->routeIs('pages.delivery')) {
         $alternateUrl = route('pages.delivery', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('pages.tracking')) {
+        $alternateUrl = route('pages.tracking', ['locale' => $alternateLocale, 'tracking_number' => request('tracking_number')]);
     } elseif (request()->routeIs('pages.legal')) {
         $alternateUrl = route('pages.legal', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('pages.terms')) {
@@ -28,6 +30,8 @@
         $alternateUrl = route('account.register', ['locale' => $alternateLocale]);
     } elseif (request()->routeIs('account.show')) {
         $alternateUrl = route('account.show', ['locale' => $alternateLocale]);
+    } elseif (request()->routeIs('account.orders.*')) {
+        $alternateUrl = route('account.orders.show', ['locale' => $alternateLocale, 'order' => request()->route('order')]);
     } elseif (request()->routeIs('products.show')) {
         $alternateUrl = route('products.show', ['locale' => $alternateLocale, 'slug' => request()->route('slug')]);
     }
@@ -80,6 +84,7 @@
                             <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow" wire:navigate.hover>Catégories</a>
                             <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('blog.index') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Recettes</a>
                             <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('pages.about') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Notre histoire</a>
+                            <a href="{{ route('pages.tracking', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('pages.tracking') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Suivi colis</a>
                             <a href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" class="transition hover:text-forest dark:hover:text-meadow {{ request()->routeIs('pages.contact') ? 'text-forest dark:text-meadow' : '' }}" wire:navigate.hover>Contact</a>
                         </nav>
 
@@ -105,6 +110,7 @@
                         <a href="{{ route('shop.index', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-forest px-4 py-3 font-black text-cream" wire:navigate.hover>Boutique</a>
                         <a href="{{ route('blog.index', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Recettes</a>
                         <a href="{{ route('pages.about', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Notre histoire</a>
+                        <a href="{{ route('pages.tracking', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Suivi colis</a>
                         <a href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" class="rounded-2xl bg-white px-4 py-3 font-black text-forest dark:bg-white/5 dark:text-cream" wire:navigate.hover>Contact</a>
                         <div class="grid grid-cols-2 gap-2">
                             <a href="{{ $alternateUrl }}" class="rounded-2xl bg-sunshine px-4 py-3 text-center font-black text-forest" wire:navigate.hover>{{ strtoupper($alternateLocale) }}</a>
@@ -167,6 +173,7 @@
                             <a class="block hover:text-sunshine" href="{{ route('home.localized', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Accueil' : 'Home' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('shop.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Boutique' : 'Shop' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('blog.index', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Recettes' : 'Recipes' }}</a>
+                            <a class="block hover:text-sunshine" href="{{ route('pages.tracking', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Suivi colis' : 'Track parcel' }}</a>
                             <a class="block hover:text-sunshine" href="{{ route('pages.contact', ['locale' => $currentLocale]) }}" wire:navigate.hover>{{ $currentLocale === 'fr' ? 'Nous trouver' : 'Find us' }}</a>
                         </nav>
 

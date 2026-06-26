@@ -17,7 +17,7 @@ class CheckoutReview extends Component
     public array $countries = [];
     public int|string|null $selectedAddressId = null;
     public string $delivery = 'relay';
-    public string $carrier = 'mondial_relay_locker';
+    public string $carrier = '';
     public ?string $selectedPickupPoint = null;
     public string $pickupQuery = '';
     public array $pickupPointOptions = [];
@@ -26,7 +26,15 @@ class CheckoutReview extends Component
     public bool $orderConfirmed = false;
     public ?string $checkoutError = null;
     public ?string $quoteError = null;
+    public ?string $shippingMethodError = null;
+    public ?string $paymentError = null;
+    public bool $paymentProcessing = false;
+    public string $paymentProvider = 'stripe';
     public array $quote = [];
+    public array $stripePaymentIntent = [];
+    public array $paypalOrder = [];
+    public array $shippingMethods = [];
+    public ?int $selectedShippingMethodId = null;
     public ?array $confirmedOrder = null;
 
     public function mount(string $locale, ?array $user = null, array $addresses = [], array $countries = []): void
@@ -37,12 +45,14 @@ class CheckoutReview extends Component
         $this->countries = $countries;
         $this->selectedAddressId = $this->defaultAddressId();
         $this->initializeCart();
+        $this->refreshShippingMethods();
         $this->refreshPickupPoints();
     }
 
     public function restoreFromBrowser(?string $token): void
     {
         $this->restoreCart($token);
+        $this->refreshShippingMethods();
         $this->refreshPickupPoints();
         $this->refreshQuote();
     }
@@ -51,6 +61,8 @@ class CheckoutReview extends Component
     public function syncCart(?string $token = null): void
     {
         $this->restoreCart($token ?: $this->cartToken);
+        $this->refreshShippingMethods();
+        $this->refreshPickupPoints();
         $this->refreshQuote();
     }
 
@@ -58,6 +70,10 @@ class CheckoutReview extends Component
     {
         $this->checkoutError = null;
         $this->quoteError = null;
+        $this->paymentError = null;
+        $this->paymentProvider = 'stripe';
+        $this->stripePaymentIntent = [];
+        $this->paypalOrder = [];
 
         if (empty($this->cartItems())) {
             $this->checkoutError = $this->locale === 'fr' ? 'Votre panier est vide.' : 'Your cart is empty.';
@@ -101,9 +117,143 @@ class CheckoutReview extends Component
 
         $this->confirmedOrder = $response['data'];
         $this->quote = [];
+        $this->prepareStripePayment($api);
+    }
+
+    public function selectPaymentProvider(string $provider, AccountApiClient $api): void
+    {
+        if (! in_array($provider, ['stripe', 'paypal'], true)) {
+            return;
+        }
+
+        $this->paymentProvider = $provider;
+        $this->paymentError = null;
+
+        if ($provider === 'stripe') {
+            $this->prepareStripePayment($api);
+            return;
+        }
+
+        $this->preparePaypalPayment($api);
+    }
+
+    public function retryStripePayment(AccountApiClient $api): void
+    {
+        $this->paymentError = null;
+        $this->paymentProvider = 'stripe';
+
+        if (! $this->confirmedOrder || ! $this->token()) {
+            $this->paymentError = $this->locale === 'fr'
+                ? 'La commande doit etre creee avant le paiement.'
+                : 'The order must be created before payment.';
+            return;
+        }
+
+        $this->prepareStripePayment($api);
+    }
+
+    public function retryPaypalPayment(AccountApiClient $api): void
+    {
+        $this->paymentError = null;
+        $this->paymentProvider = 'paypal';
+
+        if (! $this->confirmedOrder || ! $this->token()) {
+            $this->paymentError = $this->locale === 'fr'
+                ? 'La commande doit etre creee avant le paiement.'
+                : 'The order must be created before payment.';
+            return;
+        }
+
+        $this->preparePaypalPayment($api);
+    }
+
+    public function completeStripePayment(string $paymentIntentId, AccountApiClient $api): void
+    {
+        $orderId = data_get($this->confirmedOrder, 'id');
+
+        if (! $orderId || ! $this->token()) {
+            $this->failStripePayment($this->locale === 'fr'
+                ? 'Impossible de confirmer ce paiement Stripe.'
+                : 'Unable to confirm this Stripe payment.');
+            return;
+        }
+
+        $this->paymentProcessing = true;
+        $response = $api->confirmStripePaymentIntent($this->token(), $orderId, $paymentIntentId);
+
+        if (! $response['ok']) {
+            $this->failStripePayment($this->firstApiError($response)
+                ?: ($this->locale === 'fr' ? 'Stripe na pas confirme le paiement.' : 'Stripe did not confirm the payment.'));
+            return;
+        }
+
+        $order = $response['data']['order'] ?? [];
+
+        if (($order['payment_status'] ?? null) !== 'paid') {
+            $this->failStripePayment($this->locale === 'fr'
+                ? 'Le paiement Stripe nest pas encore finalise.'
+                : 'Stripe payment is not finalized yet.');
+            return;
+        }
+
+        $this->confirmedOrder = array_replace($this->confirmedOrder, $order);
+        $this->stripePaymentIntent = $response['data'];
+        $this->paymentProcessing = false;
         $this->orderConfirmed = true;
         $this->clearCartState();
         $this->dispatch('checkout-confirmed');
+    }
+
+    public function failStripePayment(?string $message = null): void
+    {
+        $this->paymentProcessing = false;
+        $this->paymentError = $message ?: ($this->locale === 'fr'
+            ? 'Le paiement a echoue. Verifiez la carte ou reessayez.'
+            : 'Payment failed. Check the card or try again.');
+    }
+
+    public function capturePaypalPayment(string $paypalOrderId, AccountApiClient $api): void
+    {
+        $orderId = data_get($this->confirmedOrder, 'id');
+
+        if (! $orderId || ! $this->token()) {
+            $this->failPaypalPayment($this->locale === 'fr'
+                ? 'Impossible de finaliser ce paiement PayPal.'
+                : 'Unable to complete this PayPal payment.');
+            return;
+        }
+
+        $this->paymentProcessing = true;
+        $response = $api->capturePaypalOrder($this->token(), $orderId, $paypalOrderId);
+
+        if (! $response['ok']) {
+            $this->failPaypalPayment($this->firstApiError($response)
+                ?: ($this->locale === 'fr' ? 'PayPal a refuse ou interrompu le paiement.' : 'PayPal refused or interrupted the payment.'));
+            return;
+        }
+
+        $this->paypalOrder = $response['data'];
+        $this->completePaypalPayment((string) ($this->paypalOrder['status'] ?? 'COMPLETED'));
+    }
+
+    public function completePaypalPayment(string $status = 'COMPLETED'): void
+    {
+        if (! $this->confirmedOrder || ! in_array(strtoupper($status), ['COMPLETED', 'APPROVED'], true)) {
+            return;
+        }
+
+        $this->paymentProcessing = false;
+        $this->orderConfirmed = true;
+        $this->clearCartState();
+        $this->dispatch('checkout-confirmed');
+    }
+
+    public function failPaypalPayment(?string $message = null): void
+    {
+        $this->paymentProcessing = false;
+        $this->paymentError = $message ?: ($this->locale === 'fr'
+            ? 'Le paiement PayPal a echoue. Reessayez ou choisissez la carte bancaire.'
+            : 'PayPal payment failed. Try again or choose card payment.');
     }
 
     public function updatedCarrier(string $value): void
@@ -115,13 +265,18 @@ class CheckoutReview extends Component
         }
 
         $this->delivery = $option['type'] === 'home' ? 'home' : 'relay';
+        $method = collect($this->shippingMethods)->firstWhere('method_code', $value);
+        $this->selectedShippingMethodId = isset($method['method_id']) ? (int) $method['method_id'] : null;
 
         if ($this->delivery === 'relay') {
+            $this->pickupQuery = '';
+            $this->selectedPickupPoint = null;
             $this->refreshPickupPoints();
         } else {
             $this->selectedPickupPoint = null;
             $this->pickupPointOptions = [];
             $this->pickupPointError = null;
+            $this->persistShippingSelection();
         }
 
         $this->refreshQuote();
@@ -129,6 +284,9 @@ class CheckoutReview extends Component
 
     public function updatedSelectedAddressId(): void
     {
+        $this->pickupQuery = '';
+        $this->selectedPickupPoint = null;
+        $this->refreshShippingMethods();
         $this->refreshPickupPoints();
         $this->refreshQuote();
     }
@@ -142,6 +300,7 @@ class CheckoutReview extends Component
     {
         if (collect($this->allPickupPoints())->contains('code', $code)) {
             $this->selectedPickupPoint = $code;
+            $this->persistShippingSelection();
             $this->refreshQuote();
         }
     }
@@ -155,7 +314,6 @@ class CheckoutReview extends Component
             'selectedCarrier' => $this->carrierOptions()[$this->carrier] ?? null,
             'pickupPoints' => $this->pickupPoints(),
             'selectedPickupPointDetails' => $this->selectedPickupPointDetails(),
-            'nearestPickupPoint' => $this->nearestPickupPoint(),
             'pickupMapCenter' => $this->pickupMapCenter,
             'displayQuote' => $this->displayQuote(),
         ]);
@@ -182,6 +340,51 @@ class CheckoutReview extends Component
         $this->quote = $response['data'];
     }
 
+    private function refreshShippingMethods(): void
+    {
+        $this->shippingMethodError = null;
+
+        if (! $this->token() || ! $this->cartToken || ! $this->selectedAddressId) {
+            $this->shippingMethods = [];
+            $this->selectedShippingMethodId = null;
+            if ($this->token() && $this->selectedAddressId && ! $this->cartToken) {
+                $this->shippingMethodError = $this->locale === 'fr'
+                    ? 'Le panier doit être restauré avant de charger les transporteurs.'
+                    : 'The cart must be restored before loading carriers.';
+            }
+            return;
+        }
+
+        $response = app(AccountApiClient::class)->shippingMethods($this->token(), [
+            'cart_token' => $this->cartToken,
+            'shipping_address_id' => (int) $this->selectedAddressId,
+            'locale' => $this->locale,
+        ]);
+        if (! $response['ok']) {
+            $this->shippingMethods = [];
+            $this->selectedShippingMethodId = null;
+            $this->carrier = '';
+            $this->shippingMethodError = $this->firstApiError($response)
+                ?: ($this->locale === 'fr' ? 'Impossible de charger les transporteurs pour cette adresse.' : 'Unable to load carriers for this address.');
+            return;
+        }
+
+        $this->shippingMethods = is_array($response['data']) ? $response['data'] : [];
+        $method = collect($this->shippingMethods)->firstWhere('method_code', $this->carrier)
+            ?: collect($this->shippingMethods)->first();
+        $this->selectedShippingMethodId = isset($method['method_id']) ? (int) $method['method_id'] : null;
+        $this->carrier = (string) ($method['method_code'] ?? '');
+        $this->delivery = ($method['delivery_type'] ?? null) === 'home' ? 'home' : 'relay';
+        if ($this->shippingMethods === []) {
+            $this->shippingMethodError = $this->locale === 'fr'
+                ? 'Aucun transporteur actif avec tarif n’est disponible pour cette adresse et ce panier.'
+                : 'No active carrier with a rate is available for this address and cart.';
+            $this->pickupPointError = $this->shippingMethodError;
+        } elseif ($this->delivery === 'home') {
+            $this->persistShippingSelection();
+        }
+    }
+
     private function refreshPickupPoints(): void
     {
         if ($this->delivery !== 'relay') {
@@ -191,23 +394,33 @@ class CheckoutReview extends Component
         }
 
         if (! $this->token() || ! $this->selectedAddressId) {
-            $this->pickupPointOptions = $this->filteredFallbackPickupPoints();
-            $this->ensureSelectedPickupPointExists();
+            $this->pickupPointOptions = [];
+            $this->selectedPickupPoint = null;
             return;
         }
 
-        $response = app(AccountApiClient::class)->pickupPoints($this->token(), [
+        if (! $this->selectedShippingMethodId) {
+            $this->pickupPointOptions = [];
+            $this->selectedPickupPoint = null;
+            $this->pickupPointError = $this->locale === 'fr' ? 'Sélectionnez un mode de livraison disponible.' : 'Select an available delivery method.';
+            return;
+        }
+
+        $search = trim($this->pickupQuery);
+        $response = app(AccountApiClient::class)->shippingPickupPoints($this->token(), array_filter([
+            'cart_token' => $this->cartToken,
+            'shipping_method_id' => $this->selectedShippingMethodId,
             'shipping_address_id' => (int) $this->selectedAddressId,
-            'locale' => $this->locale,
-            'carrier' => $this->carrier,
-            'query' => $this->pickupQuery,
-        ]);
+            'postal_code' => $search !== '' && preg_match('/^[0-9 -]+$/', $search) ? $search : null,
+            'city' => $search !== '' && ! preg_match('/^[0-9 -]+$/', $search) ? $search : null,
+            'limit' => 15,
+        ], fn ($value) => $value !== null && $value !== ''));
 
         if (! $response['ok']) {
-            $this->pickupPointOptions = $this->filteredFallbackPickupPoints();
+            $this->pickupPointOptions = [];
+            $this->selectedPickupPoint = null;
             $this->pickupPointError = $this->firstApiError($response)
-                ?: ($this->locale === 'fr' ? 'Recherche indisponible, affichage des points de secours.' : 'Search unavailable, fallback points are displayed.');
-            $this->ensureSelectedPickupPointExists();
+                ?: ($this->locale === 'fr' ? 'La recherche Mondial Relay est indisponible. Aucun point statique n’est affiché.' : 'Mondial Relay search is unavailable. No static pickup points are displayed.');
             return;
         }
 
@@ -215,6 +428,7 @@ class CheckoutReview extends Component
         $this->pickupPointOptions = $response['data']['points'] ?? [];
         $this->pickupMapCenter = $response['data']['center'] ?? $this->pickupMapCenter;
         $this->ensureSelectedPickupPointExists();
+        $this->persistShippingSelection();
     }
 
     private function checkoutPayload(): array
@@ -234,16 +448,87 @@ class CheckoutReview extends Component
             ],
         ];
 
+        if ($this->selectedShippingMethodId) {
+            $payload['shipping_method_id'] = $this->selectedShippingMethodId;
+        }
+
         if ($this->delivery === 'relay' && $this->selectedPickupPointDetails()) {
             $payload['metadata']['pickup_point'] = $this->selectedPickupPointDetails();
+            if (isset($payload['metadata']['pickup_point']['id'])) {
+                $payload['pickup_point_id'] = (int) $payload['metadata']['pickup_point']['id'];
+            }
         }
 
         return $payload;
     }
 
+    private function prepareStripePayment(AccountApiClient $api): void
+    {
+        $orderId = data_get($this->confirmedOrder, 'id');
+
+        if (! $orderId || ! $this->token()) {
+            $this->paymentError = $this->locale === 'fr'
+                ? 'Impossible de preparer le paiement de cette commande.'
+                : 'Unable to prepare payment for this order.';
+            return;
+        }
+
+        $response = $api->createStripePaymentIntent($this->token(), $orderId);
+
+        if (! $response['ok']) {
+            $this->paymentError = $this->firstApiError($response)
+                ?: ($this->locale === 'fr' ? 'Stripe est indisponible pour le moment.' : 'Stripe is unavailable right now.');
+            return;
+        }
+
+        $this->stripePaymentIntent = $response['data'];
+        $this->paymentProcessing = false;
+        $this->dispatch('stripe-payment-ready', payment: $this->stripePaymentIntent);
+    }
+
+    private function preparePaypalPayment(AccountApiClient $api): void
+    {
+        $orderId = data_get($this->confirmedOrder, 'id');
+
+        if (! $orderId || ! $this->token()) {
+            $this->paymentError = $this->locale === 'fr'
+                ? 'Impossible de preparer le paiement PayPal pour cette commande.'
+                : 'Unable to prepare PayPal payment for this order.';
+            return;
+        }
+
+        $response = $api->createPaypalOrder($this->token(), $orderId);
+
+        if (! $response['ok']) {
+            $this->paymentError = $this->firstApiError($response)
+                ?: ($this->locale === 'fr' ? 'PayPal est indisponible pour le moment.' : 'PayPal is unavailable right now.');
+            return;
+        }
+
+        $this->paypalOrder = $response['data'];
+        $this->paymentProcessing = false;
+        $this->dispatch('paypal-payment-ready', payment: $this->paypalOrder);
+    }
+
     private function deliveryMethodForApi(): string
     {
         return $this->delivery === 'relay' ? 'relay' : 'standard';
+    }
+
+    private function persistShippingSelection(): void
+    {
+        $point = $this->selectedPickupPointDetails();
+        $method = collect($this->shippingMethods)->firstWhere('method_id', $this->selectedShippingMethodId);
+        $requiresPickupPoint = (bool) ($method['requires_pickup_point'] ?? false);
+        if (! $this->token() || ! $this->cartToken || ! $this->selectedAddressId || ! $this->selectedShippingMethodId) return;
+        if ($requiresPickupPoint && empty($point['id'])) return;
+        $payload = [
+            'cart_token' => $this->cartToken, 'shipping_method_id' => $this->selectedShippingMethodId,
+            'shipping_address_id' => (int) $this->selectedAddressId, 'locale' => $this->locale,
+        ];
+        if (! empty($point['id'])) $payload['pickup_point_id'] = (int) $point['id'];
+        $response = app(AccountApiClient::class)->selectShipping($this->token(), $payload);
+        if (! $response['ok']) $this->pickupPointError = $this->firstApiError($response);
     }
 
     private function displayQuote(): array
@@ -290,23 +575,18 @@ class CheckoutReview extends Component
         return collect($this->allPickupPoints())->firstWhere('code', $this->selectedPickupPoint);
     }
 
-    private function nearestPickupPoint(): ?array
-    {
-        return collect($this->pickupPoints())->sortBy('distance_meters')->first();
-    }
-
     private function pickupPoints(): array
     {
         if ($this->delivery !== 'relay') {
             return [];
         }
 
-        return $this->pickupPointOptions ?: $this->filteredFallbackPickupPoints();
+        return $this->pickupPointOptions;
     }
 
     private function allPickupPoints(): array
     {
-        return $this->pickupPointOptions ?: $this->filteredFallbackPickupPoints();
+        return $this->pickupPointOptions;
     }
 
     private function ensureSelectedPickupPointExists(): void
@@ -323,121 +603,41 @@ class CheckoutReview extends Component
         }
     }
 
-    private function filteredFallbackPickupPoints(): array
-    {
-        $points = collect($this->fallbackPickupPoints())
-            ->filter(function (array $point) {
-                if ($this->carrier === 'mondial_relay_locker') {
-                    return ($point['provider'] ?? null) === 'mondial_relay' && ($point['type'] ?? null) === 'locker';
-                }
-
-                if ($this->carrier === 'mondial_relay_pickup') {
-                    return ($point['provider'] ?? null) === 'mondial_relay' && ($point['type'] ?? null) === 'pickup';
-                }
-
-                if ($this->carrier === 'chrono_relais_pickup') {
-                    return ($point['provider'] ?? null) === 'chrono_relais';
-                }
-
-                return ($point['carrier_code'] ?? null) === $this->carrier;
-            });
-
-        $query = trim(mb_strtolower($this->pickupQuery));
-
-        if ($query !== '') {
-            $points = $points->filter(fn (array $point) => str_contains(mb_strtolower($point['name'].' '.$point['address'].' '.$point['carrier']), $query));
-        }
-
-        return $points->sortBy('distance_meters')->values()->all();
-    }
-
-    private function fallbackPickupPoints(): array
-    {
-        return [
-            $this->pickup('mr-locker-bricomarche-chalons', 'mondial_relay_locker', 'mondial_relay', 'Mondial Relay', 'locker', 'Locker 24/7 Bricomarché Chalons', '4 rue Anne Josephe de Mericourt, 51000 - Châlons-en-Champagne', 'Ouvert 24/7', 350, 38, 22),
-            $this->pickup('mr-locker-match-chalons', 'mondial_relay_locker', 'mondial_relay', 'Mondial Relay', 'locker', 'Locker 24/7 Match Chalons', '1B avenue du Général Sarrail, 51000 - Châlons-en-Champagne', 'Ouvert 24/7', 650, 50, 61),
-            $this->pickup('mr-locker-aldi-planchette', 'mondial_relay_locker', 'mondial_relay', 'Mondial Relay', 'locker', 'Locker 24/7 Aldi', '2 rue de la Planchette, 51000 - Châlons-en-Champagne', 'Ouvert 24/7', 1200, 20, 72),
-            $this->pickup('mr-locker-carrefour-contact', 'mondial_relay_locker', 'mondial_relay', 'Mondial Relay', 'locker', 'Locker 24/7 Carrefour Contact', '34 avenue de Sainte-Menehould, 51000 - Châlons-en-Champagne', 'Ouvert 24/7', 1500, 61, 61),
-            $this->pickup('mr-locker-laverie-ursulines', 'mondial_relay_locker', 'mondial_relay', 'Mondial Relay', 'locker', 'Locker laverie des Ursulines', '20 rue André Hubert, 51000 - Châlons-en-Champagne', 'Ouvert 24/7', 1700, 58, 76),
-            $this->pickup('mr-locker-lidl-chalons', 'mondial_relay_locker', 'mondial_relay', 'Mondial Relay', 'locker', 'Locker 24/7 Lidl Chalons', '4 rue Romain Rolland, 51000 - Châlons-en-Champagne', 'Ouvert 24/7', 2100, 39, 86),
-            $this->pickup('mr-locker-aldi-saint-memmie', 'mondial_relay_locker', 'mondial_relay', 'Mondial Relay', 'locker', 'Locker 24/7 Aldi Saint Memmie', '11 avenue Marc Hamet, 51470 - Saint-Memmie', 'Ouvert 24/7', 2900, 88, 66),
-            $this->pickup('mr-point-centre-chalons', 'mondial_relay_pickup', 'mondial_relay', 'Mondial Relay', 'pickup', 'Tabac presse du centre', '8 rue de la Marne, 51000 - Châlons-en-Champagne', 'Lun-Sam 09:00-19:00', 950, 48, 50),
-            $this->pickup('mr-point-superette-chalons', 'mondial_relay_pickup', 'mondial_relay', 'Mondial Relay', 'pickup', 'Supérette Saint-Jean', '12 rue Saint-Jean, 51000 - Châlons-en-Champagne', 'Lun-Sam 08:30-20:00', 1400, 34, 66),
-            $this->pickup('chrono-carrefour-gouzon', 'chrono_relais_pickup', 'chrono_relais', 'Chrono Relais', 'pickup', 'Carrefour Market Gouzon', '15 avenue du Berry, 23230 Gouzon', 'Lun-Sam 09:00-19:00', 3900, 73, 22),
-            $this->pickup('chrono-france-rurale-gouzon', 'chrono_relais_pickup', 'chrono_relais', 'Chrono Relais', 'pickup', 'France rurale', 'Bellevue, 23230 Gouzon', 'Lun-Sam 09:00-18:30', 4300, 43, 52),
-            $this->pickup('chrono-epicurien-parsac', 'chrono_relais_pickup', 'chrono_relais', 'Chrono Relais', 'pickup', "Relais l'épicurien", '6 rue Eugène Parry, 23140 Parsac-Rimondeix', 'Lun-Sam 08:30-19:00', 5500, 34, 62),
-            $this->pickup('chrono-tikki-soumans', 'chrono_relais_pickup', 'chrono_relais', 'Chrono Relais', 'pickup', "Le Tikki's", '22 rue des Acacias, 23600 Soumans', 'Lun-Sam 08:00-19:00', 7600, 52, 32),
-        ];
-    }
-
-    private function pickup(string $code, string $carrierCode, string $provider, string $carrier, string $type, string $name, string $address, string $hours, int $distanceMeters, int $mapX, int $mapY): array
-    {
-        return [
-            'code' => $code,
-            'carrier_code' => $carrierCode,
-            'provider' => $provider,
-            'carrier' => $carrier,
-            'type' => $type,
-            'name' => $name,
-            'address' => $address,
-            'hours' => $hours,
-            'distance' => $distanceMeters >= 1000 ? str_replace('.', ',', number_format($distanceMeters / 1000, 1)).' km' : $distanceMeters.' m',
-            'distance_meters' => $distanceMeters,
-            'map_x' => $mapX,
-            'map_y' => $mapY,
-        ];
-    }
-
     private function carrierOptions(): array
     {
-        return $this->locale === 'fr'
-            ? [
-                'mondial_relay_locker' => [
-                    'name' => 'Mondial Relay Locker',
-                    'type' => 'relay',
-                    'brand' => 'Mondial Relay',
-                    'logo' => 'mr',
-                    'eta' => 'Délai de 3 à 5 jours à partir de la mise à disposition du colis.',
-                    'price' => '2,99 € TTC',
-                    'choose_label' => 'Utiliser ce locker',
-                    'panel_title' => 'Sélectionnez votre Point Relais® ou Locker - Mondial Relay',
-                ],
-                'mondial_relay_pickup' => [
-                    'name' => 'Mondial Points Relais®',
-                    'type' => 'relay',
-                    'brand' => 'Mondial Relay',
-                    'logo' => 'mr',
-                    'eta' => 'Délai de 5 à 7 jours à partir de la mise à disposition du colis.',
-                    'price' => '4,19 € TTC',
-                    'choose_label' => 'Utiliser ce point relais',
-                    'panel_title' => 'Sélectionnez votre Point Relais® - Mondial Relay',
-                ],
-                'chrono_relais_pickup' => [
-                    'name' => 'Chrono Relais',
-                    'type' => 'relay',
-                    'brand' => 'Chronopost',
-                    'logo' => 'chrono',
-                    'eta' => '4 à 7 jours',
-                    'price' => '6,77 € TTC',
-                    'choose_label' => 'Choisir ce point de retrait',
-                    'panel_title' => 'Sélectionnez votre point de retrait Chrono Relais',
-                ],
-                'chronopost_home' => [
-                    'name' => 'CHRONOPOST',
-                    'type' => 'home',
-                    'brand' => 'Chronopost',
-                    'logo' => 'chrono',
-                    'eta' => '72 Heures',
-                    'price' => '12,94 € TTC',
-                    'choose_label' => '',
-                    'panel_title' => '',
-                ],
-            ]
-            : [
-                'mondial_relay_locker' => ['name' => 'Mondial Relay Locker', 'type' => 'relay', 'brand' => 'Mondial Relay', 'logo' => 'mr', 'eta' => '3 to 5 days from parcel availability.', 'price' => '€2.99 incl. VAT', 'choose_label' => 'Use this locker', 'panel_title' => 'Select your Mondial Relay pickup or locker'],
-                'mondial_relay_pickup' => ['name' => 'Mondial Pickup Points®', 'type' => 'relay', 'brand' => 'Mondial Relay', 'logo' => 'mr', 'eta' => '5 to 7 days from parcel availability.', 'price' => '€4.19 incl. VAT', 'choose_label' => 'Use this pickup point', 'panel_title' => 'Select your Mondial Relay pickup point'],
-                'chrono_relais_pickup' => ['name' => 'Chrono Relais', 'type' => 'relay', 'brand' => 'Chronopost', 'logo' => 'chrono', 'eta' => '4 to 7 days', 'price' => '€6.77 incl. VAT', 'choose_label' => 'Choose this pickup point', 'panel_title' => 'Select your Chrono Relais pickup point'],
-                'chronopost_home' => ['name' => 'CHRONOPOST', 'type' => 'home', 'brand' => 'Chronopost', 'logo' => 'chrono', 'eta' => '72 hours', 'price' => '€12.94 incl. VAT', 'choose_label' => '', 'panel_title' => ''],
-            ];
+        return collect($this->shippingMethods)->mapWithKeys(function (array $method) {
+            $min = $method['min_delivery_days'] ?? null;
+            $max = $method['max_delivery_days'] ?? null;
+            $eta = $min !== null && $max !== null
+                ? ($this->locale === 'fr' ? "Livraison estimée sous {$min} à {$max} jours ouvrés." : "Estimated delivery in {$min} to {$max} business days.")
+                : ($this->locale === 'fr' ? 'Délai communiqué par le transporteur.' : 'Timing provided by the carrier.');
+            $carrierCode = (string) ($method['carrier_code'] ?? '');
+            $deliveryType = (string) ($method['delivery_type'] ?? '');
+            $typeLabel = match ($deliveryType) {
+                'locker' => 'Locker',
+                'home' => $this->locale === 'fr' ? 'Domicile' : 'Home',
+                default => $this->locale === 'fr' ? 'Point relais' : 'Pickup point',
+            };
+            $brandLabel = match ($carrierCode) {
+                'mondial_relay' => 'Mondial Relay',
+                'chronopost' => 'Chronopost',
+                default => $carrierCode !== '' ? str_replace('_', ' ', $carrierCode) : ($this->locale === 'fr' ? 'Transporteur' : 'Carrier'),
+            };
+
+            return [(string) $method['method_code'] => [
+                'name' => $method['name'],
+                'type' => $deliveryType === 'home' ? 'home' : 'relay',
+                'delivery_type' => $deliveryType,
+                'type_label' => $typeLabel,
+                'brand_label' => $brandLabel,
+                'brand' => $carrierCode,
+                'logo' => $carrierCode === 'mondial_relay' ? 'mr' : ($carrierCode === 'chronopost' ? 'chrono' : 'generic'),
+                'eta' => $eta,
+                'price' => number_format(((int) $method['price_cents']) / 100, 2, ',', ' ').' '.($method['currency'] ?? 'EUR'),
+                'requires_pickup_point' => (bool) ($method['requires_pickup_point'] ?? false),
+                'choose_label' => $this->locale === 'fr' ? 'Choisir ce point relais' : 'Choose this pickup point',
+                'panel_title' => $this->locale === 'fr' ? 'Sélectionnez votre point relais' : 'Select your pickup point',
+            ]];
+        })->all();
     }
 }

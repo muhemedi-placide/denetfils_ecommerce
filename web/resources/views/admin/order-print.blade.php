@@ -175,6 +175,21 @@
                 vertical-align: top;
             }
 
+            .product-cell {
+                align-items: center;
+                display: flex;
+                gap: 10px;
+            }
+
+            .product-thumb {
+                background: #eef4ec;
+                border: 1px solid #d9e4d7;
+                border-radius: 10px;
+                height: 44px;
+                object-fit: cover;
+                width: 44px;
+            }
+
             .right {
                 text-align: right;
             }
@@ -303,9 +318,20 @@
                     </thead>
                     <tbody>
                         @forelse ($items as $item)
+                            @php
+                                $imageUrl = data_get($item, 'product.image.url');
+                                $productName = data_get($item, 'product.name', '-');
+                            @endphp
                             <tr>
                                 <td>{{ data_get($item, 'product.sku', '-') }}</td>
-                                <td>{{ data_get($item, 'product.name', '-') }}</td>
+                                <td>
+                                    <div class="product-cell">
+                                        @if ($imageUrl)
+                                            <img src="{{ $imageUrl }}" alt="{{ $productName }}" class="product-thumb">
+                                        @endif
+                                        <span>{{ $productName }}</span>
+                                    </div>
+                                </td>
                                 <td class="right">{{ $item['formatted_unit_price'] ?? '-' }}</td>
                                 <td class="right">{{ $item['quantity'] ?? 0 }}</td>
                                 <td class="right"><strong>{{ $item['formatted_line_total'] ?? '-' }}</strong></td>

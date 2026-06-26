@@ -219,7 +219,37 @@ class BackOfficeController extends Controller
         return view('admin.order-show', $this->payload($context, [
             'activeAdmin' => 'sales.orders',
             'order' => $response['data'],
+            'conversation' => ($conversation = $admin->orderConversation($context['token'], $order))['ok'] ? $conversation['data'] : [
+                'status' => 'not_started',
+                'messages' => [],
+                'staff_unread_count' => 0,
+                'customer_unread_count' => 0,
+            ],
         ]));
+    }
+
+    public function openOrderDiscussion(Request $request, AdminApiClient $admin, string $locale, int $order): RedirectResponse
+    {
+        return $this->discussionAction($request, $admin, $locale, $order, fn (string $token) => $admin->openOrderConversation($token, $order));
+    }
+
+    public function sendOrderDiscussionMessage(Request $request, AdminApiClient $admin, string $locale, int $order): RedirectResponse
+    {
+        $validated = $this->validateAdminAction($request, [
+            'body' => ['required', 'string', 'min:2', 'max:2000'],
+        ], "order-discussion-{$order}");
+
+        return $this->discussionAction($request, $admin, $locale, $order, fn (string $token) => $admin->sendOrderMessage($token, $order, $validated['body']));
+    }
+
+    public function markOrderDiscussionRead(Request $request, AdminApiClient $admin, string $locale, int $order): RedirectResponse
+    {
+        return $this->discussionAction($request, $admin, $locale, $order, fn (string $token) => $admin->markOrderConversationRead($token, $order));
+    }
+
+    public function closeOrderDiscussion(Request $request, AdminApiClient $admin, string $locale, int $order): RedirectResponse
+    {
+        return $this->discussionAction($request, $admin, $locale, $order, fn (string $token) => $admin->closeOrderConversation($token, $order));
     }
 
     public function printOrder(Request $request, AdminApiClient $admin, string $locale, int $order): View|RedirectResponse
@@ -964,6 +994,29 @@ class BackOfficeController extends Controller
         }
 
         return back()->with('status', $success);
+    }
+
+    private function discussionAction(Request $request, AdminApiClient $admin, string $locale, int $order, callable $callback): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $callback($context['token']);
+
+        if (! ($response['ok'] ?? false)) {
+            return back()
+                ->withErrors($this->responseErrors($response, 'body'))
+                ->withInput()
+                ->with('admin_modal', "order-discussion-{$order}");
+        }
+
+        return redirect()
+            ->route('admin.orders.show', ['locale' => $locale, 'order' => $order])
+            ->with('status', 'Discussion commande mise a jour.');
     }
 
     /**

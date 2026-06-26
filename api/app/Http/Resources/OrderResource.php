@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\OrderAddress;
 use App\Models\OrderItem;
 use App\Support\MoneyFormatter;
+use App\Support\OrderStatusCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,8 +21,11 @@ class OrderResource extends JsonResource
             'cart_id' => $this->cart_id,
             'order_number' => $this->order_number,
             'status' => $this->status,
+            'status_label' => OrderStatusCatalog::label('order', $this->status, $locale),
             'payment_status' => $this->payment_status,
+            'payment_status_label' => OrderStatusCatalog::label('payment', $this->payment_status, $locale),
             'fulfillment_status' => $this->fulfillment_status,
+            'fulfillment_status_label' => OrderStatusCatalog::label('fulfillment', $this->fulfillment_status, $locale),
             'currency' => $this->currency,
             'subtotal_cents' => $this->subtotal_cents,
             'formatted_subtotal' => MoneyFormatter::format($this->subtotal_cents, $this->currency, $locale),
@@ -43,6 +47,7 @@ class OrderResource extends JsonResource
             'delivery_method' => $this->delivery_method,
             'carrier' => $this->carrier,
             'metadata' => $this->metadata,
+            'tracking' => $this->trackingSummary(),
             'placed_at' => $this->placed_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'items' => $this->whenLoaded('items', fn () => $this->items
@@ -118,6 +123,23 @@ class OrderResource extends JsonResource
             'region' => $address->region,
             'country_code' => $address->country_code,
             'phone' => $address->phone,
+        ];
+    }
+
+    private function trackingSummary(): array
+    {
+        $metadata = is_array($this->metadata) ? $this->metadata : [];
+        $tracking = is_array($metadata['tracking'] ?? null) ? $metadata['tracking'] : [];
+        $shipment = $this->relationLoaded('shipments')
+            ? $this->shipments->firstWhere('tracking_number', '!=', null) ?? $this->shipments->first()
+            : null;
+
+        return [
+            'number' => $tracking['number'] ?? $shipment?->tracking_number,
+            'url' => $tracking['url'] ?? null,
+            'updated_at' => $tracking['updated_at'] ?? $shipment?->updated_at?->toIso8601String(),
+            'shipment_status' => $shipment?->status,
+            'external_shipment_id' => $shipment?->external_shipment_id,
         ];
     }
 

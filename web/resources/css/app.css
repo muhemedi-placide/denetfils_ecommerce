@@ -249,6 +249,53 @@ img {
     @apply inline-flex items-center rounded-full bg-mint px-3 py-1 text-xs font-black text-leaf;
 }
 
+.chat-thread {
+    @apply max-h-[460px] space-y-3 overflow-y-auto rounded-2xl border border-leaf/10 bg-linen/50 p-3 dark:border-white/10 dark:bg-white/[0.03];
+    scrollbar-width: thin;
+    scrollbar-color: rgba(32, 122, 31, 0.35) transparent;
+}
+
+.chat-thread::-webkit-scrollbar {
+    width: 0.55rem;
+}
+
+.chat-thread::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-thread::-webkit-scrollbar-thumb {
+    background: rgba(32, 122, 31, 0.35);
+    border-radius: 999px;
+}
+
+.chat-bubble {
+    @apply w-fit max-w-[88%] rounded-2xl border px-4 py-3 text-sm shadow-sm;
+}
+
+.chat-bubble-own {
+    @apply ml-auto border-forest/15 bg-forest text-cream dark:border-meadow/20 dark:bg-meadow/15 dark:text-cream;
+}
+
+.chat-bubble-other {
+    @apply mr-auto border-leaf/10 bg-white text-cocoa dark:border-white/10 dark:bg-white/[0.07] dark:text-cream;
+}
+
+.chat-meta {
+    @apply flex items-start justify-between gap-3 text-[11px] font-black uppercase tracking-wide;
+}
+
+.chat-composer {
+    @apply rounded-2xl border border-leaf/15 bg-white shadow-sm transition focus-within:border-leaf focus-within:ring-4 focus-within:ring-leaf/10 dark:border-white/10 dark:bg-white/[0.04];
+}
+
+.chat-textarea {
+    @apply block min-h-[132px] w-full resize-y border-0 bg-transparent px-4 py-4 text-sm font-semibold leading-6 text-cocoa outline-none placeholder:text-cocoa/40 dark:text-cream dark:placeholder:text-cream/35;
+}
+
+.chat-toolbar {
+    @apply flex flex-wrap items-center justify-between gap-3 border-t border-leaf/10 px-3 py-3 dark:border-white/10;
+}
+
 .admin-table {
     @apply min-w-full divide-y divide-leaf/10 text-left text-sm;
 }

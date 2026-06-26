@@ -294,7 +294,14 @@ class PaymentsApiTest extends TestCase
             'locale' => 'fr',
         ])->assertCreated()->json('data.id');
 
-        return Order::findOrFail($orderId);
+        $order = Order::findOrFail($orderId);
+        $order->forceFill([
+            'status' => 'pending_payment',
+            'payment_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
+        ])->save();
+
+        return $order->refresh();
     }
 
     private function customer(array $overrides = []): User

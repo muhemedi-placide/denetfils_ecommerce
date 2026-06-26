@@ -18,11 +18,13 @@
     @if (! empty($recommendedProducts))<section class="bg-cream px-4 py-12 dark:bg-ink sm:px-8 lg:py-16"><div class="mx-auto max-w-7xl"><div class="mb-7 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><p class="section-kicker">{{ $locale === 'fr' ? 'Compléter votre panier' : 'Complete your cart' }}</p><h2 class="mt-3 text-3xl font-black text-forest dark:text-meadow">{{ __('home.product.related_title') }}</h2></div><a href="{{ route('shop.index', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-fit" wire:navigate>{{ __('home.spotlight.cta') }}</a></div><div class="mobile-scrollbarless flex gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">@foreach ($recommendedProducts as $product)<article class="market-card group min-w-[260px] overflow-hidden bg-white dark:bg-white/5 lg:min-w-0" wire:key="recommended-{{ $product['id'] }}"><a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" wire:navigate>@if (! empty($product['primary_image']['url']))<img class="h-48 w-full object-cover transition group-hover:scale-[1.04]" src="{{ $product['primary_image']['url'] }}" alt="{{ $product['primary_image']['alt_text'] ?? $product['name'] }}" loading="lazy" decoding="async">@else<div class="grid h-48 place-items-center bg-sunshine/35 text-forest">MP</div>@endif</a><div class="p-5"><a href="{{ route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) }}" wire:navigate><h3 class="line-clamp-2 text-xl font-black text-forest transition group-hover:text-leaf dark:text-meadow">{{ $product['name'] }}</h3></a><div class="mt-4 flex items-center justify-between gap-3"><span class="brand-display text-2xl text-forest dark:text-meadow">{{ $product['formatted_price'] }}</span><button type="button" class="btn-primary px-4 py-2 text-xs" wire:click="addRecommended({{ (int) $product['id'] }})" wire:loading.attr="disabled">{{ __('home.products.cta') }}</button></div></div></article>@endforeach</div></div></section>@endif
     @script
         <script>
-            const cartPageStorageKey = 'marche_peyi_cart_token';
-            $wire.restoreFromBrowser(localStorage.getItem(cartPageStorageKey));
-            const cartPagePayload = (event) => Array.isArray(event) ? (event[0] || {}) : (event || {});
-            $wire.on('cart-token-stored', (event) => { const detail = cartPagePayload(event); if (detail.token) { localStorage.setItem(cartPageStorageKey, detail.token); } });
-            $wire.on('cart-token-cleared', () => { localStorage.removeItem(cartPageStorageKey); });
+            (() => {
+                const cartPageStorageKey = 'marche_peyi_cart_token';
+                $wire.restoreFromBrowser(localStorage.getItem(cartPageStorageKey));
+                const cartPagePayload = (event) => Array.isArray(event) ? (event[0] || {}) : (event || {});
+                $wire.on('cart-token-stored', (event) => { const detail = cartPagePayload(event); if (detail.token) { localStorage.setItem(cartPageStorageKey, detail.token); } });
+                $wire.on('cart-token-cleared', () => { localStorage.removeItem(cartPageStorageKey); });
+            })();
         </script>
     @endscript
 </div>

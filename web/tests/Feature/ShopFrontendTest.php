@@ -20,12 +20,11 @@ class ShopFrontendTest extends TestCase
             ->assertSee('Origine France')
             ->assertSee('Epicerie fine')
             ->assertSee('cart:add', false)
-            ->assertSee('data-theme-toggle', false)
             ->assertSee('id="mobile-menu-state"', false)
             ->assertSee('data-mobile-menu-toggle', false)
             ->assertSee('data-testid="mobile-cart-open-button"', false)
             ->assertSee('pointer-events-none fixed', false)
-            ->assertSee('Paiement sécurisé : carte, Visa, Mastercard, PayPal.')
+            ->assertSee('Paiement sécurisé : Visa, Mastercard, Apple Pay, Google Pay, PayPal.')
             ->assertDontSee(__('home.cart.subtitle'))
             ->assertDontSee('TVA UE')
             ->assertDontSee('Securise')
@@ -44,7 +43,7 @@ class ShopFrontendTest extends TestCase
 
         $this->get('/en')
             ->assertOk()
-            ->assertSee('A family house bringing Haitian flavors across borders.')
+            ->assertSee('Marché Peyi makes Caribbean, Haitian and African flavors easy to find, cook and share every day.')
             ->assertSee('Mountain honey')
             ->assertSee('French origin');
     }
@@ -54,12 +53,12 @@ class ShopFrontendTest extends TestCase
         $this->withoutVite();
         $this->fakeCatalog('Hibiscus infusion', 'Senegalese origin', 'Natural drinks');
 
-        $this->get('/en?category=boissons-naturelles&q=hibiscus&sort=price_desc')
+        $this->get('/en/boutique?category=boissons-naturelles&q=hibiscus&sort=price_desc')
             ->assertOk()
             ->assertSee('Hibiscus infusion')
-            ->assertSee('wire:submit.prevent="applyFilters"', false)
-            ->assertSee('wire:model="category"', false)
-            ->assertSee('value="boissons-naturelles"', false)
+            ->assertSee('filterCategory', false)
+            ->assertSee('Natural drinks')
+            ->assertSee('wire:model="sort"', false)
             ->assertSee('value="price_desc"', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/products')
@@ -138,20 +137,20 @@ class ShopFrontendTest extends TestCase
             ]),
             '*/products*' => Http::response([
                 'data' => [
-                    $this->product($name, $origin),
+                    $this->product($name, $origin, $categoryName),
                 ],
             ]),
         ]);
     }
 
-    private function product(string $name, string $origin): array
+    private function product(string $name, string $origin, string $categoryName = 'Fine groceries'): array
     {
         return [
             'id' => 10,
             'category' => [
                 'id' => 1,
                 'slug' => 'epicerie-fine',
-                'name' => 'Fine groceries',
+                'name' => $categoryName,
             ],
             'name' => $name,
             'slug' => 'miel-de-montagne',

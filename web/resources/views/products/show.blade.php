@@ -18,7 +18,8 @@
         $imageIndex = 0;
     }
 
-    $heroImage = $productImages[$imageIndex];
+    $apiHeroImage = data_get($product, 'primary_image.url') ?: data_get($product, 'image.url') ?: data_get($product, 'images.0.url');
+    $heroImage = $apiHeroImage ?: $productImages[$imageIndex];
     $ratingAverage = (float) data_get($product, 'commerce.rating.average', 4.8);
     $ratingCount = (int) data_get($product, 'commerce.rating.count', 64);
     $ratingLabel = number_format($ratingAverage, 1, ',', ' ');
@@ -85,7 +86,7 @@
             <div class="mt-9 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                 @foreach (array_slice($relatedProducts ?: $relatedFallbacks, 0, 3) as $index => $related)
                     @php
-                        $relatedImage = $related['image'] ?? $productImages[($index + 1) % count($productImages)];
+                        $relatedImage = data_get($related, 'primary_image.url') ?: data_get($related, 'image.url') ?: data_get($related, 'images.0.url') ?: ($related['image'] ?? $productImages[($index + 1) % count($productImages)]);
                         $relatedHref = ! empty($related['slug'] ?? null) ? route('products.show', ['locale' => $locale, 'slug' => $related['slug']]) : route('shop.index', ['locale' => $locale]);
                         $relatedRating = number_format((float) data_get($related, 'commerce.rating.average', 4.8), 1, ',', ' ');
                     @endphp

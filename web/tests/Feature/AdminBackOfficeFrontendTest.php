@@ -82,6 +82,14 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertSee('audit-show-0', false);
 
         $this->withSession($session)
+            ->get('/fr/admin/modules/paiement')
+            ->assertOk()
+            ->assertSee('Modes de paiement')
+            ->assertSee('payment-create-modal', false)
+            ->assertSee('Stripe')
+            ->assertSee('Tester');
+
+        $this->withSession($session)
             ->get('/fr/admin/modules/commandes')
             ->assertRedirect('/fr/admin/commandes');
     }
@@ -106,8 +114,35 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertSee('Client')
             ->assertSee('Documents')
             ->assertSee('Transporteur')
+            ->assertSee('Discussion client')
+            ->assertSee('Reponse au client')
+            ->assertSee('Merci pour votre message.')
             ->assertSee('Sources')
             ->assertSee('/fr/admin/commandes/42/impression', false);
+    }
+
+    public function test_admin_can_send_order_discussion_message(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->post('/fr/admin/commandes/42/discussion/messages', [
+            'body' => 'Bonjour, votre colis part aujourd hui.',
+        ])
+            ->assertRedirect(route('admin.orders.show', ['locale' => 'fr', 'order' => 42]))
+            ->assertSessionHas('status', 'Discussion commande mise a jour.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/orders/42/conversation/messages')
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer admin-token')
+            && $request['body'] === 'Bonjour, votre colis part aujourd hui.');
     }
 
     public function test_admin_can_open_printable_order_page(): void
@@ -259,6 +294,69 @@ class AdminBackOfficeFrontendTest extends TestCase
             && data_get($request->data(), 'metadata.admin_note') === 'Commande ajoutee par telephone.');
     }
 
+    public function test_admin_can_create_stripe_payment_method(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->post('/fr/admin/modules/paiement/methodes', [
+            'code' => 'stripe_cards_fr',
+            'provider' => 'stripe',
+            'display_name' => [
+                'fr' => 'Carte bancaire',
+                'en' => 'Card',
+            ],
+            'environment' => 'sandbox',
+            'countries' => 'FR, BE',
+            'currencies' => 'EUR',
+            'credentials' => [
+                'publishable_key' => 'pk_test_123',
+                'secret_key' => 'sk_test_123',
+                'webhook_signing_secret' => 'whsec_123',
+            ],
+        ])
+            ->assertRedirect('/fr/admin/modules/paiement')
+            ->assertSessionHas('admin_success', 'Mode de paiement cree.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/payment-methods')
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer admin-token')
+            && $request['provider'] === 'stripe'
+            && $request['code'] === 'stripe_cards_fr'
+            && $request['countries'] === ['FR', 'BE']
+            && $request['currencies'] === ['EUR']
+            && $request['credentials']['publishable_key'] === 'pk_test_123'
+            && $request['credentials']['secret_key'] === 'sk_test_123');
+    }
+
+    public function test_admin_can_activate_payment_method(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->post('/fr/admin/modules/paiement/methodes/5/activate')
+            ->assertRedirect('/fr/admin/modules/paiement')
+            ->assertSessionHas('admin_success', 'Mode de paiement active.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/payment-methods/5/activate')
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer admin-token'));
+    }
+
     private function adminApiFakes(): array
     {
         return [
@@ -292,6 +390,9 @@ class AdminBackOfficeFrontendTest extends TestCase
                 'data' => [$this->inventoryProduct()],
                 'meta' => ['total' => 1],
             ]),
+            '*/admin/orders/42/conversation*' => Http::response([
+                'data' => $this->orderConversation(),
+            ]),
             '*/admin/orders/42*' => Http::response([
                 'data' => $this->order(),
             ]),
@@ -323,6 +424,18 @@ class AdminBackOfficeFrontendTest extends TestCase
             ]),
             '*/admin/audit-logs*' => Http::response([
                 'data' => [$this->auditLog()],
+                'meta' => ['total' => 1],
+            ]),
+            '*/admin/payment-methods/schemas' => Http::response([
+                'data' => [
+                    'stripe' => ['name' => 'Stripe'],
+                    'paypal' => ['name' => 'PayPal'],
+                    'bank_transfer' => ['name' => 'Bank transfer'],
+                    'cash_on_delivery' => ['name' => 'Cash on delivery'],
+                ],
+            ]),
+            '*/admin/payment-methods*' => Http::response([
+                'data' => [$this->paymentMethod()],
                 'meta' => ['total' => 1],
             ]),
         ];
@@ -431,6 +544,37 @@ class AdminBackOfficeFrontendTest extends TestCase
         ];
     }
 
+    private function orderConversation(): array
+    {
+        return [
+            'id' => 3,
+            'order_id' => 42,
+            'status' => 'open',
+            'customer_unread_count' => 0,
+            'staff_unread_count' => 1,
+            'messages' => [
+                [
+                    'id' => 1,
+                    'sender_type' => 'customer',
+                    'body' => 'Merci pour votre message.',
+                    'status' => 'unread',
+                    'status_for_staff' => 'unread',
+                    'is_own' => false,
+                    'created_at' => '2026-06-16T10:15:00Z',
+                ],
+                [
+                    'id' => 2,
+                    'sender_type' => 'staff',
+                    'body' => 'Nous preparons votre commande.',
+                    'status' => 'read',
+                    'status_for_staff' => 'read',
+                    'is_own' => true,
+                    'created_at' => '2026-06-16T10:20:00Z',
+                ],
+            ],
+        ];
+    }
+
     private function category(): array
     {
         return [
@@ -470,6 +614,32 @@ class AdminBackOfficeFrontendTest extends TestCase
             'metadata' => ['field' => 'stock_quantity'],
             'ip_address' => '127.0.0.1',
             'created_at' => '2026-06-16T10:00:00Z',
+        ];
+    }
+
+    private function paymentMethod(): array
+    {
+        return [
+            'id' => 5,
+            'code' => 'stripe_cards_fr',
+            'provider' => 'stripe',
+            'provider_name' => 'Stripe',
+            'display_name' => ['fr' => 'Carte bancaire', 'en' => 'Card'],
+            'environment' => 'sandbox',
+            'status' => 'draft',
+            'is_enabled' => false,
+            'countries' => ['FR', 'BE'],
+            'currencies' => ['EUR'],
+            'credentials' => [
+                'configured' => ['publishable_key', 'secret_key', 'webhook_signing_secret'],
+                'missing_required' => [],
+                'masked' => [
+                    'publishable_key' => 'pk_test_123',
+                    'secret_key' => '********',
+                    'webhook_signing_secret' => '********',
+                ],
+            ],
+            'last_test_message' => 'Credentials structure is complete.',
         ];
     }
 }

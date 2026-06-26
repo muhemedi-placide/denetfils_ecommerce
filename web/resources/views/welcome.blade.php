@@ -41,6 +41,8 @@
             $newProducts = array_slice($fallbackProducts, 2, 2);
         }
 
+        $featuredProductImage = data_get($spotlightProducts[0] ?? [], 'primary_image.url') ?: data_get($spotlightProducts[0] ?? [], 'image.url') ?: data_get($spotlightProducts[0] ?? [], 'images.0.url') ?: $productImages[0];
+
         $recipes = [
             ['meta' => '45 min · facile', 'title' => 'Riz djon djon maison', 'body' => 'Le classique haïtien, parfumé aux champignons noirs.', 'image' => $recipeImages[0]],
             ['meta' => 'Astuces · 3 min', 'title' => 'Comment utiliser le pikliz ?', 'body' => '5 façons d’ajouter du peps à vos plats du quotidien.', 'image' => $recipeImages[1]],
@@ -111,7 +113,7 @@
             <ellipse cx="36" cy="28" rx="11" ry="16" fill="#ffc829" opacity="0.55" />
         </svg>
         <div class="pointer-events-none absolute right-8 top-36 z-10 hidden rotate-[369deg] rounded-[1.25rem] border-4 border-sunshine bg-sunshine/40 p-3 shadow-[18px_18px_0_rgba(15,95,34,0.16)] lg:block">
-            <img class="w-36 rounded-[1rem] object-cover" src="{{ $productImages[0] }}" alt="Produit Marché Peyi" loading="lazy" decoding="async">
+            <img class="w-36 rounded-[1rem] object-cover" src="{{ $featuredProductImage }}" alt="Produit Marché Peyi" loading="lazy" decoding="async">
         </div>
 
         <div class="relative mx-auto max-w-7xl text-center">
@@ -149,10 +151,12 @@
                     @php
                         $href = ! empty($product['slug'] ?? null) ? route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) : route('shop.index', ['locale' => $locale]);
                         $productId = (int) ($product['id'] ?? 0);
+                        $productImage = data_get($product, 'primary_image.url') ?: data_get($product, 'image.url') ?: data_get($product, 'images.0.url') ?: $productImages[$index % count($productImages)];
+                        $productAlt = data_get($product, 'primary_image.alt_text') ?: ($product['name'] ?? 'Produit');
                     @endphp
                     <article class="group overflow-hidden rounded-[1.6rem] border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical">
                         <a href="{{ $href }}" class="relative block overflow-hidden bg-sunshine" wire:navigate.hover>
-                            <img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $productImages[$index % count($productImages)] }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async">
+                            <img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $productImage }}" alt="{{ $productAlt }}" loading="lazy" decoding="async">
                             <span class="absolute left-4 top-4 rounded-full bg-forest px-4 py-2 text-[11px] font-black uppercase tracking-wide text-cream">{{ $index < 3 ? 'Best-seller' : 'Nouveau' }}</span>
                             @if ($index === 0 || $index === 1 || $index === 5)<span class="absolute right-4 top-4 rounded-full bg-cream px-3 py-1 text-xs font-black text-coral">🔥🔥</span>@endif
                         </a>
@@ -183,9 +187,11 @@
                     @php
                         $href = ! empty($product['slug'] ?? null) ? route('products.show', ['locale' => $locale, 'slug' => $product['slug']]) : route('shop.index', ['locale' => $locale]);
                         $productId = (int) ($product['id'] ?? 0);
+                        $productImage = data_get($product, 'primary_image.url') ?: data_get($product, 'image.url') ?: data_get($product, 'images.0.url') ?: $productImages[($index + 2) % count($productImages)];
+                        $productAlt = data_get($product, 'primary_image.alt_text') ?: ($product['name'] ?? 'Produit');
                     @endphp
                     <article class="group overflow-hidden rounded-[1.6rem] border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-tropical">
-                        <a href="{{ $href }}" class="relative block overflow-hidden" wire:navigate.hover><img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $productImages[($index + 2) % count($productImages)] }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async"><span class="absolute left-4 top-4 rounded-full bg-forest px-4 py-2 text-[11px] font-black uppercase tracking-wide text-cream">Nouveau</span></a>
+                        <a href="{{ $href }}" class="relative block overflow-hidden" wire:navigate.hover><img class="h-80 w-full object-cover transition duration-500 group-hover:scale-[1.04]" src="{{ $productImage }}" alt="{{ $productAlt }}" loading="lazy" decoding="async"><span class="absolute left-4 top-4 rounded-full bg-forest px-4 py-2 text-[11px] font-black uppercase tracking-wide text-cream">Nouveau</span></a>
                         <div class="p-6"><p class="text-xs font-black uppercase tracking-[0.22em] text-coral">{{ data_get($product, 'category.name', 'Épicerie') }} · {{ $product['origin'] ?? 'Marché Peyi' }}</p><h3 class="mt-2 text-2xl font-black leading-tight text-forest">{{ $product['name'] }}</h3><p class="mt-1 line-clamp-1 text-sm font-semibold text-forest/65">{{ $product['short_description'] ?? $product['description'] ?? 'Produit authentique du marché.' }}</p><div class="mt-4 flex items-center gap-2 text-xs font-semibold text-forest/65"><span class="text-sunshine">★★★★★</span><span>4.{{ 7 + $index }} · {{ 64 + ($index * 34) }} avis</span></div><div class="mt-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-forest"><span class="h-2 w-2 rounded-full bg-forest"></span><span>En stock</span></div><div class="mt-7 flex items-center justify-between gap-4"><strong class="text-3xl font-black tracking-tight text-forest">{{ $product['formatted_price'] }}</strong><button class="rounded-full bg-forest px-5 py-3 text-xs font-black text-cream transition hover:bg-leaf disabled:opacity-50" type="button" @if($productId > 0) x-on:click="window.Livewire?.dispatch('cart:add', { productId: {{ $productId }} }); window.dispatchEvent(new CustomEvent('cart-opening'))" @else disabled @endif>+ Ajouter</button></div><a href="{{ $href }}" class="mt-5 block text-center text-xs font-black uppercase tracking-[0.22em] text-forest/65" wire:navigate.hover>Voir le produit</a></div>
                     </article>
                 @endforeach

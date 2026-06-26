@@ -53,11 +53,13 @@
 
     @script
         <script>
-            const cartStorageKey = 'marche_peyi_cart_token';
-            $wire.restoreFromBrowser(localStorage.getItem(cartStorageKey));
-            const payload = (event) => Array.isArray(event) ? (event[0] || {}) : (event || {});
-            $wire.on('cart-token-stored', (event) => { const detail = payload(event); if (detail.token) { localStorage.setItem(cartStorageKey, detail.token); } });
-            $wire.on('cart-token-cleared', () => { localStorage.removeItem(cartStorageKey); });
+            (() => {
+                const cartStorageKey = 'marche_peyi_cart_token';
+                $wire.restoreFromBrowser(localStorage.getItem(cartStorageKey));
+                const payload = (event) => Array.isArray(event) ? (event[0] || {}) : (event || {});
+                $wire.on('cart-token-stored', (event) => { const detail = payload(event); if (detail.token) { localStorage.setItem(cartStorageKey, detail.token); } });
+                $wire.on('cart-token-cleared', () => { localStorage.removeItem(cartStorageKey); });
+            })();
         </script>
     @endscript
 </div>

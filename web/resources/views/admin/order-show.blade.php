@@ -53,8 +53,13 @@
     $items = $order['items'] ?? [];
     $notes = data_get($order, 'admin_notes', []);
     $pickup = data_get($order, 'metadata.pickup_point');
-    $trackingNumber = data_get($order, 'tracking.number');
-    $trackingUrl = data_get($order, 'tracking.url');
+    $shipment = collect($order['shipments'] ?? [])->first(fn ($item) => filled(data_get($item, 'tracking_number')) || filled(data_get($item, 'external_shipment_id')))
+        ?: collect($order['shipments'] ?? [])->first();
+    $shipmentCount = count($order['shipments'] ?? []);
+    $documentCount = 2 + ($shipment && data_get($shipment, 'has_label') ? 1 : 0);
+    $shipmentTrackingNumber = data_get($shipment, 'tracking_number') ?: data_get($shipment, 'external_shipment_id');
+    $trackingNumber = data_get($order, 'tracking.number') ?: $shipmentTrackingNumber;
+    $trackingUrl = data_get($order, 'tracking.url') ?: ($trackingNumber ? route('pages.tracking', ['locale' => $locale, 'tracking_number' => $trackingNumber]) : null);
     $paymentMethod = data_get($order, 'payment_method') ?: ($paymentLabels[$payment] ?? $payment);
     $dateValue = fn (?string $value) => $value ? Str::of($value)->replace('T', ' ')->before('+')->before('Z') : '-';
     $timeline = [
@@ -70,6 +75,16 @@
             ['date' => $order['placed_at'] ?? null, 'from' => 'Panier client', 'to' => 'Commande API'],
         ];
     }
+
+    $conversationStatus = $conversation['status'] ?? 'not_started';
+    $conversationMessages = $conversation['messages'] ?? [];
+    $staffUnreadCount = (int) ($conversation['staff_unread_count'] ?? 0);
+    $customerUnreadCount = (int) ($conversation['customer_unread_count'] ?? 0);
+    $conversationStatusLabel = [
+        'not_started' => 'A ouvrir',
+        'open' => 'Ouverte',
+        'closed' => 'Closee',
+    ][$conversationStatus] ?? $conversationStatus;
 @endphp
 
 @section('content')
@@ -239,14 +254,14 @@
                 <p class="mt-5 text-center text-sm text-cocoa/60 dark:text-cream/60">Pour ce groupe de clients, les prix sont affiches : <strong>TTC</strong>.</p>
             </article>
 
-            <article class="border border-leaf/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-7">
+            <article class="border border-leaf/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-7" x-data="{ activeOrderTab: 'state' }">
                 <div class="flex flex-wrap gap-2 border-b border-leaf/10 dark:border-white/10">
-                    @foreach ([['Etat', count($timeline)], ['Documents', 2], ['Transporteurs', $carrier ? 1 : 0], ['Retours produit', 0]] as $tab)
-                        <span class="inline-flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-cocoa/70 first:border-ink first:text-ink dark:text-cream/70 dark:first:border-white dark:first:text-cream">{{ $tab[0] }} ({{ $tab[1] }})</span>
+                    @foreach ([['key' => 'state', 'label' => 'Etat', 'count' => count($timeline)], ['key' => 'documents', 'label' => 'Documents', 'count' => $documentCount], ['key' => 'carrier', 'label' => 'Transporteurs', 'count' => $shipmentCount], ['key' => 'returns', 'label' => 'Retours produit', 'count' => 0]] as $tab)
+                        <button type="button" x-on:click="activeOrderTab = '{{ $tab['key'] }}'" class="inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition" x-bind:class="activeOrderTab === '{{ $tab['key'] }}' ? 'border-ink text-ink dark:border-white dark:text-cream' : 'border-transparent text-cocoa/70 hover:text-ink dark:text-cream/70 dark:hover:text-cream'">{{ $tab['label'] }} ({{ $tab['count'] }})</button>
                     @endforeach
                 </div>
 
-                <div class="mt-5 space-y-3">
+                <div class="mt-5 space-y-3" x-show="activeOrderTab === 'state'">
                     @foreach ($timeline as $event)
                         <div class="grid gap-3 border-b border-leaf/10 py-3 text-sm dark:border-white/10 md:grid-cols-[1fr_180px_220px_auto] md:items-center">
                             <span><span class="inline-flex px-2 py-1 text-xs font-black {{ $stateBadge($event['state'] ?? null) }}">{{ $event['label'] }}</span></span>
@@ -257,7 +272,7 @@
                     @endforeach
                 </div>
 
-                <form method="POST" action="{{ route('admin.orders.update', ['locale' => $locale, 'order' => $order['id']]) }}" class="mt-8 grid gap-3 md:grid-cols-[1fr_auto]">
+                <form method="POST" action="{{ route('admin.orders.update', ['locale' => $locale, 'order' => $order['id']]) }}" class="mt-8 grid gap-3 md:grid-cols-[1fr_auto]" x-show="activeOrderTab === 'state'">
                     @csrf
                     @method('PATCH')
                     <input type="hidden" name="status" value="{{ $status }}">
@@ -267,26 +282,63 @@
                     <button class="admin-btn rounded-none self-start">Ajouter la note</button>
                 </form>
 
-                <div class="mt-6 grid gap-4 lg:grid-cols-3">
+                <div class="mt-6" x-show="activeOrderTab === 'documents'">
                     <div class="bg-linen p-4 dark:bg-white/5">
                         <h4 class="text-xl font-black">Documents</h4>
                         <div class="mt-4 grid gap-2">
                             <a href="{{ route('admin.orders.invoice', ['locale' => $locale, 'order' => $order['id']]) }}" class="admin-btn-secondary rounded-none">Telecharger la facture</a>
                             <a href="{{ route('admin.orders.delivery-note', ['locale' => $locale, 'order' => $order['id']]) }}" class="admin-btn-secondary rounded-none">Telecharger le bon de livraison</a>
                             <a href="{{ route('admin.orders.print', ['locale' => $locale, 'order' => $order['id']]) }}" target="_blank" class="admin-btn-secondary rounded-none">Ouvrir la version imprimable</a>
+                            @if ($shipment && data_get($shipment, 'has_label'))
+                                <a href="{{ route('admin.orders.shipment.label', ['locale' => $locale, 'order' => $order['id'], 'shipment' => data_get($shipment, 'id')]) }}" class="admin-btn rounded-none">Telecharger l'etiquette transporteur</a>
+                            @else
+                                <span class="rounded-xl bg-white px-4 py-3 text-sm font-bold text-cocoa/55 ring-1 ring-leaf/10 dark:bg-white/10 dark:text-cream/55">Etiquette transporteur non disponible.</span>
+                            @endif
                         </div>
                     </div>
+                </div>
+
+                <div class="mt-6" x-show="activeOrderTab === 'carrier'">
                     <div class="bg-linen p-4 dark:bg-white/5">
                         <h4 class="text-xl font-black">Transporteur</h4>
                         <p class="mt-3 text-sm">{{ $carrierLabels[$carrier] ?? $carrier ?: '-' }}</p>
-                        <p class="mt-1 text-sm">Suivi: {{ $trackingNumber ?: '-' }}</p>
-                        @if ($trackingUrl)
-                            <a href="{{ $trackingUrl }}" class="mt-3 inline-flex text-sm font-black text-leaf underline">Ouvrir le suivi</a>
+                        @if ($shipment)
+                            <p class="mt-1 text-sm">Statut expedition: {{ data_get($shipment, 'status', '-') }}</p>
+                            @if (data_get($shipment, 'last_error'))
+                                <p class="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold leading-5 text-red-700">{{ data_get($shipment, 'last_error') }}</p>
+                            @endif
                         @endif
+                        <p class="mt-1 text-sm">Suivi: {{ $trackingNumber ?: '-' }}</p>
+                        @if ($shipmentTrackingNumber && data_get($order, 'tracking.number') && data_get($order, 'tracking.number') !== $shipmentTrackingNumber)
+                            <p class="mt-1 text-xs text-cocoa/55 dark:text-cream/55">Numero Mondial Relay: {{ $shipmentTrackingNumber }}</p>
+                        @endif
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            @if ($trackingUrl)
+                                <a href="{{ $trackingUrl }}" class="admin-btn-secondary rounded-none">Ouvrir le suivi</a>
+                            @endif
+                            @if ($shipment && data_get($shipment, 'has_label'))
+                                <a href="{{ route('admin.orders.shipment.label', ['locale' => $locale, 'order' => $order['id'], 'shipment' => data_get($shipment, 'id')]) }}" class="admin-btn rounded-none">Telecharger etiquette</a>
+                            @endif
+                            @if ($shipment)
+                                <form method="POST" action="{{ route('admin.orders.shipment.create', ['locale' => $locale, 'order' => $order['id']]) }}">
+                                    @csrf
+                                    <button class="admin-btn-secondary rounded-none" type="submit">{{ in_array(data_get($shipment, 'status'), ['creation_failed', 'label_failed'], true) ? 'Relancer expedition' : 'Generer expedition' }}</button>
+                                </form>
+                            @endif
+                        </div>
                         @if ($pickup)
                             <p class="mt-3 text-xs leading-5 text-cocoa/65 dark:text-cream/65">{{ data_get($pickup, 'name') }} - {{ data_get($pickup, 'address') }}</p>
                         @endif
                     </div>
+                </div>
+
+                <div class="mt-6" x-show="activeOrderTab === 'returns'">
+                    <div class="bg-linen p-4 text-sm font-semibold text-cocoa/65 dark:bg-white/5 dark:text-cream/65">
+                        Aucun retour produit declare pour cette commande.
+                    </div>
+                </div>
+
+                <div class="mt-6" x-show="activeOrderTab === 'state'">
                     <div class="bg-linen p-4 dark:bg-white/5">
                         <h4 class="text-xl font-black">Paiement</h4>
                         <p class="mt-3 text-sm">{{ $paymentMethod }}</p>
@@ -297,6 +349,93 @@
             </article>
 
             <section class="grid gap-5 xl:grid-cols-2">
+                <article class="rounded-2xl border border-leaf/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 xl:col-span-2">
+                    <div class="flex flex-col gap-4 border-b border-leaf/10 pb-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-leaf dark:text-meadow">SAV commande</p>
+                            <h3 class="mt-2 text-2xl font-black text-ink dark:text-cream">Discussion client</h3>
+                            <p class="mt-1 text-sm font-semibold text-cocoa/60 dark:text-cream/60">Messages visibles par le client depuis son espace commande.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex min-h-[34px] items-center rounded-full px-3 text-xs font-black uppercase tracking-wide {{ $conversationStatus === 'closed' ? 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-200' : 'bg-mint text-leaf dark:bg-white/10 dark:text-meadow' }}">
+                                {{ $conversationStatusLabel }}
+                            </span>
+                            @if ($staffUnreadCount > 0)
+                                <form method="POST" action="{{ route('admin.orders.discussion.read', ['locale' => $locale, 'order' => $order['id']]) }}">
+                                    @csrf
+                                    <button class="inline-flex min-h-[34px] items-center rounded-full bg-amber-500 px-3 text-xs font-black uppercase tracking-wide text-white transition hover:bg-amber-600">
+                                        {{ $staffUnreadCount }} non lu{{ $staffUnreadCount > 1 ? 's' : '' }} - marquer lu
+                                    </button>
+                                </form>
+                            @endif
+                            @if ($customerUnreadCount > 0)
+                                <span class="inline-flex min-h-[34px] items-center rounded-full bg-cocoa/10 px-3 text-xs font-black uppercase tracking-wide text-cocoa dark:bg-white/10 dark:text-cream">
+                                    {{ $customerUnreadCount }} non lu client
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+                        <div class="chat-thread">
+                            @forelse ($conversationMessages as $message)
+                                @php
+                                    $isStaff = ($message['sender_type'] ?? null) === 'staff';
+                                    $messageStatus = $message['status_for_staff'] ?? $message['status'] ?? 'read';
+                                @endphp
+                                <article class="chat-bubble {{ $isStaff ? 'chat-bubble-own' : 'chat-bubble-other' }}">
+                                    <div class="chat-meta">
+                                        <p class="{{ $isStaff ? 'text-cream/70' : 'text-cocoa/45 dark:text-cream/45' }}">
+                                            {{ $isStaff ? 'Equipe support' : 'Client' }}
+                                        </p>
+                                        <span class="shrink-0 {{ $messageStatus === 'unread' ? 'text-amber-600 dark:text-amber-300' : ($isStaff ? 'text-cream/60' : 'text-cocoa/45 dark:text-cream/45') }}">
+                                            {{ $messageStatus === 'unread' ? 'Non lu' : 'Lu' }}
+                                        </span>
+                                    </div>
+                                    <p class="mt-2 whitespace-pre-line font-semibold leading-6">{{ $message['body'] ?? '' }}</p>
+                                    @if (! empty($message['created_at']))
+                                        <p class="mt-2 text-[11px] font-semibold {{ $isStaff ? 'text-cream/55' : 'text-cocoa/45 dark:text-cream/45' }}">
+                                            {{ $dateValue($message['created_at']) }}
+                                        </p>
+                                    @endif
+                                </article>
+                            @empty
+                                <div class="rounded-xl border border-dashed border-leaf/20 bg-white p-6 text-sm font-semibold leading-6 text-cocoa/60 dark:border-white/10 dark:bg-white/5 dark:text-cream/60">
+                                    Aucune discussion client pour cette commande. Ouvrez le chat pour envoyer un premier message.
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <aside class="rounded-2xl border border-leaf/10 bg-linen p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                            @if ($conversationStatus === 'open')
+                                <form method="POST" action="{{ route('admin.orders.discussion.messages', ['locale' => $locale, 'order' => $order['id']]) }}" class="grid gap-3">
+                                    @csrf
+                                    <label for="admin-order-message-body" class="text-sm font-black text-ink dark:text-cream">Reponse au client</label>
+                                    <div class="chat-composer">
+                                        <textarea id="admin-order-message-body" name="body" required rows="7" maxlength="2000" class="chat-textarea min-h-[170px]" placeholder="Ecrire une reponse claire au client...">{{ old('body') }}</textarea>
+                                        <div class="chat-toolbar">
+                                            <span class="text-xs font-semibold text-cocoa/50 dark:text-cream/50">Visible par le client</span>
+                                            <button class="inline-flex min-h-[42px] items-center justify-center rounded-full bg-forest px-4 text-sm font-black uppercase tracking-wide text-white transition hover:bg-leaf" type="submit">
+                                                Envoyer
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" formnovalidate formaction="{{ route('admin.orders.discussion.close', ['locale' => $locale, 'order' => $order['id']]) }}" class="inline-flex min-h-[42px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-black uppercase tracking-wide text-red-700 transition hover:bg-red-100 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+                                        Clore la discussion
+                                    </button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('admin.orders.discussion.open', ['locale' => $locale, 'order' => $order['id']]) }}">
+                                    @csrf
+                                    <button class="inline-flex min-h-[46px] w-full items-center justify-center rounded-full bg-forest px-5 text-sm font-black uppercase tracking-wide text-white transition hover:bg-leaf" type="submit">
+                                        {{ $conversationStatus === 'closed' ? 'Rouvrir la discussion' : 'Ouvrir le chat client' }}
+                                    </button>
+                                </form>
+                            @endif
+                        </aside>
+                    </div>
+                </article>
+
                 <article class="border border-leaf/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
                     <h3 class="text-2xl font-black text-ink dark:text-cream">Messages ({{ count($notes) }})</h3>
                     <div class="mt-5 space-y-3">

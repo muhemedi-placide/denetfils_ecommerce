@@ -16,6 +16,7 @@ class OrderAdminResource extends JsonResource
         $base = (new OrderResource($this->resource))->toArray($request);
         $metadata = is_array($this->metadata) ? $this->metadata : [];
         $tracking = $metadata['tracking'] ?? [];
+        $baseTracking = is_array($base['tracking'] ?? null) ? $base['tracking'] : [];
 
         return [
             ...$base,
@@ -23,9 +24,11 @@ class OrderAdminResource extends JsonResource
             'payment_status_label' => OrderStatusCatalog::label('payment', $this->payment_status, $locale),
             'fulfillment_status_label' => OrderStatusCatalog::label('fulfillment', $this->fulfillment_status, $locale),
             'tracking' => [
-                'number' => $tracking['number'] ?? null,
-                'url' => $tracking['url'] ?? null,
-                'updated_at' => $tracking['updated_at'] ?? null,
+                'number' => $tracking['number'] ?? $baseTracking['number'] ?? null,
+                'url' => $tracking['url'] ?? $baseTracking['url'] ?? null,
+                'updated_at' => $tracking['updated_at'] ?? $baseTracking['updated_at'] ?? null,
+                'shipment_status' => $baseTracking['shipment_status'] ?? null,
+                'external_shipment_id' => $baseTracking['external_shipment_id'] ?? null,
             ],
             'payment_method' => $metadata['payment']['method'] ?? $metadata['payment_method'] ?? null,
             'is_new_customer' => $this->user_id

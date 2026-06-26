@@ -23,6 +23,17 @@ class PaymentController extends Controller
         return $this->gatewayResponse(fn () => $stripe->createPaymentIntent($order));
     }
 
+    public function confirmStripePaymentIntent(Request $request, Order $order, StripePaymentService $stripe): JsonResponse
+    {
+        $this->authorizeOrder($request, $order, allowPaid: true);
+
+        $data = $request->validate([
+            'payment_intent_id' => ['required', 'string', 'max:255'],
+        ]);
+
+        return $this->gatewayResponse(fn () => $stripe->confirmPaymentIntent($order, $data['payment_intent_id']));
+    }
+
     public function createPaypalOrder(Request $request, Order $order, PayPalPaymentService $paypal): JsonResponse
     {
         $this->authorizeOrder($request, $order);
@@ -81,10 +92,10 @@ class PaymentController extends Controller
         return response()->json(['received' => true]);
     }
 
-    private function authorizeOrder(Request $request, Order $order): void
+    private function authorizeOrder(Request $request, Order $order, bool $allowPaid = false): void
     {
         abort_unless($order->user_id === $request->user()?->id, 404);
-        abort_if($order->payment_status === 'paid', 409, 'This order is already paid.');
+        abort_if(! $allowPaid && $order->payment_status === 'paid', 409, 'This order is already paid.');
     }
 
     private function gatewayResponse(callable $callback): JsonResponse

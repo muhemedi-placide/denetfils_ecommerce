@@ -68,6 +68,64 @@ class StripePaymentService
         return $this->paymentIntentResponse($payment, $publishableKey);
     }
 
+    public function confirmPaymentIntent(Order $order, string $paymentIntentId): array
+    {
+        $payment = $order->payments()
+            ->with('paymentMethod')
+            ->where('provider', 'stripe')
+            ->where('provider_reference', $paymentIntentId)
+            ->first();
+
+        if (! $payment) {
+            throw new PaymentGatewayException('Stripe payment intent was not found for this order.', 404);
+        }
+
+        $method = $payment->paymentMethod ?: $this->methods->activeForOrder($order, 'stripe');
+        $credentials = $this->methods->credentials($method);
+        $secretKey = $credentials['restricted_key'] ?? $credentials['secret_key'] ?? config('services.stripe.secret');
+        $publishableKey = $credentials['publishable_key'] ?? config('services.stripe.key');
+
+        if (blank($secretKey)) {
+            throw new PaymentGatewayException('Stripe secret key is not configured.', 422);
+        }
+
+        try {
+            $intent = (new StripeClient($secretKey))->paymentIntents->retrieve($paymentIntentId, []);
+        } catch (ApiErrorException $exception) {
+            throw new PaymentGatewayException($exception->getMessage(), 502, $exception);
+        }
+
+        if ((int) $intent->amount !== (int) $order->total_cents || strtoupper((string) $intent->currency) !== strtoupper($order->currency)) {
+            throw new PaymentGatewayException('Stripe payment intent does not match this order.', 409);
+        }
+
+        $payment->forceFill([
+            'status' => $intent->status,
+            'amount_cents' => $intent->amount,
+            'currency' => strtoupper($intent->currency),
+            'client_secret' => $intent->client_secret ?? $payment->client_secret,
+            'provider_payload' => $intent->toArray(),
+        ])->save();
+
+        match ($intent->status) {
+            'succeeded' => $this->markOrderPaymentSucceeded($order, $payment),
+            'canceled' => $this->markOrderPaymentFailed($order, $payment, 'canceled'),
+            default => null,
+        };
+
+        $freshOrder = $order->fresh();
+
+        return [
+            ...$this->paymentIntentResponse($payment->refresh(), $publishableKey),
+            'order' => [
+                'id' => $freshOrder->id,
+                'status' => $freshOrder->status,
+                'payment_status' => $freshOrder->payment_status,
+                'fulfillment_status' => $freshOrder->fulfillment_status,
+            ],
+        ];
+    }
+
     public function handleWebhook(array $payload): ?OrderPayment
     {
         $eventType = (string) ($payload['type'] ?? '');

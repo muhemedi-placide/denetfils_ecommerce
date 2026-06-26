@@ -17,6 +17,7 @@ trait UpdatesOrderPaymentStatus
         $order->forceFill([
             'payment_status' => 'paid',
             'status' => $order->status === 'pending_payment' ? 'confirmed' : $order->status,
+            'fulfillment_status' => $order->fulfillment_status === 'unfulfilled' ? 'preparing' : $order->fulfillment_status,
         ])->save();
     }
 

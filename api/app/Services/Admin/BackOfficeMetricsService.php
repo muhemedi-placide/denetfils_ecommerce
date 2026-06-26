@@ -193,26 +193,39 @@ class BackOfficeMetricsService
     private function stockAlerts(int $lowStockThreshold, string $locale): array
     {
         return Product::query()
-            ->with('category')
+            ->with(['category', 'images'])
             ->where('stock_quantity', '<=', $this->threshold($lowStockThreshold))
             ->orderBy('stock_quantity')
             ->orderBy('id')
             ->limit(10)
             ->get()
-            ->map(fn (Product $product) => [
-                'id' => $product->id,
-                'sku' => $product->sku,
-                'slug' => $product->slug,
-                'name' => $product->localized('name', $locale),
-                'category' => $product->category ? [
-                    'id' => $product->category->id,
-                    'name' => $product->category->localized('name', $locale),
-                    'slug' => $product->category->slug,
-                ] : null,
-                'stock_quantity' => $product->stock_quantity,
-                'status' => $this->stockStatus($product, $lowStockThreshold),
-                'is_active' => $product->is_active,
-            ])
+            ->map(function (Product $product) use ($lowStockThreshold, $locale) {
+                $primaryImage = $product->images->first();
+
+                return [
+                    'id' => $product->id,
+                    'sku' => $product->sku,
+                    'slug' => $product->slug,
+                    'name' => $product->localized('name', $locale),
+                    'category' => $product->category ? [
+                        'id' => $product->category->id,
+                        'name' => $product->category->localized('name', $locale),
+                        'slug' => $product->category->slug,
+                    ] : null,
+                    'primary_image' => $primaryImage ? [
+                        'id' => $primaryImage->id,
+                        'url' => $primaryImage->url,
+                        'width' => $primaryImage->width,
+                        'height' => $primaryImage->height,
+                        'dominant_color' => $primaryImage->dominant_color,
+                        'alt_text' => $primaryImage->localized('alt_text', $locale),
+                        'sort_order' => $primaryImage->sort_order,
+                    ] : null,
+                    'stock_quantity' => $product->stock_quantity,
+                    'status' => $this->stockStatus($product, $lowStockThreshold),
+                    'is_active' => $product->is_active,
+                ];
+            })
             ->values()
             ->all();
     }

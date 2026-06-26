@@ -58,14 +58,51 @@ class AccountApiClient
         return $this->send('post', 'checkout/quote', $payload, $token);
     }
 
-    public function pickupPoints(string $token, array $payload): array
+    public function shippingMethods(string $token, array $payload): array
     {
-        return $this->send('post', 'checkout/pickup-points', $payload, $token);
+        return $this->send('get', 'shipping/methods', $payload, $token);
+    }
+
+    public function shippingPickupPoints(string $token, array $payload): array
+    {
+        return $this->send('post', 'shipping/pickup-points/search', $payload, $token);
+    }
+
+    public function selectShipping(string $token, array $payload): array
+    {
+        return $this->send('post', 'shipping/selection', $payload, $token);
+    }
+
+    public function shipmentTracking(array $payload): array
+    {
+        return $this->send('post', 'shipping/tracking', $payload);
     }
 
     public function createOrder(string $token, array $payload): array
     {
         return $this->send('post', 'orders', $payload, $token);
+    }
+
+    public function createStripePaymentIntent(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/payments/stripe/payment-intent", [], $token);
+    }
+
+    public function confirmStripePaymentIntent(string $token, int|string $order, string $paymentIntentId): array
+    {
+        return $this->send('post', "orders/{$order}/payments/stripe/payment-intent/confirm", [
+            'payment_intent_id' => $paymentIntentId,
+        ], $token);
+    }
+
+    public function createPaypalOrder(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/payments/paypal/orders", [], $token);
+    }
+
+    public function capturePaypalOrder(string $token, int|string $order, string $paypalOrderId): array
+    {
+        return $this->send('post', "orders/{$order}/payments/paypal/orders/{$paypalOrderId}/capture", [], $token);
     }
 
     public function orders(string $token, string $locale = 'fr', int $perPage = 5): array
@@ -74,6 +111,40 @@ class AccountApiClient
             'locale' => $this->locale($locale),
             'per_page' => max(5, min(15, $perPage)),
         ], $token);
+    }
+
+    public function order(string $token, int|string $order, string $locale = 'fr'): array
+    {
+        return $this->send('get', "orders/{$order}", [
+            'locale' => $this->locale($locale),
+        ], $token);
+    }
+
+    public function orderConversation(string $token, int|string $order): array
+    {
+        return $this->send('get', "orders/{$order}/conversation", [], $token);
+    }
+
+    public function openOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/open", [], $token);
+    }
+
+    public function sendOrderMessage(string $token, int|string $order, string $body): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/messages", [
+            'body' => $body,
+        ], $token);
+    }
+
+    public function markOrderConversationRead(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/read", [], $token);
+    }
+
+    public function closeOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/close", [], $token);
     }
 
     public function supportedCountries(string $locale): array

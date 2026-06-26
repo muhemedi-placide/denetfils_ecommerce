@@ -65,6 +65,9 @@ class OrdersApiTest extends TestCase
             'id' => $response->json('data.id'),
             'user_id' => $user->id,
             'cart_id' => $this->cartId($cartToken),
+            'status' => 'pending_payment',
+            'payment_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
             'shipping_cents' => 590,
             'tax_cents' => 216,
             'total_cents' => 2586,
@@ -199,6 +202,66 @@ class OrdersApiTest extends TestCase
             ->assertJsonValidationErrors('cart_token');
     }
 
+    public function test_customer_can_manage_order_conversation(): void
+    {
+        $user = $this->customer();
+        $address = $this->address($user);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+
+        Sanctum::actingAs($user);
+
+        $orderId = $this->postJson('/api/v1/orders', [
+            'cart_token' => $this->cartWithProduct($product),
+            'shipping_address_id' => $address->id,
+        ])->assertCreated()->json('data.id');
+
+        $this->getJson("/api/v1/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'not_started')
+            ->assertJsonCount(0, 'data.messages');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/open")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'open');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/messages", [
+            'body' => 'Bonjour, pouvez-vous confirmer le suivi ?',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'open')
+            ->assertJsonPath('data.staff_unread_count', 1)
+            ->assertJsonPath('data.messages.0.sender_type', 'customer')
+            ->assertJsonPath('data.messages.0.body', 'Bonjour, pouvez-vous confirmer le suivi ?');
+
+        $conversation = Order::query()->findOrFail($orderId)->conversation()->firstOrFail();
+        $conversation->messages()->create([
+            'user_id' => null,
+            'sender_type' => 'staff',
+            'body' => 'Votre commande est en preparation.',
+        ]);
+        $conversation->update(['customer_unread_count' => 1]);
+
+        $this->getJson("/api/v1/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.customer_unread_count', 1)
+            ->assertJsonPath('data.messages.1.status', 'unread');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/read")
+            ->assertOk()
+            ->assertJsonPath('data.customer_unread_count', 0)
+            ->assertJsonPath('data.messages.1.status', 'read');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/close")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'closed');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/messages", [
+            'body' => 'Merci.',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('body');
+    }
+
     public function test_order_creation_revalidates_current_stock(): void
     {
         $user = $this->customer();
@@ -301,6 +364,64 @@ class OrdersApiTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $adminCreatedOrderId)
             ->assertJsonPath('data.0.is_new_customer', false);
+    }
+
+    public function test_operations_manager_can_manage_order_conversation(): void
+    {
+        $customer = $this->customer();
+        $address = $this->address($customer);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+
+        Sanctum::actingAs($customer);
+
+        $orderId = $this->postJson('/api/v1/orders', [
+            'cart_token' => $this->cartWithProduct($product),
+            'shipping_address_id' => $address->id,
+        ])->assertCreated()->json('data.id');
+
+        $manager = User::factory()->create();
+        $manager->assignRole('operations_manager');
+
+        Sanctum::actingAs($manager);
+
+        $this->getJson("/api/v1/admin/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'not_started');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/open")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'open');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/messages", [
+            'body' => 'Bonjour, votre commande est en preparation.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.customer_unread_count', 1)
+            ->assertJsonPath('data.messages.0.sender_type', 'staff')
+            ->assertJsonPath('data.messages.0.status_for_customer', 'unread')
+            ->assertJsonPath('data.messages.0.status_for_staff', 'read');
+
+        $conversation = Order::query()->findOrFail($orderId)->conversation()->firstOrFail();
+        $conversation->messages()->create([
+            'user_id' => $customer->id,
+            'sender_type' => 'customer',
+            'body' => 'Merci pour le retour.',
+        ]);
+        $conversation->update(['staff_unread_count' => 1]);
+
+        $this->getJson("/api/v1/admin/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.staff_unread_count', 1)
+            ->assertJsonPath('data.messages.1.status', 'unread');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/read")
+            ->assertOk()
+            ->assertJsonPath('data.staff_unread_count', 0)
+            ->assertJsonPath('data.messages.1.status', 'read');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/close")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'closed');
     }
 
     public function test_customer_cannot_read_admin_orders(): void

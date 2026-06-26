@@ -9,6 +9,8 @@ class ProductAdminResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $primaryImage = $this->relationLoaded('images') ? $this->images->first() : null;
+
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
@@ -50,6 +52,15 @@ class ProductAdminResource extends JsonResource
             'canonical_path' => $this->canonical_path,
             'published_at' => $this->published_at,
             'is_active' => $this->is_active,
+            'primary_image' => $primaryImage ? [
+                'id' => $primaryImage->id,
+                'url' => $primaryImage->url,
+                'width' => $primaryImage->width,
+                'height' => $primaryImage->height,
+                'dominant_color' => $primaryImage->dominant_color,
+                'alt_text' => $primaryImage->alt_text,
+                'sort_order' => $primaryImage->sort_order,
+            ] : null,
             'images' => $this->whenLoaded('images', fn () => $this->images->map(fn ($image) => [
                 'id' => $image->id,
                 'url' => $image->url,

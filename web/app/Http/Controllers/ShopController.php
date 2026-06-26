@@ -93,6 +93,27 @@ class ShopController extends Controller
         return $this->utilityPage($locale, 'payment');
     }
 
+    public function tracking(Request $request, AccountApiClient $accountApi, string $locale): View
+    {
+        $locale = $this->setLocale($locale);
+        $trackingNumber = trim((string) $request->query('tracking_number', ''));
+        $tracking = null;
+
+        if ($trackingNumber !== '') {
+            $tracking = $accountApi->shipmentTracking([
+                'tracking_number' => $trackingNumber,
+                'locale' => $locale,
+            ]);
+        }
+
+        return view('pages.tracking', [
+            'locale' => $locale,
+            'activeMenu' => 'tracking',
+            'trackingNumber' => $trackingNumber,
+            'tracking' => $tracking,
+        ]);
+    }
+
     public function cart(ShopApiClient $api, string $locale): View
     {
         $locale = $this->setLocale($locale);

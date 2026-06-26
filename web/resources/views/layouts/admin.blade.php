@@ -314,15 +314,15 @@
 
                 <main class="px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
                     <div class="mx-auto max-w-7xl">
-                        @if (session('status'))
+                        @if (session('status') || session('admin_success'))
                             <div class="mb-5 rounded-xl border border-leaf/15 bg-mint px-4 py-3 text-sm font-semibold text-leaf dark:border-meadow/20 dark:bg-meadow/10 dark:text-meadow">
-                                {{ session('status') }}
+                                {{ session('status') ?: session('admin_success') }}
                             </div>
                         @endif
 
-                        @if ($errors->has('admin_action'))
+                        @if ($errors->has('admin_action') || $errors->has('shipment'))
                             <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-                                {{ $errors->first('admin_action') }}
+                                {{ $errors->first('admin_action') ?: $errors->first('shipment') }}
                             </div>
                         @endif
 

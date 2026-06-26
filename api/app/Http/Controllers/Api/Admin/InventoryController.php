@@ -13,7 +13,7 @@ class InventoryController extends Controller
     {
         $threshold = max(0, min(100, $request->integer('threshold', 5)));
         $query = Product::query()
-            ->with(['category', 'variants'])
+            ->with(['category', 'images', 'variants'])
             ->latest('updated_at');
 
         if ($request->filled('q')) {

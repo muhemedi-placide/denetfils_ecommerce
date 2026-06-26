@@ -183,7 +183,41 @@
     </section>
 
     <section class="mt-6 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <article class="rounded-2xl border border-leaf/10 bg-white p-5 shadow-sm transition hover:border-leaf/25 hover:shadow-xl dark:border-white/10 dark:bg-white/5 sm:p-6"><div class="flex items-end justify-between gap-3"><div><p class="text-[11px] font-black uppercase tracking-[0.18em] text-leaf dark:text-meadow">Stock alerts</p><h2 class="mt-1 text-xl font-black text-ink dark:text-cream">Produits a traiter</h2></div><a href="{{ route('admin.inventory', ['locale' => $locale]) }}" class="admin-btn-secondary">Stock</a></div><div class="mt-5 space-y-3">@forelse ($stockAlerts as $item)<div class="group rounded-xl border border-leaf/10 bg-linen/60 p-4 transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-orange-400/10"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate font-black text-ink dark:text-cream">{{ $item['name'] ?? '-' }}</p><p class="mt-1 text-xs font-bold text-cocoa/55 dark:text-cream/55">{{ $item['sku'] ?? '-' }} - {{ data_get($item, 'category.name', 'Sans categorie') }}</p></div><span class="rounded-full bg-white px-3 py-1 text-xs font-black text-orange-700 ring-1 ring-orange-200 dark:bg-white/10 dark:text-orange-300 dark:ring-orange-300/20">{{ $item['stock_quantity'] ?? 0 }}</span></div></div>@empty<div class="rounded-xl border border-leaf/10 bg-linen/60 p-4 text-sm font-semibold text-cocoa/60 dark:border-white/10 dark:bg-white/5 dark:text-cream/60">Aucune alerte stock critique.</div>@endforelse</div></article>
+        <article class="rounded-2xl border border-leaf/10 bg-white p-5 shadow-sm transition hover:border-leaf/25 hover:shadow-xl dark:border-white/10 dark:bg-white/5 sm:p-6">
+            <div class="flex items-end justify-between gap-3">
+                <div>
+                    <p class="text-[11px] font-black uppercase tracking-[0.18em] text-leaf dark:text-meadow">Stock alerts</p>
+                    <h2 class="mt-1 text-xl font-black text-ink dark:text-cream">Produits a traiter</h2>
+                </div>
+                <a href="{{ route('admin.inventory', ['locale' => $locale]) }}" class="admin-btn-secondary">Stock</a>
+            </div>
+            <div class="mt-5 space-y-3">
+                @forelse ($stockAlerts as $item)
+                    @php
+                        $imageUrl = data_get($item, 'primary_image.url');
+                        $imageAlt = data_get($item, 'primary_image.alt_text') ?: ($item['name'] ?? 'Produit');
+                    @endphp
+                    <div class="group rounded-xl border border-leaf/10 bg-linen/60 p-4 transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-orange-400/10">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex min-w-0 items-center gap-3">
+                                @if ($imageUrl)
+                                    <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}" class="h-12 w-12 shrink-0 rounded-xl object-cover ring-1 ring-leaf/10 dark:ring-white/10" loading="lazy" decoding="async">
+                                @else
+                                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white text-xs font-black text-leaf ring-1 ring-leaf/10 dark:bg-white/10 dark:text-meadow dark:ring-white/10">DF</span>
+                                @endif
+                                <div class="min-w-0">
+                                    <p class="truncate font-black text-ink dark:text-cream">{{ $item['name'] ?? '-' }}</p>
+                                    <p class="mt-1 text-xs font-bold text-cocoa/55 dark:text-cream/55">{{ $item['sku'] ?? '-' }} - {{ data_get($item, 'category.name', 'Sans categorie') }}</p>
+                                </div>
+                            </div>
+                            <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-orange-700 ring-1 ring-orange-200 dark:bg-white/10 dark:text-orange-300 dark:ring-orange-300/20">{{ $item['stock_quantity'] ?? 0 }}</span>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-leaf/10 bg-linen/60 p-4 text-sm font-semibold text-cocoa/60 dark:border-white/10 dark:bg-white/5 dark:text-cream/60">Aucune alerte stock critique.</div>
+                @endforelse
+            </div>
+        </article>
         <article class="rounded-2xl border border-leaf/10 bg-white p-5 shadow-sm transition hover:border-leaf/25 hover:shadow-xl dark:border-white/10 dark:bg-white/5 sm:p-6"><div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-[11px] font-black uppercase tracking-[0.18em] text-leaf dark:text-meadow">Recent activity</p><h2 class="mt-1 text-xl font-black text-ink dark:text-cream">Dernieres actions sensibles</h2></div><a href="{{ route('admin.audit', ['locale' => $locale]) }}" class="admin-btn-secondary">Voir tout</a></div><div class="mt-5 overflow-hidden rounded-xl border border-leaf/10 dark:border-white/10"><div class="overflow-x-auto"><table class="admin-table"><thead><tr><th class="px-4 py-3">Action</th><th class="px-4 py-3">Acteur</th><th class="px-4 py-3">Cible</th><th class="px-4 py-3">Date</th></tr></thead><tbody>@forelse ($recentActivity as $log)<tr class="transition hover:bg-linen dark:hover:bg-white/5"><td class="px-4 py-3 font-bold text-ink dark:text-cream">{{ $log['action'] ?? '-' }}</td><td class="px-4 py-3 text-cocoa/65 dark:text-cream/65">{{ data_get($log, 'actor.name', 'Systeme') }}</td><td class="px-4 py-3 text-cocoa/65 dark:text-cream/65">{{ class_basename($log['auditable_type'] ?? '-') }} #{{ $log['auditable_id'] ?? '-' }}</td><td class="px-4 py-3 text-cocoa/55 dark:text-cream/55">{{ $log['created_at'] ?? '-' }}</td></tr>@empty<tr><td colspan="4" class="px-4 py-6 text-center text-cocoa/55 dark:text-cream/55">Aucune activite recente.</td></tr>@endforelse</tbody></table></div></div></article>
     </section>
 @endsection
