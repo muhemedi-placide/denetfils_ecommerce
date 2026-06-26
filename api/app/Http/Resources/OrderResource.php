@@ -54,6 +54,17 @@ class OrderResource extends JsonResource
                 ->map(fn (OrderAddress $address) => $this->address($address))
                 ->values()
                 ->all()),
+            'shipments' => $this->whenLoaded('shipments', fn () => $this->shipments->map(fn ($shipment) => [
+                'id' => $shipment->id,
+                'status' => $shipment->status,
+                'last_error' => $shipment->last_error,
+                'tracking_number' => $shipment->tracking_number,
+                'external_shipment_id' => $shipment->external_shipment_id,
+                'has_label' => filled($shipment->label_path),
+                'shipped_at' => $shipment->shipped_at?->toIso8601String(),
+                'method' => $shipment->relationLoaded('method') ? ['id' => $shipment->method->id, 'code' => $shipment->method->code] : null,
+                'pickup_point' => $shipment->relationLoaded('pickupPoint') ? $shipment->pickupPoint?->only(['external_id', 'name', 'address_line1', 'postal_code', 'city', 'country']) : null,
+            ])->all()),
         ];
     }
 

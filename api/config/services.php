@@ -31,4 +31,19 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'mode' => env('PAYPAL_MODE', 'sandbox'),
+        'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+        'return_url' => env('PAYPAL_RETURN_URL', rtrim((string) env('FRONTEND_URL', ''), '/').'/checkout/paypal/return'),
+        'cancel_url' => env('PAYPAL_CANCEL_URL', rtrim((string) env('FRONTEND_URL', ''), '/').'/checkout/paypal/cancel'),
+    ],
+
 ];

@@ -7,11 +7,15 @@ use App\Models\CartItem;
 use App\Models\SupportedCountry;
 use App\Models\User;
 use App\Models\UserAddress;
+use App\Models\ShippingMethod;
+use App\Services\Shipping\ShippingManager;
 use App\Support\MoneyFormatter;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutQuoteService
 {
+    public function __construct(private ShippingManager $shipping) {}
+
     public function quoteForUser(User $user, array $data): array
     {
         $locale = $this->locale($data['locale'] ?? $user->preferred_locale ?? 'fr');
@@ -32,7 +36,11 @@ class CheckoutQuoteService
 
         $productTaxRate = $this->taxRate($country, true);
         $shippingTaxRate = $this->taxRate($country, false);
-        $shippingCents = $this->shippingCents($cart, $country, $deliveryMethod);
+        $shippingOptions = $this->shipping->quotes($cart, $country->code, $locale);
+        $selectedMethod = $this->selectedMethod($cart, $data);
+        $shippingCents = $selectedMethod
+            ? $this->shipping->quote($cart, $selectedMethod, $country->code, $locale)->priceCents
+            : $this->shippingCents($cart, $country, $deliveryMethod);
         $taxBreakdown = $this->taxBreakdown($cart, $country, $productTaxRate, $shippingCents, $shippingTaxRate, $locale);
         $taxCents = collect($taxBreakdown)->sum('tax_cents');
         $discountCents = 0;
@@ -49,6 +57,13 @@ class CheckoutQuoteService
             ],
             'delivery_method' => $deliveryMethod,
             'carrier' => $carrier,
+            'shipping_method_id' => $selectedMethod?->id,
+            'shipping_method' => $selectedMethod ? [
+                'id' => $selectedMethod->id,
+                'code' => $selectedMethod->code,
+                'requires_pickup_point' => $selectedMethod->requires_pickup_point,
+            ] : null,
+            'shipping_options' => $shippingOptions,
             'subtotal_cents' => $cart->subtotal_cents,
             'formatted_subtotal' => MoneyFormatter::format($cart->subtotal_cents, $cart->currency, $locale),
             'tax_cents' => $taxCents,
@@ -255,6 +270,15 @@ class CheckoutQuoteService
     private function totalWeight(Cart $cart): int
     {
         return (int) $cart->items->sum(fn (CartItem $item) => ((int) ($item->product?->weight_grams ?? 0)) * $item->quantity);
+    }
+
+    private function selectedMethod(Cart $cart, array $data): ?ShippingMethod
+    {
+        if (! empty($data['shipping_method_id'])) {
+            return ShippingMethod::query()->with('carrier')->find((int) $data['shipping_method_id']);
+        }
+
+        return $cart->shippingSelection()->with('method.carrier')->first()?->method;
     }
 
     private function locale(string $locale): string

@@ -61,7 +61,7 @@ class OrderController extends Controller
 
     public function show(Order $order): OrderAdminResource
     {
-        return new OrderAdminResource($order->load(['items', 'addresses', 'user']));
+        return new OrderAdminResource($order->load(['items', 'addresses', 'user', 'shipments.method', 'shipments.pickupPoint']));
     }
 
     public function update(UpdateOrderRequest $request, Order $order, OrderManagementService $orders): OrderAdminResource

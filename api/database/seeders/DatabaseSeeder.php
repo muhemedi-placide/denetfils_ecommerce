@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CoreSeeder::class,
             EcommerceSeeder::class,
+            ShippingDomainSeeder::class,
         ]);
     }
 }

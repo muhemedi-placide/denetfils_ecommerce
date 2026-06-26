@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShippingCarrier extends Model
 {
@@ -42,4 +43,9 @@ class ShippingCarrier extends Model
         'credentials' => 'encrypted:array',
         'last_tested_at' => 'datetime',
     ];
+
+    public function methods(): HasMany
+    {
+        return $this->hasMany(ShippingMethod::class);
+    }
 }

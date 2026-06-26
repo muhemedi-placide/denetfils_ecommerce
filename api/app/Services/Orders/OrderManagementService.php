@@ -4,6 +4,7 @@ namespace App\Services\Orders;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Jobs\Shipping\CreateMondialRelayShipmentJob;
 use App\Services\Core\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -38,6 +39,13 @@ class OrderManagementService
             $changed = array_keys($order->getDirty());
             $order->save();
 
+            if (in_array('payment_status', $changed, true) && $order->payment_status === 'paid') {
+                $shipment = $order->shipments()->where('status', 'pending')->first();
+                if ($shipment && $shipment->carrier()->where('provider', 'mondial_relay')->exists()) {
+                    DB::afterCommit(fn () => CreateMondialRelayShipmentJob::dispatch($shipment->id));
+                }
+            }
+
             $this->auditLogger->record(
                 $actor,
                 $this->auditAction($changed, $order),
@@ -57,7 +65,7 @@ class OrderManagementService
                 ],
             );
 
-            return $order->refresh()->load(['items', 'addresses', 'user']);
+            return $order->refresh()->load(['items', 'addresses', 'user', 'shipments.method', 'shipments.pickupPoint']);
         });
     }
 

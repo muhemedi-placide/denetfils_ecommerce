@@ -25,7 +25,15 @@ class OrderCreationService
         return DB::transaction(function () use ($user, $data) {
             $cart = $this->cart((string) $data['cart_token']);
 
-            if (Order::query()->where('cart_id', $cart->id)->exists()) {
+            $existingOrder = Order::query()
+                ->where('cart_id', $cart->id)
+                ->first();
+
+            if ($existingOrder && (int) $existingOrder->user_id === (int) $user->id) {
+                return $existingOrder->load(['items', 'addresses', 'shipments.method', 'shipments.pickupPoint']);
+            }
+
+            if ($existingOrder) {
                 throw ValidationException::withMessages([
                     'cart_token' => 'This cart has already been converted to an order.',
                 ]);
@@ -46,6 +54,14 @@ class OrderCreationService
 
             $this->assertOrderableItems($cart);
             $quote = $this->quotes->quoteForUser($user, $data);
+            $selection = $cart->shippingSelection()->with(['method.carrier', 'pickupPoint'])->first();
+
+            if (! empty($data['shipping_method_id']) && (! $selection || $selection->shipping_method_id !== (int) $data['shipping_method_id'])) {
+                throw ValidationException::withMessages(['shipping_method_id' => 'Save the shipping selection before creating the order.']);
+            }
+            if ($selection?->method->requires_pickup_point && ! $selection->pickupPoint) {
+                throw ValidationException::withMessages(['pickup_point_id' => 'A pickup point is required for the selected method.']);
+            }
 
             $shippingCents = (int) $quote['shipping_cents'];
             $taxCents = (int) $quote['tax_cents'];
@@ -70,9 +86,12 @@ class OrderCreationService
                 'customer_phone' => $user->phone,
                 'customer_locale' => $data['locale'] ?? $user->preferred_locale ?? 'fr',
                 'customer_country_code' => $user->country_code,
-                'delivery_method' => $data['delivery_method'] ?? null,
-                'carrier' => $data['carrier'] ?? null,
-                'metadata' => $data['metadata'] ?? null,
+                'delivery_method' => $selection?->method->delivery_type ?? ($data['delivery_method'] ?? null),
+                'carrier' => $selection?->method->carrier->code ?? ($data['carrier'] ?? null),
+                'metadata' => $selection ? [
+                    'shipping_method_code' => $selection->method->code,
+                    'pickup_point' => $selection->pickupPoint?->only(['external_id', 'type', 'country', 'name', 'address_line1', 'address_line2', 'postal_code', 'city']),
+                ] : ($data['metadata'] ?? null),
                 'placed_at' => now(),
             ]);
 
@@ -80,7 +99,16 @@ class OrderCreationService
             $this->createAddressSnapshot($order, $shippingAddress, 'shipping');
             $this->createAddressSnapshot($order, $billingAddress, 'billing');
 
-            return $order->load(['items', 'addresses']);
+            if ($selection) {
+                $order->shipments()->create([
+                    'shipping_carrier_id' => $selection->method->shipping_carrier_id,
+                    'shipping_method_id' => $selection->shipping_method_id,
+                    'pickup_point_id' => $selection->pickup_point_id,
+                    'status' => 'pending',
+                ]);
+            }
+
+            return $order->load(['items', 'addresses', 'shipments.method', 'shipments.pickupPoint']);
         });
     }
 

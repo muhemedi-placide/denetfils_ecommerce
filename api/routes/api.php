@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Admin\PaymentMethodController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\ShippingCarrierController;
+use App\Http\Controllers\Api\Admin\ShipmentController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
@@ -18,10 +19,11 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\PickupPointController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PrivacyConsentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SeoController;
+use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\Api\SupportedCountryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +48,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{slug}', [ProductController::class, 'show']);
+    Route::post('/shipping/tracking', [ShippingController::class, 'tracking'])->middleware('throttle:shipment-tracking');
+    Route::post('/payments/stripe/webhook', [PaymentController::class, 'stripeWebhook']);
+    Route::post('/payments/paypal/webhook', [PaymentController::class, 'paypalWebhook']);
 
     Route::post('/carts', [CartController::class, 'store']);
     Route::get('/carts/{cartToken}', [CartController::class, 'show']);
@@ -68,8 +73,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders', [OrderController::class, 'index']);
         Route::post('/orders', [OrderController::class, 'store']);
         Route::get('/orders/{order}', [OrderController::class, 'show']);
+        Route::post('/orders/{order}/payments/stripe/payment-intent', [PaymentController::class, 'createStripePaymentIntent']);
+        Route::post('/orders/{order}/payments/paypal/orders', [PaymentController::class, 'createPaypalOrder']);
+        Route::post('/orders/{order}/payments/paypal/orders/{paypalOrderId}/capture', [PaymentController::class, 'capturePaypalOrder']);
         Route::post('/checkout/quote', [CheckoutQuoteController::class, 'store']);
-        Route::post('/checkout/pickup-points', [PickupPointController::class, 'store']);
+        Route::get('/shipping/methods', [ShippingController::class, 'methods']);
+        Route::post('/shipping/pickup-points/search', [ShippingController::class, 'pickupPoints'])->middleware('throttle:pickup-search');
+        Route::post('/shipping/pickup-points/detail', [ShippingController::class, 'pickupPointDetail'])->middleware('throttle:pickup-search');
+        Route::post('/shipping/postal-codes/search', [ShippingController::class, 'postalCodes'])->middleware('throttle:pickup-search');
+        Route::post('/shipping/selection', [ShippingController::class, 'select']);
 
         Route::prefix('admin')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:catalog.view');
@@ -79,6 +91,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/orders', [AdminOrderController::class, 'store'])->middleware('permission:orders.manage');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->middleware('permission:orders.view');
             Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->middleware('permission:orders.manage');
+            Route::post('/orders/{order}/shipment/create', [ShipmentController::class, 'create'])->middleware('permission:orders.manage');
+            Route::get('/orders/{order}/shipments/{shipment}/label', [ShipmentController::class, 'label'])->middleware('permission:orders.view');
 
             Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
             Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');

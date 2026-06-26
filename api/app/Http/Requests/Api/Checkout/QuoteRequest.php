@@ -21,6 +21,8 @@ class QuoteRequest extends FormRequest
             'locale' => ['sometimes', Rule::in(['fr', 'en'])],
             'delivery_method' => ['nullable', Rule::in(['standard', 'relay'])],
             'carrier' => ['nullable', 'string', 'max:64'],
+            'shipping_method_id' => ['nullable', 'integer', 'exists:shipping_methods,id'],
+            'pickup_point_id' => ['nullable', 'integer', 'exists:pickup_points,id'],
         ];
     }
 }

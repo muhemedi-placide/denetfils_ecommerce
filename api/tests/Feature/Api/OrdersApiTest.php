@@ -113,7 +113,7 @@ class OrdersApiTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_order_creation_rejects_empty_cart_invalid_address_and_duplicate_cart(): void
+    public function test_order_creation_rejects_empty_cart_and_invalid_address(): void
     {
         $user = $this->customer();
         $address = $this->address($user);
@@ -145,10 +145,55 @@ class OrdersApiTest extends TestCase
             'cart_token' => $cartToken,
             'shipping_address_id' => $address->id,
         ])->assertCreated();
+    }
+
+    public function test_order_creation_is_idempotent_for_same_customer_cart(): void
+    {
+        $user = $this->customer();
+        $address = $this->address($user);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+        $cartToken = $this->cartWithProduct($product);
+
+        Sanctum::actingAs($user);
+
+        $firstOrderId = $this->postJson('/api/v1/orders', [
+            'cart_token' => $cartToken,
+            'shipping_address_id' => $address->id,
+        ])
+            ->assertCreated()
+            ->json('data.id');
 
         $this->postJson('/api/v1/orders', [
             'cart_token' => $cartToken,
             'shipping_address_id' => $address->id,
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.id', $firstOrderId);
+
+        $this->assertDatabaseCount('orders', 1);
+    }
+
+    public function test_converted_cart_cannot_be_reused_by_another_customer(): void
+    {
+        $owner = $this->customer(['email' => 'owner-cart@example.test']);
+        $other = $this->customer(['email' => 'other-cart@example.test']);
+        $ownerAddress = $this->address($owner);
+        $otherAddress = $this->address($other);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+        $cartToken = $this->cartWithProduct($product);
+
+        Sanctum::actingAs($owner);
+
+        $this->postJson('/api/v1/orders', [
+            'cart_token' => $cartToken,
+            'shipping_address_id' => $ownerAddress->id,
+        ])->assertCreated();
+
+        Sanctum::actingAs($other);
+
+        $this->postJson('/api/v1/orders', [
+            'cart_token' => $cartToken,
+            'shipping_address_id' => $otherAddress->id,
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('cart_token');
