@@ -7,6 +7,7 @@ use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Notifications\WelcomeCustomerNotification;
 use App\Services\Core\UserProvisioningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class AuthController extends Controller
     {
         $user = $users->registerCustomer($request->validated(), $request);
         $token = $user->createToken('customer-api')->plainTextToken;
+        $user->notify(new WelcomeCustomerNotification($user->preferred_locale ?: 'fr'));
 
         return response()->json([
             'data' => [

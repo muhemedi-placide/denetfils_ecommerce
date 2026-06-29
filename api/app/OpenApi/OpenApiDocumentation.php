@@ -7,8 +7,8 @@ use OpenApi\Attributes as OA;
 #[OA\OpenApi(
     info: new OA\Info(
         version: '1.0.0',
-        title: 'Denetfils API',
-        description: 'Backend REST API for the Denetfils ecommerce platform: catalog, carts, identity, RBAC, GDPR consent and admin core.',
+        title: 'Ecommerce API',
+        description: 'Backend REST API for the ecommerce platform: catalog, carts, identity, RBAC, GDPR consent and admin core.',
     ),
     servers: [
         new OA\Server(url: 'http://127.0.0.1:8000', description: 'Local API server'),
@@ -82,7 +82,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'type', type: 'string', enum: ['billing', 'shipping'], example: 'billing'),
         new OA\Property(property: 'label', type: 'string', nullable: true, example: 'Home'),
         new OA\Property(property: 'recipient_name', type: 'string', example: 'Jean Martin'),
-        new OA\Property(property: 'company', type: 'string', nullable: true, example: 'Denetfils'),
+        new OA\Property(property: 'company', type: 'string', nullable: true, example: 'Boutique'),
         new OA\Property(property: 'street_line_1', type: 'string', example: '10 Rue de Rivoli'),
         new OA\Property(property: 'street_line_2', type: 'string', nullable: true),
         new OA\Property(property: 'postal_code', type: 'string', example: '75001'),
@@ -185,7 +185,7 @@ use OpenApi\Attributes as OA;
     schema: 'ProductCommerce',
     type: 'object',
     properties: [
-        new OA\Property(property: 'brand', type: 'string', example: 'Denetfils'),
+        new OA\Property(property: 'brand', type: 'string', example: 'Boutique'),
         new OA\Property(property: 'availability', type: 'string', example: 'in_stock'),
         new OA\Property(property: 'is_available', type: 'boolean', example: true),
         new OA\Property(property: 'max_order_quantity', type: 'integer', example: 12),
@@ -416,7 +416,7 @@ use OpenApi\Attributes as OA;
     schema: 'LoginRequest',
     required: ['email', 'password'],
     properties: [
-        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@denetfils.fr'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@example.com'),
         new OA\Property(property: 'password', type: 'string', format: 'password', example: 'password'),
         new OA\Property(property: 'device_name', type: 'string', example: 'Swagger UI'),
     ],

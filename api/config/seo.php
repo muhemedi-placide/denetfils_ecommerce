@@ -3,7 +3,7 @@
 return [
     'site_url' => env('FRONTEND_URL', 'http://127.0.0.1:8001'),
     'api_url' => env('APP_URL', 'http://127.0.0.1:8000'),
-    'brand_name' => 'Denetfils',
+    'brand_name' => env('SHOP_NAME', 'Marché Peyi'),
     'default_locale' => 'fr',
     'locales' => ['fr', 'en'],
     'hreflang' => [
@@ -11,10 +11,10 @@ return [
         'en' => 'en',
     ],
     'organization' => [
-        'name' => 'Denetfils',
-        'legal_name' => 'DEN & FILS',
-        'email' => 'support@denetfils.fr',
-        'logo_path' => '/images/denetfils-logo.png',
+        'name' => env('SHOP_NAME', 'Marché Peyi'),
+        'legal_name' => env('SHOP_LEGAL_NAME', env('SHOP_NAME', 'Marché Peyi')),
+        'email' => env('SHOP_EMAIL', 'contact@example.com'),
+        'logo_path' => '/images/shop-logo.png',
         'same_as' => [],
     ],
     'static_routes' => [
@@ -38,15 +38,15 @@ return [
     ],
     'articles' => [
         [
-            'slug' => 'pourquoi-choisir-denetfils',
+            'slug' => 'pourquoi-nous-choisir',
             'published_at' => '2025-11-19',
             'title' => [
-                'fr' => 'Pourquoi tant de personnes choisissent Denetfils ?',
-                'en' => 'Why do so many people choose Denetfils?',
+                'fr' => 'Pourquoi tant de personnes choisissent '.env('SHOP_NAME', 'Marché Peyi').' ?',
+                'en' => 'Why do so many people choose '.env('SHOP_NAME', 'Marché Peyi').'?',
             ],
             'description' => [
-                'fr' => 'La difference Denetfils : authenticite, histoire, gout et confiance.',
-                'en' => 'The Denetfils difference: authenticity, history, taste and trust.',
+                'fr' => 'La difference '.env('SHOP_NAME', 'Marché Peyi').' : authenticite, histoire, gout et confiance.',
+                'en' => 'The '.env('SHOP_NAME', 'Marché Peyi').' difference: authenticity, history, taste and trust.',
             ],
         ],
     ],

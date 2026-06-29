@@ -16,9 +16,9 @@ class SeoPayloadBuilder
 
         return [
             'meta' => [
-                'title' => $locale === 'en'
-                    ? 'Denetfils - Premium food shop'
-                    : 'Denetfils - Boutique alimentaire premium',
+                'title' => config('shop.name').' - '.($locale === 'en'
+                    ? 'Premium food shop'
+                    : 'Boutique alimentaire premium'),
                 'description' => $locale === 'en'
                     ? 'Discover curated grocery products, natural drinks and premium food boxes for Europe.'
                     : 'Decouvrez des produits alimentaires selectionnes, boissons naturelles et coffrets premium pour l Europe.',
@@ -26,8 +26,8 @@ class SeoPayloadBuilder
             ],
             'canonical' => $url,
             'hreflang' => $this->hreflang('/{locale}'),
-            'open_graph' => $this->openGraph('website', $url, 'Denetfils', null, null, $locale),
-            'twitter_card' => $this->twitterCard('Denetfils', null, null),
+            'open_graph' => $this->openGraph('website', $url, config('shop.name'), null, null, $locale),
+            'twitter_card' => $this->twitterCard(config('shop.name'), null, null),
             'json_ld' => [
                 'organization' => $this->organizationSchema(),
                 'website' => $this->websiteSchema($locale),

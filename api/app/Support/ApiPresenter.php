@@ -157,7 +157,7 @@ class ApiPresenter
         };
 
         return [
-            'brand' => config('seo.brand_name', 'Denetfils'),
+            'brand' => config('seo.brand_name', config('shop.name')),
             'availability' => $stockState,
             'is_available' => $product->is_active && $product->stock_quantity > 0,
             'max_order_quantity' => $product->max_order_quantity

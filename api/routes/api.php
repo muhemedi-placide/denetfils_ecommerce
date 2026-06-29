@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/v1/health', function () {
     return response()->json([
-        'service' => 'denetfils-api',
+        'service' => \Illuminate\Support\Str::slug(config('shop.name')).'-api',
         'status' => 'ok',
         'version' => 'v1',
     ]);
