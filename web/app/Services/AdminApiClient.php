@@ -8,9 +8,14 @@ use Illuminate\Support\Facades\Http;
 
 class AdminApiClient
 {
+    public function login(array $payload): array
+    {
+        return $this->send('post', 'admin/auth/login', $payload);
+    }
+
     public function me(string $token): array
     {
-        return $this->send('get', 'auth/me', [], $token);
+        return $this->send('get', 'admin/auth/me', [], $token);
     }
 
     public function dashboard(string $token, string $locale, array $filters = []): array

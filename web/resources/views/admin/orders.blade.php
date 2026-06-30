@@ -371,7 +371,7 @@
             <div class="mt-5 grid gap-3">
                 <label class="block">
                     <span class="admin-kicker mb-2 block">ID client</span>
-                    <input name="user_id" value="{{ old('user_id') }}" type="number" min="1" class="admin-input rounded-none" required>
+                    <input name="customer_id" value="{{ old('customer_id') }}" type="number" min="1" class="admin-input rounded-none" required>
                 </label>
                 <label class="block">
                     <span class="admin-kicker mb-2 block">Token panier</span>

@@ -1,19 +1,24 @@
-@extends('layouts.shop')
-
-@section('title', __('home.account.auth.login_title') . ' | ' . config('shop.name'))
-@section('description', __('home.account.auth.login_intro'))
-@section('robots', 'noindex,nofollow')
-
-@section('content')
-    <section class="soft-grid px-4 py-14 dark:bg-ink sm:px-8 lg:py-20">
-        <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-            <div class="max-w-xl">
-                <p class="section-kicker">{{ __('home.account.nav') }}</p>
-                <h1 class="brand-display mt-4 text-5xl uppercase text-forest dark:text-meadow sm:text-6xl">{{ __('home.account.auth.login_title') }}</h1>
-                <p class="mt-5 text-base font-semibold leading-8 text-cocoa/70 dark:text-cream/70">{{ __('home.account.auth.login_intro') }}</p>
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', $locale) }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{{ __('home.account.auth.login_title') }} | {{ config('shop.name') }}</title>
+        <meta name="robots" content="noindex,nofollow">
+        <script>
+            try {
+                if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+            } catch (error) {}
+        </script>
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @livewireStyles
+    </head>
+    <body class="store-page min-h-screen antialiased">
+        <main class="grid min-h-screen place-items-center px-4 py-8">
+            <div class="w-full max-w-md">
+                <livewire:account.login-form :locale="$locale" />
             </div>
-
-            <livewire:account.login-form :locale="$locale" />
-        </div>
-    </section>
-@endsection
+        </main>
+        @livewireScripts
+    </body>
+</html>

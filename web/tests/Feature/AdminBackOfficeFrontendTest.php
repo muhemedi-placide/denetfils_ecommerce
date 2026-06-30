@@ -275,7 +275,7 @@ class AdminBackOfficeFrontendTest extends TestCase
                 'roles' => ['admin'],
             ],
         ])->post('/fr/admin/commandes', [
-            'user_id' => 7,
+            'customer_id' => 7,
             'cart_token' => 'cart-token-123',
             'shipping_address_id' => 11,
             'billing_address_id' => 12,
@@ -289,7 +289,7 @@ class AdminBackOfficeFrontendTest extends TestCase
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/orders')
             && $request->method() === 'POST'
             && $request->hasHeader('Authorization', 'Bearer admin-token')
-            && $request['user_id'] === 7
+            && $request['customer_id'] === 7
             && $request['cart_token'] === 'cart-token-123'
             && data_get($request->data(), 'metadata.admin_note') === 'Commande ajoutee par telephone.');
     }

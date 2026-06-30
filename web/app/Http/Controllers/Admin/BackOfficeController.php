@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\AccountApiClient;
 use App\Services\AdminApiClient;
 use App\Services\Documents\OrderDocumentPdfRenderer;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +28,7 @@ class BackOfficeController extends Controller
         ]);
     }
 
-    public function login(Request $request, AccountApiClient $accounts, string $locale): RedirectResponse
+    public function login(Request $request, AdminApiClient $admin, string $locale): RedirectResponse
     {
         $locale = $this->setLocale($locale);
         $validated = $request->validate([
@@ -37,7 +36,7 @@ class BackOfficeController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $response = $accounts->login([
+        $response = $admin->login([
             ...$validated,
             'device_name' => \Illuminate\Support\Str::slug(config('shop.name')).'-admin-web',
         ]);
@@ -607,7 +606,7 @@ class BackOfficeController extends Controller
         }
 
         $validated = $this->validateAdminAction($request, [
-            'user_id' => ['required', 'integer', 'min:1'],
+            'customer_id' => ['required', 'integer', 'min:1'],
             'cart_token' => ['required', 'string', 'max:64'],
             'shipping_address_id' => ['required', 'integer', 'min:1'],
             'billing_address_id' => ['nullable', 'integer', 'min:1'],
@@ -623,7 +622,7 @@ class BackOfficeController extends Controller
         }
 
         $response = $admin->createOrder($context['token'], [
-            'user_id' => (int) $validated['user_id'],
+            'customer_id' => (int) $validated['customer_id'],
             'cart_token' => $validated['cart_token'],
             'shipping_address_id' => (int) $validated['shipping_address_id'],
             'billing_address_id' => isset($validated['billing_address_id']) ? (int) $validated['billing_address_id'] : null,
