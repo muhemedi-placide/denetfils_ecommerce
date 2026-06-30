@@ -2,11 +2,13 @@
 
 namespace App\Services\Payments;
 
+use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderPayment;
 use App\Services\Payments\Concerns\UpdatesOrderPaymentStatus;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class PayPalPaymentService
@@ -32,9 +34,10 @@ class PayPalPaymentService
             return $this->orderResponse($existingPayment);
         }
 
-        $applicationContext = array_filter([
+        $experienceContext = array_filter([
             'brand_name' => Str::limit((string) config('app.name'), 127, ''),
             'user_action' => 'PAY_NOW',
+            'shipping_preference' => 'GET_FROM_FILE',
             'return_url' => $this->absoluteUrl($options['return_url'] ?? config('services.paypal.return_url')),
             'cancel_url' => $this->absoluteUrl($options['cancel_url'] ?? config('services.paypal.cancel_url')),
         ]);
@@ -49,11 +52,12 @@ class PayPalPaymentService
                     'value' => $this->decimalAmount($order->total_cents),
                 ],
             ]],
+            'payment_source' => [
+                'paypal' => [
+                    'experience_context' => $experienceContext,
+                ],
+            ],
         ];
-
-        if ($applicationContext !== []) {
-            $payload['application_context'] = $applicationContext;
-        }
 
         try {
             $response = Http::withToken($this->accessToken($method))
@@ -114,10 +118,129 @@ class PayPalPaymentService
         ])->save();
 
         if (($response['status'] ?? null) === 'COMPLETED') {
+            $this->syncPaypalCustomerDetails($order, $response);
             $this->markOrderPaymentSucceeded($order, $payment);
         }
 
         return $this->orderResponse($payment->refresh());
+    }
+
+    public function createExpressOrder(Cart $cart, array $quote, string $countryCode, array $options = []): array
+    {
+        $method = $this->methods->activeForContext('paypal', $cart->currency, $countryCode);
+        $checkoutToken = Str::random(64);
+        $experienceContext = array_filter([
+            'brand_name' => Str::limit((string) config('app.name'), 127, ''),
+            'user_action' => 'PAY_NOW',
+            'shipping_preference' => 'GET_FROM_FILE',
+            'return_url' => $this->absoluteUrl($options['return_url'] ?? config('services.paypal.return_url')),
+            'cancel_url' => $this->absoluteUrl($options['cancel_url'] ?? config('services.paypal.cancel_url')),
+        ]);
+        $payload = [
+            'intent' => 'CAPTURE',
+            'purchase_units' => [[
+                'reference_id' => 'express-'.$cart->id,
+                'custom_id' => hash('sha256', $checkoutToken),
+                'amount' => [
+                    'currency_code' => strtoupper($cart->currency),
+                    'value' => $this->decimalAmount((int) $quote['total_cents']),
+                ],
+            ]],
+            'payment_source' => ['paypal' => ['experience_context' => $experienceContext]],
+        ];
+
+        try {
+            $response = Http::withToken($this->accessToken($method))
+                ->acceptJson()
+                ->withHeaders(['PayPal-Request-Id' => 'express-cart-'.$cart->id])
+                ->post($this->baseUrl($method).'/v2/checkout/orders', $payload)
+                ->throw()
+                ->json();
+        } catch (RequestException $exception) {
+            throw new PaymentGatewayException($this->paypalErrorMessage($exception), 502, $exception);
+        }
+
+        $paypalOrderId = (string) ($response['id'] ?? '');
+        $approvalLink = collect($response['links'] ?? [])
+            ->first(fn (array $link) => in_array($link['rel'] ?? null, ['payer-action', 'approve'], true));
+        $approvalUrl = $approvalLink['href'] ?? null;
+
+        if ($paypalOrderId === '' || blank($approvalUrl)) {
+            throw new PaymentGatewayException('PayPal did not return an express checkout link.', 502);
+        }
+
+        Cache::put("paypal-express:{$checkoutToken}", [
+            'paypal_order_id' => $paypalOrderId,
+            'cart_token' => $cart->cart_token,
+            'amount_cents' => (int) $quote['total_cents'],
+            'currency' => strtoupper($cart->currency),
+            'country_code' => strtoupper($countryCode),
+            'locale' => $options['locale'] ?? 'fr',
+            'payment_method_id' => $method->exists ? $method->id : null,
+            'approval_url' => $approvalUrl,
+        ], now()->addHour());
+
+        return [
+            'checkout_token' => $checkoutToken,
+            'external_id' => $paypalOrderId,
+            'approval_url' => $approvalUrl,
+        ];
+    }
+
+    public function approvedExpressOrder(string $checkoutToken, string $paypalOrderId): array
+    {
+        $context = Cache::get("paypal-express:{$checkoutToken}");
+
+        if (! is_array($context) || ! hash_equals((string) ($context['paypal_order_id'] ?? ''), $paypalOrderId)) {
+            throw new PaymentGatewayException('The PayPal express checkout session is invalid or expired.', 422);
+        }
+
+        $method = $this->methods->activeForContext('paypal', $context['currency'], $context['country_code']);
+
+        try {
+            $details = Http::withToken($this->accessToken($method))
+                ->acceptJson()
+                ->get($this->baseUrl($method)."/v2/checkout/orders/{$paypalOrderId}")
+                ->throw()
+                ->json();
+        } catch (RequestException $exception) {
+            throw new PaymentGatewayException($this->paypalErrorMessage($exception), 502, $exception);
+        }
+
+        if (! in_array(strtoupper((string) ($details['status'] ?? '')), ['APPROVED', 'COMPLETED'], true)) {
+            throw new PaymentGatewayException('The PayPal order has not been approved.', 422);
+        }
+
+        if (! hash_equals(hash('sha256', $checkoutToken), (string) data_get($details, 'purchase_units.0.custom_id', ''))) {
+            throw new PaymentGatewayException('The PayPal order does not match this checkout.', 409);
+        }
+
+        return ['context' => $context, 'details' => $details];
+    }
+
+    public function captureExpressOrder(Order $order, array $express, string $checkoutToken): array
+    {
+        $context = $express['context'];
+        $details = $express['details'];
+        $paypalOrderId = (string) $context['paypal_order_id'];
+
+        OrderPayment::query()->updateOrCreate(
+            ['provider' => 'paypal', 'provider_reference' => $paypalOrderId],
+            [
+                'order_id' => $order->id,
+                'payment_method_id' => $context['payment_method_id'],
+                'status' => $details['status'] ?? 'APPROVED',
+                'amount_cents' => $context['amount_cents'],
+                'currency' => $context['currency'],
+                'approval_url' => $context['approval_url'],
+                'provider_payload' => $details,
+            ],
+        );
+
+        $result = $this->captureOrder($order, $paypalOrderId);
+        Cache::forget("paypal-express:{$checkoutToken}");
+
+        return $result;
     }
 
     public function handleWebhook(array $payload): ?OrderPayment
@@ -253,6 +376,9 @@ class PayPalPaymentService
     private function orderResponse(OrderPayment $payment): array
     {
         $credentials = $payment->paymentMethod?->credentials ?? [];
+        $payload = $payment->provider_payload ?? [];
+        $paypal = data_get($payload, 'payment_source.paypal', []);
+        $shipping = data_get($payload, 'purchase_units.0.shipping', []);
 
         return [
             'provider' => 'paypal',
@@ -263,7 +389,52 @@ class PayPalPaymentService
             'currency' => $payment->currency,
             'approval_url' => $payment->approval_url,
             'client_id' => $credentials['client_id'] ?? config('services.paypal.client_id'),
+            'payer' => [
+                'email' => $paypal['email_address'] ?? null,
+                'first_name' => data_get($paypal, 'name.given_name'),
+                'last_name' => data_get($paypal, 'name.surname'),
+            ],
+            'shipping' => [
+                'recipient_name' => data_get($shipping, 'name.full_name'),
+                'street_line_1' => data_get($shipping, 'address.address_line_1'),
+                'street_line_2' => data_get($shipping, 'address.address_line_2'),
+                'city' => data_get($shipping, 'address.admin_area_2'),
+                'region' => data_get($shipping, 'address.admin_area_1'),
+                'postal_code' => data_get($shipping, 'address.postal_code'),
+                'country_code' => data_get($shipping, 'address.country_code'),
+            ],
         ];
+    }
+
+    private function syncPaypalCustomerDetails(Order $order, array $payload): void
+    {
+        $paypal = data_get($payload, 'payment_source.paypal', []);
+        $shipping = data_get($payload, 'purchase_units.0.shipping', []);
+        $address = $shipping['address'] ?? [];
+        $recipientName = trim((string) data_get($shipping, 'name.full_name'));
+
+        $order->forceFill(array_filter([
+            'customer_email' => $paypal['email_address'] ?? null,
+            'customer_name' => trim(implode(' ', array_filter([
+                data_get($paypal, 'name.given_name'),
+                data_get($paypal, 'name.surname'),
+            ]))) ?: $recipientName,
+            'customer_country_code' => $address['country_code'] ?? null,
+        ]))->save();
+
+        if ($recipientName === '' || blank($address['address_line_1'] ?? null) || blank($address['postal_code'] ?? null) || blank($address['admin_area_2'] ?? null) || blank($address['country_code'] ?? null)) {
+            return;
+        }
+
+        $order->addresses()->where('type', 'shipping')->update([
+            'recipient_name' => $recipientName,
+            'street_line_1' => $address['address_line_1'],
+            'street_line_2' => $address['address_line_2'] ?? null,
+            'postal_code' => $address['postal_code'],
+            'city' => $address['admin_area_2'],
+            'region' => $address['admin_area_1'] ?? null,
+            'country_code' => strtoupper($address['country_code']),
+        ]);
     }
 
     private function paypalErrorMessage(RequestException $exception): string

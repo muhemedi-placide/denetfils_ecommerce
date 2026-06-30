@@ -20,6 +20,9 @@
         @case('cart')
             <path d="M3 3h2l2.2 11h10.9l2-8H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/>
             @break
+        @case('credit-card')
+            <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>
+            @break
         @case('store')
             <path d="M3 10h18M5 10v11h14V10M4 3h16l2 7H2zM9 21v-6h6v6"/>
             @break

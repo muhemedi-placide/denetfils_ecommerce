@@ -30,7 +30,7 @@ class CheckoutReview extends Component
     public ?string $shippingMethodError = null;
     public ?string $paymentError = null;
     public bool $paymentProcessing = false;
-    public string $paymentProvider = 'stripe';
+    public string $paymentProvider = '';
     public array $quote = [];
     public array $stripePaymentIntent = [];
     public array $paypalOrder = [];
@@ -59,6 +59,7 @@ class CheckoutReview extends Component
         ?array $user = null,
         array $addresses = [],
         array $countries = [],
+        ?array $completedOrder = null,
         string $visitorCountryCode = 'FR',
     ): void
     {
@@ -71,6 +72,10 @@ class CheckoutReview extends Component
             ? $this->visitorCountryCode
             : 'FR';
         $this->selectedAddressId = $this->defaultAddressId();
+        if ($completedOrder) {
+            $this->confirmedOrder = $completedOrder;
+            $this->orderConfirmed = true;
+        }
         $this->initializeCart();
         $this->refreshShippingMethods();
         $this->refreshPickupPoints();
@@ -144,7 +149,52 @@ class CheckoutReview extends Component
 
         $this->confirmedOrder = $response['data'];
         $this->quote = [];
-        $this->prepareStripePayment($api);
+        $this->paymentProcessing = false;
+        $this->dispatch('payment-step-ready');
+    }
+
+    public function startPaypalExpressCheckout(AccountApiClient $api): void
+    {
+        $this->checkoutError = null;
+        $this->paymentError = null;
+
+        if (! $this->cartToken || empty($this->cartItems())) {
+            $this->checkoutError = $this->locale === 'fr' ? 'Votre panier est vide.' : 'Your cart is empty.';
+            return;
+        }
+
+        $response = $api->createPaypalExpressOrder([
+            'cart_token' => $this->cartToken,
+            'country_code' => $this->visitorCountryCode,
+            'locale' => $this->locale,
+            'return_url' => route('checkout.paypal.return'),
+            'cancel_url' => route('checkout.paypal.cancel'),
+        ]);
+
+        if (! $response['ok']) {
+            $this->paymentError = $this->firstApiError($response)
+                ?: ($this->locale === 'fr' ? 'PayPal Express est temporairement indisponible.' : 'PayPal Express is temporarily unavailable.');
+            return;
+        }
+
+        $approvalUrl = (string) data_get($response, 'data.approval_url', '');
+        $host = strtolower((string) parse_url($approvalUrl, PHP_URL_HOST));
+
+        if ($approvalUrl === '' || ($host !== 'paypal.com' && ! str_ends_with($host, '.paypal.com'))) {
+            $this->paymentError = $this->locale === 'fr'
+                ? 'PayPal n’a pas fourni de lien de paiement sécurisé.'
+                : 'PayPal did not provide a secure checkout link.';
+            return;
+        }
+
+        session()->put('paypal_express_checkout', [
+            'locale' => $this->locale,
+            'checkout_token' => data_get($response, 'data.checkout_token'),
+            'paypal_order_id' => data_get($response, 'data.external_id'),
+            'cart_token' => $this->cartToken,
+        ]);
+
+        $this->dispatch('paypal-express-redirect', url: $approvalUrl);
     }
 
     public function openAuthModal(string $mode = 'choice'): void
@@ -258,11 +308,64 @@ class CheckoutReview extends Component
         $this->paymentError = null;
 
         if ($provider === 'stripe') {
+            if ($this->stripePaymentIntent !== []) {
+                $this->dispatch('stripe-payment-ready', payment: $this->stripePaymentIntent);
+                return;
+            }
             $this->prepareStripePayment($api);
             return;
         }
 
+        if ($this->paypalOrder !== []) {
+            $this->dispatch('paypal-payment-ready', payment: $this->paypalOrder);
+            return;
+        }
+
         $this->preparePaypalPayment($api);
+    }
+
+    public function preloadPaymentMethods(AccountApiClient $api): void
+    {
+        $orderId = data_get($this->confirmedOrder, 'id');
+
+        if (! $orderId || ! $this->token()) {
+            return;
+        }
+
+        if ($this->stripePaymentIntent !== [] && $this->paypalOrder !== []) {
+            $this->dispatch('stripe-payment-ready', payment: $this->stripePaymentIntent);
+            $this->dispatch('paypal-payment-ready', payment: $this->paypalOrder);
+            return;
+        }
+
+        $this->paymentProcessing = true;
+        $responses = $api->preloadPaymentMethods($this->token(), $orderId);
+        $errors = [];
+
+        foreach (['stripe', 'paypal'] as $provider) {
+            $response = $responses[$provider] ?? ['ok' => false, 'data' => [], 'message' => null, 'errors' => []];
+
+            if ($response['ok']) {
+                if ($provider === 'stripe') {
+                    $this->stripePaymentIntent = $response['data'];
+                    $this->dispatch('stripe-payment-ready', payment: $this->stripePaymentIntent);
+                } else {
+                    $this->paypalOrder = $response['data'];
+                    $this->dispatch('paypal-payment-ready', payment: $this->paypalOrder);
+                }
+            } else {
+                $errors[$provider] = $this->firstApiError($response);
+            }
+
+            $this->dispatch('payment-method-settled', provider: $provider, ok: (bool) $response['ok']);
+        }
+
+        $this->paymentProcessing = false;
+        $this->paymentError = count($errors) === 2
+            ? ($this->locale === 'fr'
+                ? 'Les services de paiement sont temporairement indisponibles. Réessayez.'
+                : 'Payment services are temporarily unavailable. Please retry.')
+            : null;
     }
 
     public function retryStripePayment(AccountApiClient $api): void
@@ -620,17 +723,21 @@ class CheckoutReview extends Component
             return;
         }
 
+        $this->paymentProcessing = true;
         $response = $api->createStripePaymentIntent($this->token(), $orderId);
 
         if (! $response['ok']) {
+            $this->paymentProcessing = false;
             $this->paymentError = $this->firstApiError($response)
                 ?: ($this->locale === 'fr' ? 'Stripe est indisponible pour le moment.' : 'Stripe is unavailable right now.');
+            $this->dispatch('payment-method-settled', provider: 'stripe', ok: false);
             return;
         }
 
         $this->stripePaymentIntent = $response['data'];
         $this->paymentProcessing = false;
         $this->dispatch('stripe-payment-ready', payment: $this->stripePaymentIntent);
+        $this->dispatch('payment-method-settled', provider: 'stripe', ok: true);
     }
 
     private function preparePaypalPayment(AccountApiClient $api): void
@@ -644,17 +751,21 @@ class CheckoutReview extends Component
             return;
         }
 
+        $this->paymentProcessing = true;
         $response = $api->createPaypalOrder($this->token(), $orderId);
 
         if (! $response['ok']) {
+            $this->paymentProcessing = false;
             $this->paymentError = $this->firstApiError($response)
                 ?: ($this->locale === 'fr' ? 'PayPal est indisponible pour le moment.' : 'PayPal is unavailable right now.');
+            $this->dispatch('payment-method-settled', provider: 'paypal', ok: false);
             return;
         }
 
         $this->paypalOrder = $response['data'];
         $this->paymentProcessing = false;
         $this->dispatch('paypal-payment-ready', payment: $this->paypalOrder);
+        $this->dispatch('payment-method-settled', provider: 'paypal', ok: true);
     }
 
     private function deliveryMethodForApi(): string

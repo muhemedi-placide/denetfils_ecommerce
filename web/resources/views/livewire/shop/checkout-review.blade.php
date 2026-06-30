@@ -1,14 +1,10 @@
-<section class="soft-grid px-4 pb-28 pt-8 dark:bg-ink sm:px-6 lg:px-8 lg:pb-16 lg:pt-10" x-data="{ chronoModal: false }">
-    <div class="mx-auto max-w-7xl">
+<section class="checkout-compact store-page pb-20 pt-4 lg:pb-12 lg:pt-6" x-data="{ chronoModal: false }">
+    <div class="store-container">
         @include('partials.checkout-progress', ['currentLocale' => $locale, 'currentStep' => $orderConfirmed ? 'success' : 'checkout'])
 
         @if (! $orderConfirmed && ! $confirmedOrder)
-            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="section-kicker">{{ $locale === 'fr' ? 'Commande rapide' : 'Fast checkout' }}</p>
-                    <h1 class="section-title mt-3">{{ $locale === 'fr' ? 'Valider votre commande' : 'Confirm your order' }}</h1>
-                    <p class="section-copy mt-4">{{ $locale === 'fr' ? 'Choisissez votre adresse, puis sélectionnez Mondial Relay Locker, Mondial Points Relais, Chrono Relais ou Chronopost.' : 'Choose your address, then select Mondial Relay Locker, Mondial pickup, Chrono Relais or Chronopost.' }}</p>
-                </div>
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h1 class="text-2xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Valider votre commande' : 'Confirm your order' }}</h1>
                 <a href="{{ route('cart.show', ['locale' => $locale]) }}" class="btn-secondary w-full sm:w-auto" wire:navigate>
                     {{ $locale === 'fr' ? 'Modifier le panier' : 'Edit cart' }}
                 </a>
@@ -34,16 +30,27 @@
                 </div>
             @endif
 
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-start">
-                <form class="space-y-4" wire:submit.prevent="confirm">
+            <div class="checkout-onepage-grid grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
+                <form class="checkout-onepage-form form-card space-y-0 overflow-hidden p-0" wire:submit.prevent="confirm">
+                    <section class="checkout-express px-4 py-6 text-center sm:px-7">
+                        <p class="text-base font-semibold text-cocoa/65 dark:text-cream/65">{{ $locale === 'fr' ? 'Paiement express' : 'Express checkout' }}</p>
+                        <button type="button" class="mx-auto mt-4 flex min-h-[52px] w-full max-w-sm items-center justify-center rounded-xl bg-[#ffc439] px-8 text-2xl font-black italic text-[#003087] transition hover:bg-[#f4b72f] disabled:cursor-wait disabled:opacity-65" wire:click="startPaypalExpressCheckout" wire:loading.attr="disabled" wire:target="startPaypalExpressCheckout">
+                            <span wire:loading.remove wire:target="startPaypalExpressCheckout">Pay<span class="text-[#009cde]">Pal</span></span>
+                            <span class="text-sm not-italic" wire:loading wire:target="startPaypalExpressCheckout">{{ $locale === 'fr' ? 'Connexion à PayPal…' : 'Connecting to PayPal…' }}</span>
+                        </button>
+                        <div class="mt-5 flex items-center gap-4 text-sm font-semibold text-cocoa/50 dark:text-cream/50">
+                            <span class="h-px flex-1 bg-black/10 dark:bg-white/10"></span>
+                            <span>{{ $locale === 'fr' ? 'OU' : 'OR' }}</span>
+                            <span class="h-px flex-1 bg-black/10 dark:bg-white/10"></span>
+                        </div>
+                    </section>
+
                     <section class="form-card">
-                        <div class="flex items-start gap-4">
-                            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-forest text-xs font-black text-cream dark:bg-meadow dark:text-ink">1</span>
+                        <div class="flex items-start gap-3">
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div>
-                                        <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Compte client' : 'Customer account' }}</h2>
-                                        <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Le compte permet de garder l’historique, les adresses et les informations de livraison.' : 'The account keeps order history, addresses and delivery information.' }}</p>
+                                        <h2 class="text-2xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Contact' : 'Contact' }}</h2>
                                     </div>
                                     @if (! $isAuthenticated)
                                         <div class="grid gap-2 sm:flex">
@@ -54,47 +61,27 @@
                                 </div>
 
                                 @if ($isAuthenticated)
-                                    <div class="mt-4 grid gap-2 sm:grid-cols-3">
-                                        <div class="rounded-xl bg-linen px-3 py-3 dark:bg-white/5">
-                                            <p class="text-[11px] font-black uppercase tracking-wide text-cocoa/50 dark:text-cream/50">{{ $locale === 'fr' ? 'Client' : 'Customer' }}</p>
-                                            <p class="mt-1 truncate font-black text-cocoa dark:text-cream">{{ $user['name'] ?? trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) }}</p>
-                                        </div>
-                                        <div class="rounded-xl bg-linen px-3 py-3 dark:bg-white/5">
-                                            <p class="text-[11px] font-black uppercase tracking-wide text-cocoa/50 dark:text-cream/50">Email</p>
-                                            <p class="mt-1 truncate font-black text-cocoa dark:text-cream">{{ $user['email'] ?? '' }}</p>
-                                        </div>
-                                        <div class="rounded-xl bg-linen px-3 py-3 dark:bg-white/5">
-                                            <p class="text-[11px] font-black uppercase tracking-wide text-cocoa/50 dark:text-cream/50">{{ $locale === 'fr' ? 'Pays' : 'Country' }}</p>
-                                            <p class="mt-1 truncate font-black text-cocoa dark:text-cream">{{ $countryNames[$user['country_code'] ?? ''] ?? ($user['country_code'] ?? '') }}</p>
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="mt-4 rounded-xl bg-coral/10 px-4 py-3 text-sm font-semibold text-cocoa dark:text-cream">
-                                        {{ $locale === 'fr' ? 'Votre panier reste ici. Identifiez-vous sans quitter cette page.' : 'Your cart stays here. Identify yourself without leaving this page.' }}
-                                    </div>
+                                    <p class="mt-2 truncate text-sm font-semibold text-cocoa/70 dark:text-cream/70">
+                                        {{ $user['name'] ?? trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) }} · {{ $user['email'] ?? '' }}
+                                    </p>
                                 @endif
                             </div>
                         </div>
                     </section>
 
                     <section class="form-card">
-                        <div class="flex items-start gap-4">
-                            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-forest text-xs font-black text-cream dark:bg-meadow dark:text-ink">2</span>
+                        <div class="flex items-start gap-3">
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div>
-                                        <h2 class="text-xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Adresse de livraison' : 'Delivery address' }}</h2>
-                                        <p class="mt-1 text-sm leading-6 text-cocoa/60 dark:text-cream/60">{{ $locale === 'fr' ? 'Elle sert au calcul transporteur et à la recherche du point de retrait le plus proche.' : 'Used for carrier pricing and nearest pickup search.' }}</p>
+                                        <h2 class="text-2xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Livraison' : 'Delivery' }}</h2>
                                     </div>
-                                    @if ($isAuthenticated)
-                                        <a href="{{ route('account.show', ['locale' => $locale]) }}" class="btn-secondary px-4 py-2 text-xs" wire:navigate>{{ $locale === 'fr' ? 'Gérer' : 'Manage' }}</a>
-                                    @endif
                                 </div>
 
                                 @if ($isAuthenticated && ! empty($addresses))
                                     <div class="mt-4 grid gap-2">
                                         @foreach ($addresses as $address)
-                                            <label class="cursor-pointer rounded-xl border border-leaf/10 bg-linen p-4 text-sm transition dark:border-white/10 dark:bg-white/5 {{ (int) $selectedAddressId === (int) $address['id'] ? 'ring-2 ring-leaf/35 dark:ring-meadow/40' : 'hover:border-leaf/25' }}" wire:key="checkout-address-{{ $address['id'] }}">
+                                            <label class="cursor-pointer rounded-xl border border-leaf/10 bg-linen p-3 text-sm transition dark:border-white/10 dark:bg-white/5 {{ (int) $selectedAddressId === (int) $address['id'] ? 'ring-2 ring-leaf/35 dark:ring-meadow/40' : 'hover:border-leaf/25' }}" wire:key="checkout-address-{{ $address['id'] }}">
                                                 <span class="flex items-start gap-3">
                                                     <input class="mt-1" type="radio" wire:model.live="selectedAddressId" value="{{ $address['id'] }}">
                                                     <span class="min-w-0">
@@ -125,22 +112,22 @@
                         </div>
                     </section>
 
-                    <section class="overflow-hidden rounded-[1.35rem] border border-leaf/10 bg-white shadow-tropical dark:border-white/10 dark:bg-white/5">
-                        <div class="bg-[#48a900] px-5 py-4 text-white">
-                            <h2 class="flex items-center gap-4 text-2xl font-light uppercase tracking-wide"><span>3</span><span>{{ $locale === 'fr' ? 'Mode de livraison' : 'Delivery mode' }}</span></h2>
+                    <section class="form-card overflow-hidden p-0">
+                        <div class="px-4 pb-1 pt-4 sm:px-7">
+                            <h2 class="text-2xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Mode de livraison' : 'Shipping method' }}</h2>
                         </div>
 
-                        <div class="space-y-5 p-4 sm:p-6">
+                        <div class="space-y-3 p-3 sm:p-4">
                             @forelse ($carriers as $key => $option)
                                 <div wire:key="carrier-option-wrapper-{{ $key }}">
-                                    <label class="grid cursor-pointer items-center gap-4 rounded-xl bg-neutral-100 px-5 py-5 transition hover:bg-neutral-50 dark:bg-white/5 dark:hover:bg-white/10 sm:grid-cols-[36px_86px_minmax(170px,1fr)_minmax(190px,1.3fr)_120px]">
+                                    <label class="grid cursor-pointer items-center gap-3 rounded-xl bg-neutral-100 px-3 py-3 transition hover:bg-neutral-50 dark:bg-white/5 dark:hover:bg-white/10 sm:grid-cols-[28px_64px_minmax(150px,1fr)_minmax(150px,1fr)_90px]">
                                         <span class="grid h-7 w-7 place-items-center rounded-full border border-cocoa/10 bg-white dark:border-white/20 dark:bg-white/5">
-                                            <input class="h-4 w-4 accent-[#48a900]" type="radio" value="{{ $key }}" wire:model.live="carrier">
+                                            <input class="h-4 w-4 accent-[#f97316]" type="radio" value="{{ $key }}" wire:model.live="carrier">
                                         </span>
 
-                                        <span class="grid h-14 w-20 place-items-center">
+                                        <span class="grid h-10 w-14 place-items-center">
                                             @if ($option['logo'] === 'mr')
-                                                <span class="grid h-12 w-12 place-items-center rounded-xl bg-[#f7b6cd] text-2xl font-black text-[#a01455]">r</span>
+                                                <span class="grid h-9 w-9 place-items-center rounded-lg bg-[#f7b6cd] text-lg font-black text-[#a01455]">r</span>
                                             @elseif ($option['logo'] === 'chrono')
                                                 <span class="text-xs font-black text-[#168bd0]">▣ chronopost</span>
                                             @else
@@ -148,12 +135,8 @@
                                             @endif
                                         </span>
 
-                                        <span class="text-lg font-black leading-6 text-cocoa dark:text-cream">
+                                        <span class="font-black leading-5 text-cocoa dark:text-cream">
                                             {{ $option['name'] }}
-                                            <span class="mt-1 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-wide">
-                                                <span class="rounded-full bg-white px-2 py-1 text-cocoa/55 ring-1 ring-cocoa/10 dark:bg-white/10 dark:text-cream/60 dark:ring-white/10">{{ $option['brand_label'] }}</span>
-                                                <span class="rounded-full bg-mint px-2 py-1 text-forest dark:bg-white/10 dark:text-meadow">{{ $option['type_label'] }}</span>
-                                            </span>
                                         </span>
                                         <span class="text-base leading-6 text-cocoa/80 dark:text-cream/75">{{ $option['eta'] }}</span>
                                         <span class="text-lg font-semibold text-cocoa dark:text-cream">{{ $option['price'] }}</span>
@@ -178,14 +161,7 @@
                                 </div>
                             @endforelse
 
-                            <div class="pt-2">
-                                <label class="block text-base font-medium text-cocoa dark:text-cream">
-                                    {{ $locale === 'fr' ? 'Si vous voulez nous laisser un message à propos de votre commande, merci de bien vouloir le renseigner dans le champ ci-contre' : 'Leave a message about your order if needed.' }}
-                                    <textarea class="mt-3 h-24 w-full resize-none rounded-none border border-cocoa/15 bg-white px-3 py-2 outline-none focus:border-[#48a900] dark:border-white/10 dark:bg-white/5"></textarea>
-                                </label>
-                            </div>
-
-                            <button type="submit" class="rounded-full bg-[#48ad4d] px-10 py-4 text-base font-black text-white shadow-[0_14px_32px_rgba(69,173,77,.25)] disabled:pointer-events-none disabled:opacity-50" wire:loading.attr="disabled" @disabled(count($this->cartItems()) === 0 || ! $isAuthenticated || ! $selectedAddressId || ($delivery === 'relay' && ! $selectedPickupPointDetails))>
+                            <button type="submit" class="store-button disabled:pointer-events-none disabled:opacity-50" wire:loading.attr="disabled" @disabled(count($this->cartItems()) === 0 || ! $isAuthenticated || ! $selectedAddressId || ($delivery === 'relay' && ! $selectedPickupPointDetails))>
                                 <span wire:loading.remove>{{ $locale === 'fr' ? 'Créer la commande' : 'Create order' }}</span>
                                 <span wire:loading>{{ __('home.cart.loading') }}</span>
                             </button>
@@ -194,37 +170,23 @@
                 </form>
 
                 <aside class="lg:sticky lg:top-32">
-                    <div class="rounded-[1.5rem] border border-leaf/10 bg-white p-5 shadow-tropical dark:border-white/10 dark:bg-white/5">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="section-kicker">{{ $locale === 'fr' ? 'Résumé' : 'Summary' }}</p>
-                                <h2 class="mt-2 text-2xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Votre commande' : 'Your order' }}</h2>
-                            </div>
-                            <strong class="shrink-0 text-xl font-black text-forest dark:text-meadow">{{ $displayQuote['formatted_total'] }}</strong>
-                        </div>
+                    <div class="form-card p-4">
+                        <h2 class="text-lg font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Votre commande' : 'Your order' }}</h2>
 
                         <div wire:loading.flex class="mt-3 items-center gap-3 rounded-lg bg-linen px-3 py-2 text-xs font-semibold text-cocoa/65 dark:bg-white/5 dark:text-cream/65">
                             <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-coral"></span>{{ __('home.cart.loading') }}
                         </div>
 
                         @if (count($this->cartItems()) > 0)
-                            <div class="mt-4 space-y-3">
+                            <div class="mt-3 space-y-2">
                                 @foreach ($this->cartItems() as $item)
                                     @php
-                                        $imageUrl = data_get($item, 'product.image.url');
                                         $productName = data_get($item, 'product.name', '-');
                                     @endphp
-                                    <div class="flex items-start justify-between gap-3 border-b border-leaf/10 pb-3 text-sm dark:border-white/10" wire:key="checkout-cart-item-{{ $item['id'] }}">
-                                        <div class="flex min-w-0 items-center gap-3">
-                                            @if ($imageUrl)
-                                                <img src="{{ $imageUrl }}" alt="{{ $productName }}" class="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-leaf/10 dark:ring-white/10" loading="lazy" decoding="async">
-                                            @else
-                                                <span class="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-mint text-xs font-black text-forest dark:bg-white/10 dark:text-meadow">DF</span>
-                                            @endif
-                                            <div class="min-w-0">
+                                    <div class="flex items-start justify-between gap-3 border-b border-leaf/10 pb-2 text-sm dark:border-white/10" wire:key="checkout-cart-item-{{ $item['id'] }}">
+                                        <div class="min-w-0">
                                                 <p class="line-clamp-2 font-black text-cocoa dark:text-cream">{{ $productName }}</p>
-                                            <p class="mt-1 truncate text-xs text-cocoa/55 dark:text-cream/55">{{ $item['quantity'] }} × {{ data_get($item, 'variant.name') ?: data_get($item, 'product.origin') }}</p>
-                                            </div>
+                                            <p class="truncate text-xs text-cocoa/55 dark:text-cream/55">{{ $item['quantity'] }} × {{ data_get($item, 'variant.name') ?: data_get($item, 'product.origin') }}</p>
                                         </div>
                                         <strong class="shrink-0 text-forest dark:text-meadow">{{ $item['formatted_line_total'] }}</strong>
                                     </div>
@@ -234,15 +196,13 @@
                             <div class="mt-3 rounded-lg bg-linen px-3 py-3 text-sm text-cocoa/65 dark:bg-white/5 dark:text-cream/65">{{ $locale === 'fr' ? 'Panier vide.' : 'Empty cart.' }}</div>
                         @endif
 
-                        <div class="mt-4 space-y-2 border-t border-leaf/10 pt-4 text-sm text-cocoa/70 dark:border-white/10 dark:text-cream/70">
+                        <div class="mt-3 space-y-2 border-t border-leaf/10 pt-3 text-sm text-cocoa/70 dark:border-white/10 dark:text-cream/70">
                             <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Sous-total TTC' : 'Subtotal incl. tax' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_subtotal'] }}</strong></div>
                             <div class="flex items-center justify-between"><span>{{ ! empty($quote['is_estimate']) ? ($locale === 'fr' ? 'Livraison à partir de' : 'Shipping from') : ($locale === 'fr' ? 'Livraison' : 'Shipping') }}</span><strong class="text-cocoa dark:text-cream">{{ $selectedCarrier['price'] ?? $displayQuote['formatted_shipping'] }}</strong></div>
-                            <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'TVA incluse' : 'VAT included' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_tax'] }}</strong></div>
-                            <div class="flex items-center justify-between gap-3"><span>{{ $locale === 'fr' ? 'Transporteur' : 'Carrier' }}</span><span class="truncate text-right font-semibold">{{ $selectedCarrier['name'] ?? '-' }}</span></div>
                             @if ($selectedPickupPointDetails)
-                                <div class="rounded-lg bg-mint p-3 text-xs leading-5 text-forest dark:bg-white/5 dark:text-meadow">
-                                    <strong class="block">{{ $locale === 'fr' ? 'Point choisi' : 'Selected pickup' }}</strong>
-                                    {{ $selectedPickupPointDetails['name'] }} · {{ $selectedPickupPointDetails['address'] }}
+                                <div class="rounded-lg bg-mint p-2 text-xs leading-5 text-forest dark:bg-white/5 dark:text-meadow">
+                                    <strong>{{ $locale === 'fr' ? 'Point choisi :' : 'Selected pickup:' }}</strong>
+                                    {{ $selectedPickupPointDetails['name'] }}
                                 </div>
                             @endif
                             <div class="flex items-center justify-between border-t border-leaf/10 pt-3 text-base dark:border-white/10">
@@ -273,66 +233,63 @@
                 </div>
             @endif
         @elseif ($confirmedOrder && ! $orderConfirmed)
-            <div class="mx-auto mt-8 grid max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-                <section class="rounded-[1.5rem] border border-leaf/10 bg-white p-6 shadow-tropical dark:border-white/10 dark:bg-white/5">
-                    <p class="section-kicker">{{ $locale === 'fr' ? 'Paiement securise' : 'Secure payment' }}</p>
-                    <h1 class="mt-3 text-3xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Regler votre commande' : 'Pay for your order' }}</h1>
-                    <p class="mt-3 text-sm leading-6 text-cocoa/65 dark:text-cream/65">
-                        {{ $locale === 'fr' ? 'Votre commande est creee. Choisissez le moyen de paiement pour finaliser.' : 'Your order has been created. Choose a payment method to complete it.' }}
-                    </p>
+            <div class="mx-auto mt-4 grid max-w-5xl gap-4 lg:grid-cols-[minmax(0,1fr)_300px]" x-data="{ paymentTab: @js($paymentProvider ?: 'stripe') }">
+                <section class="form-card p-4">
+                    <h1 class="text-2xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Régler votre commande' : 'Pay for your order' }}</h1>
 
                     @if ($paymentError)
                         <div class="mt-5 rounded-xl border border-coral/25 bg-coral/10 px-4 py-3 text-sm font-semibold text-cocoa dark:text-cream">{{ $paymentError }}</div>
                     @endif
 
-                    <div class="mt-6 grid gap-2 rounded-xl bg-linen p-2 dark:bg-white/5 sm:grid-cols-2">
-                        <button type="button" wire:click="selectPaymentProvider('stripe')" class="rounded-lg px-4 py-3 text-sm font-black transition {{ $paymentProvider === 'stripe' ? 'bg-white text-forest shadow-sm dark:bg-ink dark:text-meadow' : 'text-cocoa/65 hover:bg-white/60 dark:text-cream/65 dark:hover:bg-white/10' }}">
-                            {{ $locale === 'fr' ? 'Carte bancaire' : 'Card' }}
+                    <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                        <button type="button" x-on:click="paymentTab = 'stripe'; $dispatch('checkout-payment-provider', { provider: 'stripe' })" x-bind:class="paymentTab === 'stripe' ? '!bg-[#f97316] !text-white' : ''" class="store-button store-button-outline min-h-[48px] w-full">
+                            <span class="flex items-center gap-3"><x-icon name="credit-card" class="h-5 w-5" /> {{ $locale === 'fr' ? 'Carte bancaire' : 'Payment card' }}</span>
                         </button>
-                        <button type="button" wire:click="selectPaymentProvider('paypal')" class="rounded-lg px-4 py-3 text-sm font-black transition {{ $paymentProvider === 'paypal' ? 'bg-white text-forest shadow-sm dark:bg-ink dark:text-meadow' : 'text-cocoa/65 hover:bg-white/60 dark:text-cream/65 dark:hover:bg-white/10' }}">
+                        <button type="button" x-on:click="paymentTab = 'paypal'; $dispatch('checkout-payment-provider', { provider: 'paypal' })" x-bind:class="paymentTab === 'paypal' ? '!bg-[#f97316] !text-white' : ''" class="store-button store-button-outline min-h-[48px] w-full">
                             PayPal
                         </button>
                     </div>
 
-                    @if ($paymentProvider === 'stripe')
-                        <div class="mt-6 rounded-xl border border-cocoa/10 bg-linen p-4 dark:border-white/10 dark:bg-white/5">
+                    <div data-payment-panel="stripe" x-cloak x-show="paymentTab === 'stripe'">
+                        <div class="mt-4 rounded-xl border border-cocoa/10 bg-linen p-3 dark:border-white/10 dark:bg-white/5">
+                            <div data-stripe-placeholder class="flex min-h-12 items-center gap-3 text-sm font-semibold text-cocoa/60 dark:text-cream/60">
+                                <span class="h-4 w-4 animate-spin rounded-full border-2 border-orange-200 border-t-orange-500"></span>
+                                {{ $locale === 'fr' ? 'Préparation du paiement sécurisé…' : 'Preparing secure payment…' }}
+                            </div>
                             <div id="stripe-payment-element" wire:ignore></div>
                             <div id="stripe-payment-message" class="mt-3 hidden rounded-lg bg-coral/10 px-3 py-2 text-sm font-semibold text-cocoa dark:text-cream"></div>
                         </div>
 
-                        <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <button id="stripe-pay-button" type="button" class="rounded-full bg-[#48ad4d] px-8 py-4 text-base font-black text-white shadow-[0_14px_32px_rgba(69,173,77,.25)] disabled:pointer-events-none disabled:opacity-50">
+                        <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <button id="stripe-pay-button" type="button" class="store-button disabled:pointer-events-none disabled:opacity-50">
                                 <span data-stripe-pay-label>{{ $locale === 'fr' ? 'Payer maintenant' : 'Pay now' }}</span>
                                 <span data-stripe-pay-loading class="hidden">{{ $locale === 'fr' ? 'Paiement en cours...' : 'Processing payment...' }}</span>
                             </button>
-                            <button type="button" class="btn-secondary px-5 py-3 text-sm" wire:click="retryStripePayment">
-                                {{ $locale === 'fr' ? 'Recharger Stripe' : 'Reload Stripe' }}
-                            </button>
+                            @if ($paymentError)
+                                <button type="button" class="btn-secondary px-4 py-2 text-sm" wire:click="retryStripePayment">{{ $locale === 'fr' ? 'Réessayer' : 'Retry' }}</button>
+                            @endif
                         </div>
+                    </div>
 
-                        <p class="mt-4 text-xs font-semibold leading-5 text-cocoa/55 dark:text-cream/55">
-                            {{ $locale === 'fr' ? 'Carte test rapide: 4242 4242 4242 4242, date future, CVC au choix.' : 'Quick test card: 4242 4242 4242 4242, future date, any CVC.' }}
-                        </p>
-                    @else
-                        <div class="mt-6 rounded-xl border border-cocoa/10 bg-linen p-4 dark:border-white/10 dark:bg-white/5">
+                    <div data-payment-panel="paypal" x-cloak x-show="paymentTab === 'paypal'">
+                        <div class="mt-4 rounded-xl border border-cocoa/10 bg-linen p-3 dark:border-white/10 dark:bg-white/5">
+                            <div data-paypal-placeholder class="flex min-h-12 items-center gap-3 text-sm font-semibold text-cocoa/60 dark:text-cream/60">
+                                <span class="h-4 w-4 animate-spin rounded-full border-2 border-orange-200 border-t-orange-500"></span>
+                                {{ $locale === 'fr' ? 'Préparation de PayPal…' : 'Preparing PayPal…' }}
+                            </div>
                             <div id="paypal-button-container" wire:ignore></div>
                             <div id="paypal-payment-message" class="mt-3 hidden rounded-lg bg-coral/10 px-3 py-2 text-sm font-semibold text-cocoa dark:text-cream"></div>
                         </div>
 
-                        <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <button type="button" class="btn-secondary px-5 py-3 text-sm" wire:click="retryPaypalPayment">
-                                {{ $locale === 'fr' ? 'Recharger PayPal' : 'Reload PayPal' }}
-                            </button>
-                        </div>
-                    @endif
+                        @if ($paymentError)
+                            <button type="button" class="btn-secondary mt-3 px-4 py-2 text-sm" wire:click="retryPaypalPayment">{{ $locale === 'fr' ? 'Réessayer' : 'Retry' }}</button>
+                        @endif
+                    </div>
                 </section>
 
-                <aside class="rounded-[1.5rem] border border-leaf/10 bg-white p-5 shadow-tropical dark:border-white/10 dark:bg-white/5 lg:sticky lg:top-32">
-                    <p class="section-kicker">{{ $locale === 'fr' ? 'Commande' : 'Order' }}</p>
-                    <h2 class="mt-2 text-2xl font-black text-forest dark:text-meadow">{{ $confirmedOrder['order_number'] ?? '' }}</h2>
-                    <div class="mt-4 space-y-2 text-sm text-cocoa/70 dark:text-cream/70">
-                        <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Statut' : 'Status' }}</span><strong class="text-cocoa dark:text-cream">{{ $confirmedOrder['payment_status'] ?? 'unpaid' }}</strong></div>
-                        <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Paiement' : 'Payment' }}</span><strong class="text-cocoa dark:text-cream">{{ $paymentProvider === 'paypal' ? 'PayPal' : 'Stripe' }}</strong></div>
+                <aside class="form-card p-4 lg:sticky lg:top-32">
+                    <h2 class="text-lg font-black text-forest dark:text-meadow">{{ $confirmedOrder['order_number'] ?? '' }}</h2>
+                    <div class="mt-3 space-y-2 text-sm text-cocoa/70 dark:text-cream/70">
                         <div class="flex items-center justify-between border-t border-leaf/10 pt-3 text-base dark:border-white/10">
                             <span class="font-black text-cocoa dark:text-cream">Total TTC</span>
                             <strong class="text-xl text-forest dark:text-meadow">{{ $confirmedOrder['formatted_total'] ?? '' }}</strong>
@@ -341,15 +298,13 @@
                 </aside>
             </div>
         @else
-            <div class="mx-auto mt-8 max-w-2xl rounded-[1.5rem] border border-leaf/10 bg-white p-8 text-center shadow-tropical dark:border-white/10 dark:bg-white/5">
-                <div class="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-sunshine text-sm font-black text-forest">OK</div>
-                <p class="section-kicker">{{ $locale === 'fr' ? 'Confirmation' : 'Confirmation' }}</p>
-                <h1 class="mt-3 text-4xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Commande validée.' : 'Order confirmed.' }}</h1>
+            <div class="form-card mx-auto mt-4 max-w-2xl p-5 text-center">
+                <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#f97316] text-xs font-bold text-white">OK</div>
+                <h1 class="text-3xl font-black text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Commande validée.' : 'Order confirmed.' }}</h1>
                 @if (! empty($confirmedOrder['order_number']))
                     <p class="mx-auto mt-4 w-fit rounded-full bg-mint px-4 py-2 text-sm font-black text-forest dark:bg-white/10 dark:text-meadow">{{ $confirmedOrder['order_number'] }}</p>
                 @endif
-                <p class="mx-auto mt-4 max-w-md text-sm leading-6 text-cocoa/65 dark:text-cream/65">{{ $locale === 'fr' ? 'Le mode de livraison et le point de retrait sont conservés dans la commande.' : 'The delivery mode and pickup point are saved in the order.' }}</p>
-                <div class="mt-7 grid gap-2 sm:grid-cols-2">
+                <div class="mt-5 grid gap-2 sm:grid-cols-2">
                     <a href="{{ route('home.localized', ['locale' => $locale]) }}#products" class="btn-primary w-full" wire:navigate>{{ $locale === 'fr' ? 'Retour à la boutique' : 'Back to shop' }}</a>
                     <a href="{{ route('account.show', ['locale' => $locale]) }}" class="btn-secondary w-full" wire:navigate>{{ $locale === 'fr' ? 'Voir mon compte' : 'View my account' }}</a>
                 </div>
@@ -460,7 +415,13 @@
             (() => {
             const checkoutStorageKey = @js(\Illuminate\Support\Str::slug(config('shop.name'), '_').'_cart_token');
             const checkoutStoredToken = localStorage.getItem(checkoutStorageKey);
-            $wire.restoreFromBrowser(checkoutStoredToken);
+            const checkoutAlreadyCompleted = @js($orderConfirmed);
+            if (checkoutAlreadyCompleted) {
+                localStorage.removeItem(checkoutStorageKey);
+            } else {
+                $wire.restoreFromBrowser(checkoutStoredToken);
+            }
+            const checkoutRoot = $wire.$el;
             const checkoutPayload = (event) => Array.isArray(event) ? (event[0] || {}) : (event || {});
             $wire.on('cart-token-stored', (event) => {
                 const detail = checkoutPayload(event);
@@ -472,11 +433,27 @@
                 localStorage.removeItem(checkoutStorageKey);
             });
             $wire.on('checkout-confirmed', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-            const stripeState = { stripe: null, elements: null, clientSecret: null };
-            const paypalState = { sdkUrl: null, orderId: null };
+            $wire.on('paypal-express-redirect', (event) => {
+                const detail = checkoutPayload(event);
+                if (!detail.url) return;
+                const destination = new URL(detail.url, window.location.origin);
+                if (destination.protocol === 'https:' && (destination.hostname === 'paypal.com' || destination.hostname.endsWith('.paypal.com'))) {
+                    window.location.assign(destination.href);
+                }
+            });
+            const stripeState = { stripe: null, elements: null, paymentElement: null, clientSecret: null, payload: null, sdkPromise: null };
+            const paypalState = { sdkUrl: null, sdkPromise: null, orderId: null, payload: null, buttons: null };
+            let paymentPreloadStarted = false;
             const stripeMessage = () => document.getElementById('stripe-payment-message');
             const stripePayButton = () => document.getElementById('stripe-pay-button');
             const paypalMessage = () => document.getElementById('paypal-payment-message');
+            const paymentPanelVisible = (provider) => {
+                const panel = document.querySelector(`[data-payment-panel="${provider}"]`);
+                return panel && getComputedStyle(panel).display !== 'none';
+            };
+            const setPaymentPlaceholder = (provider, visible) => {
+                document.querySelector(`[data-${provider}-placeholder]`)?.classList.toggle('hidden', !visible);
+            };
 
             const setStripeLoading = (loading) => {
                 const button = stripePayButton();
@@ -500,24 +477,41 @@
                 element.classList.toggle('hidden', !message);
             };
 
-            const loadStripeJs = () => new Promise((resolve, reject) => {
+            const loadStripeJs = () => {
                 if (window.Stripe) {
-                    resolve();
-                    return;
+                    return Promise.resolve();
                 }
-                const existing = document.querySelector('script[src="https://js.stripe.com/v3/"]');
-                if (existing) {
-                    existing.addEventListener('load', resolve, { once: true });
-                    existing.addEventListener('error', reject, { once: true });
-                    return;
-                }
-                const script = document.createElement('script');
-                script.src = 'https://js.stripe.com/v3/';
-                script.async = true;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
+                if (stripeState.sdkPromise) return stripeState.sdkPromise;
+
+                stripeState.sdkPromise = new Promise((resolve, reject) => {
+                    const timer = window.setTimeout(() => {
+                        stripeState.sdkPromise = null;
+                        document.querySelector('script[src="https://js.stripe.com/v3/"]')?.remove();
+                        reject(new Error(@js($locale === 'fr' ? 'Le chargement de Stripe a expiré.' : 'Stripe loading timed out.')));
+                    }, 12000);
+                    const loaded = () => { window.clearTimeout(timer); resolve(); };
+                    const failed = (error) => {
+                        window.clearTimeout(timer);
+                        stripeState.sdkPromise = null;
+                        document.querySelector('script[src="https://js.stripe.com/v3/"]')?.remove();
+                        reject(error instanceof Error ? error : new Error('Stripe SDK failed to load.'));
+                    };
+                    const existing = document.querySelector('script[src="https://js.stripe.com/v3/"]');
+                    if (existing) {
+                        existing.addEventListener('load', loaded, { once: true });
+                        existing.addEventListener('error', failed, { once: true });
+                        return;
+                    }
+                    const script = document.createElement('script');
+                    script.src = 'https://js.stripe.com/v3/';
+                    script.async = true;
+                    script.onload = loaded;
+                    script.onerror = failed;
+                    document.head.appendChild(script);
+                });
+
+                return stripeState.sdkPromise;
+            };
 
             const mountStripePayment = async (payment) => {
                 try {
@@ -528,6 +522,11 @@
                     }
                     const container = document.getElementById('stripe-payment-element');
                     if (!container) return;
+                    if (stripeState.clientSecret === payment.client_secret && stripeState.paymentElement) {
+                        setPaymentPlaceholder('stripe', false);
+                        return;
+                    }
+                    stripeState.paymentElement?.destroy?.();
                     container.innerHTML = '';
                     stripeState.clientSecret = payment.client_secret;
                     stripeState.stripe = window.Stripe(payment.publishable_key);
@@ -535,11 +534,14 @@
                         clientSecret: payment.client_secret,
                         appearance: {
                             theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
-                            variables: { borderRadius: '8px', colorPrimary: '#48ad4d' },
+                            variables: { borderRadius: '12px', colorPrimary: '#f97316' },
                         },
                     });
-                    stripeState.elements.create('payment', { layout: 'tabs' }).mount(container);
+                    stripeState.paymentElement = stripeState.elements.create('payment', { layout: 'tabs' });
+                    stripeState.paymentElement.mount(container);
+                    setPaymentPlaceholder('stripe', false);
                 } catch (error) {
+                    setPaymentPlaceholder('stripe', false);
                     showStripeMessage(error.message || @js($locale === 'fr' ? 'Stripe ne peut pas etre charge.' : 'Stripe could not be loaded.'));
                     $wire.failStripePayment(error.message || null);
                 }
@@ -547,37 +549,49 @@
 
             $wire.on('stripe-payment-ready', (event) => {
                 const detail = checkoutPayload(event);
-                mountStripePayment(detail.payment || detail);
+                stripeState.payload = detail.payment || detail;
+                if (paymentPanelVisible('stripe')) mountStripePayment(stripeState.payload);
             });
 
-            const loadPaypalSdk = (payment) => new Promise((resolve, reject) => {
+            const loadPaypalSdk = (payment) => {
                 if (!payment?.client_id) {
-                    reject(new Error(@js($locale === 'fr' ? 'Configuration PayPal incomplete.' : 'PayPal configuration is incomplete.')));
-                    return;
+                    return Promise.reject(new Error(@js($locale === 'fr' ? 'Configuration PayPal incomplete.' : 'PayPal configuration is incomplete.')));
                 }
 
                 const currency = (payment.currency || 'EUR').toUpperCase();
                 const sdkUrl = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(payment.client_id)}&currency=${encodeURIComponent(currency)}&components=buttons`;
 
                 if (window.paypal && paypalState.sdkUrl === sdkUrl) {
-                    resolve();
-                    return;
+                    return Promise.resolve();
                 }
+                if (paypalState.sdkPromise && paypalState.sdkUrl === sdkUrl) return paypalState.sdkPromise;
 
                 document.querySelectorAll('script[data-paypal-sdk="checkout"]').forEach((script) => script.remove());
                 delete window.paypal;
 
-                const script = document.createElement('script');
-                script.src = sdkUrl;
-                script.async = true;
-                script.dataset.paypalSdk = 'checkout';
-                script.onload = () => {
-                    paypalState.sdkUrl = sdkUrl;
-                    resolve();
-                };
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
+                paypalState.sdkUrl = sdkUrl;
+                paypalState.sdkPromise = new Promise((resolve, reject) => {
+                    const timer = window.setTimeout(() => {
+                        paypalState.sdkPromise = null;
+                        document.querySelector('script[data-paypal-sdk="checkout"]')?.remove();
+                        reject(new Error(@js($locale === 'fr' ? 'Le chargement de PayPal a expiré.' : 'PayPal loading timed out.')));
+                    }, 12000);
+                    const script = document.createElement('script');
+                    script.src = sdkUrl;
+                    script.async = true;
+                    script.dataset.paypalSdk = 'checkout';
+                    script.onload = () => { window.clearTimeout(timer); resolve(); };
+                    script.onerror = (error) => {
+                        window.clearTimeout(timer);
+                        paypalState.sdkPromise = null;
+                        script.remove();
+                        reject(error instanceof Error ? error : new Error('PayPal SDK failed to load.'));
+                    };
+                    document.head.appendChild(script);
+                });
+
+                return paypalState.sdkPromise;
+            };
 
             const mountPaypalPayment = async (payment) => {
                 try {
@@ -586,11 +600,15 @@
                     await loadPaypalSdk(payment);
                     const container = document.getElementById('paypal-button-container');
                     if (!container) return;
+                    if (paypalState.buttons && paypalState.orderId === payment?.external_id && container.childElementCount > 0) {
+                        setPaymentPlaceholder('paypal', false);
+                        return;
+                    }
                     container.innerHTML = '';
                     if (!paypalState.orderId) {
                         throw new Error(@js($locale === 'fr' ? 'Ordre PayPal introuvable.' : 'PayPal order is missing.'));
                     }
-                    window.paypal.Buttons({
+                    paypalState.buttons = window.paypal.Buttons({
                         style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
                         createOrder: () => paypalState.orderId,
                         onApprove: (data) => {
@@ -607,8 +625,11 @@
                             showPaypalMessage(message);
                             $wire.failPaypalPayment(message);
                         },
-                    }).render(container);
+                    });
+                    await paypalState.buttons.render(container);
+                    setPaymentPlaceholder('paypal', false);
                 } catch (error) {
+                    setPaymentPlaceholder('paypal', false);
                     const message = error.message || @js($locale === 'fr' ? 'PayPal ne peut pas etre charge.' : 'PayPal could not be loaded.');
                     showPaypalMessage(message);
                     $wire.failPaypalPayment(message);
@@ -617,10 +638,46 @@
 
             $wire.on('paypal-payment-ready', (event) => {
                 const detail = checkoutPayload(event);
-                mountPaypalPayment(detail.payment || detail);
+                paypalState.payload = detail.payment || detail;
+                loadPaypalSdk(paypalState.payload).catch(() => {});
+                if (paymentPanelVisible('paypal')) mountPaypalPayment(paypalState.payload);
             });
 
-            document.addEventListener('click', async (event) => {
+            $wire.on('payment-step-ready', () => {
+                if (paymentPreloadStarted) return;
+                paymentPreloadStarted = true;
+                loadStripeJs().catch(() => {});
+                $wire.preloadPaymentMethods();
+            });
+
+            $wire.on('payment-method-settled', (event) => {
+                const detail = checkoutPayload(event);
+                if (detail.ok || !['stripe', 'paypal'].includes(detail.provider)) return;
+                setPaymentPlaceholder(detail.provider, false);
+                const message = detail.provider === 'stripe'
+                    ? @js($locale === 'fr' ? 'Stripe n’a pas pu être préparé. Cliquez sur Carte bancaire pour réessayer.' : 'Stripe could not be prepared. Click Payment card to retry.')
+                    : @js($locale === 'fr' ? 'PayPal n’a pas pu être préparé. Cliquez sur PayPal pour réessayer.' : 'PayPal could not be prepared. Click PayPal to retry.');
+                detail.provider === 'stripe' ? showStripeMessage(message) : showPaypalMessage(message);
+            });
+
+            checkoutRoot.addEventListener('checkout-payment-provider', (event) => {
+                const provider = event.detail?.provider;
+                if (!['stripe', 'paypal'].includes(provider)) return;
+                $wire.$set('paymentProvider', provider, false);
+
+                requestAnimationFrame(() => {
+                    if (provider === 'stripe' && stripeState.payload) {
+                        mountStripePayment(stripeState.payload);
+                    } else if (provider === 'paypal' && paypalState.payload) {
+                        mountPaypalPayment(paypalState.payload);
+                    } else {
+                        setPaymentPlaceholder(provider, true);
+                        $wire.selectPaymentProvider(provider);
+                    }
+                });
+            });
+
+            checkoutRoot.addEventListener('click', async (event) => {
                 if (!event.target.closest('#stripe-pay-button')) return;
                 event.preventDefault();
                 showStripeMessage('');

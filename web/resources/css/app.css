@@ -223,6 +223,66 @@ img {
     @apply rounded-[1.5rem] border border-leaf/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-7;
 }
 
+.checkout-compact .form-card:not(.p-0) {
+    padding: 1rem;
+    border-radius: 18px;
+}
+
+.checkout-compact nav[aria-label="Checkout progress"] {
+    margin-bottom: 1rem;
+}
+
+.checkout-compact nav[aria-label="Checkout progress"] ol {
+    border-radius: 18px;
+    padding: .35rem;
+}
+
+.checkout-compact nav[aria-label="Checkout progress"] a,
+.checkout-compact nav[aria-label="Checkout progress"] li > span {
+    min-height: 44px;
+    padding-block: .3rem;
+}
+
+.checkout-onepage-form {
+    border: 1px solid var(--store-border);
+    border-radius: 24px;
+    background: var(--store-card);
+    box-shadow: var(--store-card-shadow);
+}
+
+.checkout-onepage-form > .form-card {
+    border: 0;
+    border-top: 1px solid var(--store-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 1.5rem 1.75rem;
+}
+
+.checkout-onepage-form > .form-card:last-child {
+    padding-bottom: 1.75rem;
+}
+
+.checkout-express {
+    background: var(--store-card);
+}
+
+.checkout-onepage-form input[type="radio"] {
+    accent-color: var(--store-orange);
+}
+
+@media (min-width: 1024px) {
+    .checkout-onepage-grid > aside {
+        top: 7rem;
+    }
+}
+
+@media (max-width: 639px) {
+    .checkout-onepage-form > .form-card {
+        padding: 1.25rem 1rem;
+    }
+}
+
 .utility-section {
     @apply rounded-[1.5rem] border border-leaf/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5;
 }

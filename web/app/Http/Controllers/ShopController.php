@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\ShopApiClient;
 use App\Services\AccountApiClient;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
@@ -151,8 +152,50 @@ class ShopController extends Controller
             'user' => $user,
             'addresses' => $addresses,
             'countries' => $accountApi->supportedCountries($locale)['data'],
+            'completedOrder' => $request->session()->get('paypal_checkout_completed'),
             'activeMenu' => 'products',
         ]);
+    }
+
+    public function paypalReturn(Request $request, AccountApiClient $accountApi): RedirectResponse
+    {
+        $context = $request->session()->pull('paypal_express_checkout', []);
+        $locale = in_array($context['locale'] ?? null, ['fr', 'en'], true) ? $context['locale'] : 'fr';
+        $checkoutToken = (string) ($context['checkout_token'] ?? '');
+        $paypalOrderId = (string) ($context['paypal_order_id'] ?? '');
+        $returnedOrderId = (string) $request->query('token', '');
+
+        if ($checkoutToken === '' || $paypalOrderId === '' || ! hash_equals($paypalOrderId, $returnedOrderId)) {
+            return redirect()->route('checkout.show', ['locale' => $locale])
+                ->withErrors(['payment' => $locale === 'fr' ? 'Le retour PayPal est invalide ou a expiré.' : 'The PayPal return is invalid or expired.']);
+        }
+
+        $finalized = $accountApi->finalizePaypalExpressOrder([
+            'checkout_token' => $checkoutToken,
+            'paypal_order_id' => $paypalOrderId,
+        ]);
+
+        if (! $finalized['ok']) {
+            return redirect()->route('checkout.show', ['locale' => $locale])
+                ->withErrors(['payment' => $finalized['message'] ?: ($locale === 'fr' ? 'PayPal n’a pas confirmé le paiement.' : 'PayPal did not confirm the payment.')]);
+        }
+
+        $request->session()->regenerate();
+        $request->session()->put('customer_api_token', data_get($finalized, 'data.token'));
+        $request->session()->put('customer_user', data_get($finalized, 'data.user', []));
+        $order = data_get($finalized, 'data.order', []);
+
+        return redirect()->route('checkout.show', ['locale' => $locale])
+            ->with('paypal_checkout_completed', $order);
+    }
+
+    public function paypalCancel(Request $request): RedirectResponse
+    {
+        $context = $request->session()->pull('paypal_express_checkout', []);
+        $locale = in_array($context['locale'] ?? null, ['fr', 'en'], true) ? $context['locale'] : 'fr';
+
+        return redirect()->route('checkout.show', ['locale' => $locale])
+            ->with('payment_notice', $locale === 'fr' ? 'Paiement PayPal annulé.' : 'PayPal payment cancelled.');
     }
 
     public function show(ShopApiClient $api, string $locale, string $slug): View

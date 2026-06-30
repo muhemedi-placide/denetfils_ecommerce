@@ -73,6 +73,27 @@ class CheckoutQuoteService
         return $this->quote($cart, $country, $locale, [], true, 'visitor_context');
     }
 
+    public function standardEstimate(string $cartToken, string $countryCode, string $locale = 'fr'): array
+    {
+        $country = SupportedCountry::query()
+            ->where('code', strtoupper($countryCode))
+            ->where('is_active', true)
+            ->first();
+
+        if (! $country) {
+            throw ValidationException::withMessages(['country_code' => 'The selected country is not supported.']);
+        }
+
+        return $this->quote(
+            $this->cart($cartToken),
+            $country,
+            $this->locale($locale),
+            ['delivery_method' => 'standard'],
+            false,
+            'paypal_wallet',
+        );
+    }
+
     public function cart(string $cartToken): Cart
     {
         $cart = Cart::query()

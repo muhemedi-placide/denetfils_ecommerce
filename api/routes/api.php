@@ -54,6 +54,8 @@ Route::prefix('v1')->group(function () {
     Route::post('/shipping/tracking', [ShippingController::class, 'tracking'])->middleware('throttle:shipment-tracking');
     Route::post('/payments/stripe/webhook', [PaymentController::class, 'stripeWebhook']);
     Route::post('/payments/paypal/webhook', [PaymentController::class, 'paypalWebhook']);
+    Route::post('/payments/paypal/express/orders', [PaymentController::class, 'createPaypalExpressOrder'])->middleware('throttle:20,1');
+    Route::post('/payments/paypal/express/finalize', [PaymentController::class, 'finalizePaypalExpressOrder'])->middleware('throttle:20,1');
 
     Route::post('/carts', [CartController::class, 'store']);
     Route::get('/carts/{cartToken}', [CartController::class, 'show']);

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -100,6 +101,44 @@ class AccountApiClient
         return $this->send('post', "orders/{$order}/payments/paypal/orders", [], $token);
     }
 
+    public function createPaypalExpressOrder(array $payload): array
+    {
+        return $this->send('post', 'payments/paypal/express/orders', $payload);
+    }
+
+    public function finalizePaypalExpressOrder(array $payload): array
+    {
+        return $this->send('post', 'payments/paypal/express/finalize', $payload);
+    }
+
+    public function preloadPaymentMethods(string $token, int|string $order): array
+    {
+        try {
+            $baseUrl = $this->baseUrl();
+            $responses = Http::pool(fn (Pool $pool) => [
+                $pool->as('stripe')
+                    ->withToken($token)
+                    ->acceptJson()
+                    ->timeout(8)
+                    ->post("{$baseUrl}/orders/{$order}/payments/stripe/payment-intent"),
+                $pool->as('paypal')
+                    ->withToken($token)
+                    ->acceptJson()
+                    ->timeout(8)
+                    ->post("{$baseUrl}/orders/{$order}/payments/paypal/orders"),
+            ]);
+
+            return [
+                'stripe' => $this->responseResult($responses['stripe'] ?? null),
+                'paypal' => $this->responseResult($responses['paypal'] ?? null),
+            ];
+        } catch (\Throwable) {
+            $failure = $this->connectionFailure();
+
+            return ['stripe' => $failure, 'paypal' => $failure];
+        }
+    }
+
     public function capturePaypalOrder(string $token, int|string $order, string $paypalOrderId): array
     {
         return $this->send('post', "orders/{$order}/payments/paypal/orders/{$paypalOrderId}/capture", [], $token);
@@ -184,22 +223,36 @@ class AccountApiClient
                 ? $request->{$method}($uri, $payload)
                 : $request->{$method}($uri, $payload);
 
-            return [
-                'ok' => $response->successful(),
-                'status' => $response->status(),
-                'data' => $response->json('data', []),
-                'message' => $response->json('message'),
-                'errors' => $response->json('errors', []),
-            ];
+            return $this->responseResult($response);
         } catch (ConnectionException) {
-            return [
-                'ok' => false,
-                'status' => 0,
-                'data' => [],
-                'message' => __('home.account.api_error'),
-                'errors' => [],
-            ];
+            return $this->connectionFailure();
         }
+    }
+
+    private function responseResult(mixed $response): array
+    {
+        if (! $response instanceof Response) {
+            return $this->connectionFailure();
+        }
+
+        return [
+            'ok' => $response->successful(),
+            'status' => $response->status(),
+            'data' => $response->json('data', []),
+            'message' => $response->json('message'),
+            'errors' => $response->json('errors', []),
+        ];
+    }
+
+    private function connectionFailure(): array
+    {
+        return [
+            'ok' => false,
+            'status' => 0,
+            'data' => [],
+            'message' => __('home.account.api_error'),
+            'errors' => [],
+        ];
     }
 
     private function baseUrl(): string

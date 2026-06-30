@@ -438,6 +438,8 @@ Route::post('/{locale}/mon-compte/adresses', [CustomerAccountController::class, 
 Route::patch('/{locale}/mon-compte/adresses/{address}', [CustomerAccountController::class, 'updateAddress'])->whereIn('locale', ['fr', 'en'])->name('account.addresses.update');
 Route::delete('/{locale}/mon-compte/adresses/{address}', [CustomerAccountController::class, 'deleteAddress'])->whereIn('locale', ['fr', 'en'])->name('account.addresses.delete');
 Route::get('/{locale}/panier', [ShopController::class, 'cart'])->whereIn('locale', ['fr', 'en'])->name('cart.show');
+Route::get('/checkout/paypal/return', [ShopController::class, 'paypalReturn'])->name('checkout.paypal.return');
+Route::get('/checkout/paypal/cancel', [ShopController::class, 'paypalCancel'])->name('checkout.paypal.cancel');
 Route::get('/{locale}/commande', [ShopController::class, 'checkout'])->whereIn('locale', ['fr', 'en'])->name('checkout.show');
 Route::get('/{locale}/products/{slug}', [ShopController::class, 'show'])->whereIn('locale', ['fr', 'en'])->name('products.show');
 Route::get('/{locale}', [ShopController::class, 'home'])->whereIn('locale', ['fr', 'en'])->name('home.localized');

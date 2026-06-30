@@ -1,6 +1,6 @@
 <div>
-    <section class="soft-grid px-4 py-10 dark:bg-ink sm:px-8 lg:py-14">
-        <div class="mx-auto max-w-7xl">
+    <section class="store-page py-10 lg:py-14">
+        <div class="store-container">
             @include('partials.checkout-progress', ['currentLocale' => $locale, 'currentStep' => 'cart'])
             <nav class="mobile-scrollbarless flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm font-semibold text-cocoa/60 dark:text-cream/60" aria-label="Breadcrumb"><a href="{{ route('home.localized', ['locale' => $locale]) }}" class="transition hover:text-forest" wire:navigate>{{ __('home.nav.home') }}</a><span>/</span><span class="text-forest">{{ __('home.cart.title') }}</span></nav>
             <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">

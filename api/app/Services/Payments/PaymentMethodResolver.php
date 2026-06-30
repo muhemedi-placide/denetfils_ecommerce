@@ -39,6 +39,14 @@ class PaymentMethodResolver
         return $method->credentials ?? [];
     }
 
+    public function activeForContext(string $provider, string $currency, ?string $countryCode = null): PaymentMethod
+    {
+        return $this->activeForOrder(Order::make([
+            'currency' => strtoupper($currency),
+            'customer_country_code' => $countryCode ? strtoupper($countryCode) : null,
+        ]), $provider);
+    }
+
     private function supportsOrder(PaymentMethod $method, Order $order): bool
     {
         $currencies = array_map('strtoupper', $method->currencies ?? []);

@@ -13,6 +13,7 @@ use Database\Seeders\EcommerceSeeder;
 use Database\Seeders\SupportedCountrySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -48,6 +49,24 @@ class PaymentsApiTest extends TestCase
             'https://api-m.sandbox.paypal.com/v2/checkout/orders/PAYPAL-ORDER-1/capture' => Http::response([
                 'id' => 'PAYPAL-ORDER-1',
                 'status' => 'COMPLETED',
+                'payment_source' => [
+                    'paypal' => [
+                        'email_address' => 'paypal-buyer@example.test',
+                        'name' => ['given_name' => 'Placide', 'surname' => 'Salumu'],
+                    ],
+                ],
+                'purchase_units' => [[
+                    'shipping' => [
+                        'name' => ['full_name' => 'Placide Salumu'],
+                        'address' => [
+                            'address_line_1' => '257 Avenue du Burundi',
+                            'admin_area_2' => 'Bujumbura',
+                            'admin_area_1' => 'Bujumbura Mairie',
+                            'postal_code' => '257',
+                            'country_code' => 'BI',
+                        ],
+                    ],
+                ]],
             ]),
         ]);
 
@@ -76,12 +95,113 @@ class PaymentsApiTest extends TestCase
 
         $this->postJson("/api/v1/orders/{$order->id}/payments/paypal/orders/PAYPAL-ORDER-1/capture")
             ->assertOk()
-            ->assertJsonPath('data.status', 'captured');
+            ->assertJsonPath('data.status', 'captured')
+            ->assertJsonPath('data.payer.email', 'paypal-buyer@example.test')
+            ->assertJsonPath('data.shipping.city', 'Bujumbura');
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
             'status' => 'confirmed',
             'payment_status' => 'paid',
+            'customer_email' => 'paypal-buyer@example.test',
+            'customer_country_code' => 'BI',
+        ]);
+
+        $this->assertDatabaseHas('order_addresses', [
+            'order_id' => $order->id,
+            'type' => 'shipping',
+            'recipient_name' => 'Placide Salumu',
+            'street_line_1' => '257 Avenue du Burundi',
+            'city' => 'Bujumbura',
+            'country_code' => 'BI',
+        ]);
+    }
+
+    public function test_guest_paypal_express_uses_wallet_identity_without_login_modal(): void
+    {
+        Notification::fake();
+        Http::fake([
+            'https://api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response(['access_token' => 'paypal-access-token']),
+            'https://api-m.sandbox.paypal.com/v2/checkout/orders' => Http::response([
+                'id' => 'PAYPAL-EXPRESS-1',
+                'status' => 'PAYER_ACTION_REQUIRED',
+                'links' => [[
+                    'rel' => 'payer-action',
+                    'href' => 'https://www.sandbox.paypal.com/checkoutnow?token=PAYPAL-EXPRESS-1',
+                ]],
+            ]),
+        ]);
+        $this->activePayPalMethod();
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+        $cartToken = $this->postJson('/api/v1/carts')->assertCreated()->json('data.cart_token');
+        $this->postJson("/api/v1/carts/{$cartToken}/items", [
+            'product_id' => $product->id,
+            'quantity' => 1,
+        ])->assertCreated();
+
+        $express = $this->postJson('/api/v1/payments/paypal/express/orders', [
+            'cart_token' => $cartToken,
+            'country_code' => 'FR',
+            'locale' => 'fr',
+            'return_url' => 'https://shop.example.test/checkout/paypal/return',
+            'cancel_url' => 'https://shop.example.test/checkout/paypal/cancel',
+        ])->assertOk()->json('data');
+
+        Http::fake([
+            'https://api-m.sandbox.paypal.com/v2/checkout/orders/PAYPAL-EXPRESS-1' => Http::response([
+                'id' => 'PAYPAL-EXPRESS-1',
+                'status' => 'APPROVED',
+                'payment_source' => ['paypal' => [
+                    'email_address' => 'express-buyer@example.test',
+                    'name' => ['given_name' => 'Aline', 'surname' => 'PayPal'],
+                ]],
+                'purchase_units' => [[
+                    'custom_id' => hash('sha256', $express['checkout_token']),
+                    'shipping' => [
+                        'name' => ['full_name' => 'Aline PayPal'],
+                        'address' => [
+                            'address_line_1' => '18 Rue Express',
+                            'admin_area_2' => 'Paris',
+                            'postal_code' => '75001',
+                            'country_code' => 'FR',
+                        ],
+                    ],
+                ]],
+            ]),
+            'https://api-m.sandbox.paypal.com/v2/checkout/orders/PAYPAL-EXPRESS-1/capture' => Http::response([
+                'id' => 'PAYPAL-EXPRESS-1',
+                'status' => 'COMPLETED',
+                'payment_source' => ['paypal' => [
+                    'email_address' => 'express-buyer@example.test',
+                    'name' => ['given_name' => 'Aline', 'surname' => 'PayPal'],
+                ]],
+                'purchase_units' => [[
+                    'shipping' => [
+                        'name' => ['full_name' => 'Aline PayPal'],
+                        'address' => [
+                            'address_line_1' => '18 Rue Express',
+                            'admin_area_2' => 'Paris',
+                            'postal_code' => '75001',
+                            'country_code' => 'FR',
+                        ],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->postJson('/api/v1/payments/paypal/express/finalize', [
+            'checkout_token' => $express['checkout_token'],
+            'paypal_order_id' => 'PAYPAL-EXPRESS-1',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.user.email', 'express-buyer@example.test')
+            ->assertJsonPath('data.order.payment_status', 'paid')
+            ->assertJsonPath('data.temporary_password_created', true);
+
+        $this->assertDatabaseHas('user_addresses', [
+            'recipient_name' => 'Aline PayPal',
+            'street_line_1' => '18 Rue Express',
+            'postal_code' => '75001',
         ]);
     }
 
@@ -123,9 +243,12 @@ class PaymentsApiTest extends TestCase
 
             $payload = $request->data();
 
-            return ! isset($payload['application_context']['return_url'])
-                && ! isset($payload['application_context']['cancel_url'])
-                && ($payload['application_context']['user_action'] ?? null) === 'PAY_NOW';
+            $context = data_get($payload, 'payment_source.paypal.experience_context', []);
+
+            return ! isset($context['return_url'])
+                && ! isset($context['cancel_url'])
+                && ($context['user_action'] ?? null) === 'PAY_NOW'
+                && ($context['shipping_preference'] ?? null) === 'GET_FROM_FILE';
         });
     }
 

@@ -20,7 +20,8 @@ class CheckoutFrontendTest extends TestCase
             ->assertOk()
             ->assertDontSee('Vérifier avant paiement.')
             ->assertDontSee('Le panier vient')
-            ->assertSee('Votre panier reste ici. Identifiez-vous sans quitter cette page.')
+            ->assertSee('Contact')
+            ->assertDontSee('Votre panier reste ici. Identifiez-vous sans quitter cette page.')
             ->assertSee("openAuthModal('login')", false)
             ->assertSee('Connectez-vous pour sélectionner une adresse.')
             ->assertSee('wire:submit.prevent="confirm"', false)
@@ -40,10 +41,10 @@ class CheckoutFrontendTest extends TestCase
             ->assertSee('France')
             ->assertSee('Créer la commande')
             ->assertSee('Checkout progress', false)
-            ->assertSee('Transporteur')
+            ->assertDontSee('Transporteur')
             ->assertDontSee('Chronopost domicile')
             ->assertDontSee('Locker 24/7 Bricomarché Chalons')
-            ->assertSee('TVA')
+            ->assertDontSee('TVA incluse')
             ->assertSee('wire:model.live="selectedAddressId"', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/me')
@@ -65,7 +66,8 @@ class CheckoutFrontendTest extends TestCase
             ->get('/en/commande')
             ->assertOk()
             ->assertSessionMissing('customer_api_token')
-            ->assertSee('Your cart stays here. Identify yourself without leaving this page.');
+            ->assertSee('Contact')
+            ->assertDontSee('Your cart stays here. Identify yourself without leaving this page.');
     }
 
     public function test_checkout_restore_fetches_real_quote(): void
@@ -108,7 +110,7 @@ class CheckoutFrontendTest extends TestCase
             && ! isset($request['city']));
     }
 
-    public function test_checkout_confirmation_creates_order_and_prepares_stripe_payment(): void
+    public function test_checkout_confirmation_opens_payment_step_before_background_preload(): void
     {
         Http::fake([
             '*/orders' => Http::response(['data' => $this->order()], 201),
@@ -133,9 +135,11 @@ class CheckoutFrontendTest extends TestCase
             ->call('confirm')
             ->assertSet('orderConfirmed', false)
             ->assertSet('confirmedOrder.order_number', 'DF-20260616-ABC123')
-            ->assertSet('stripePaymentIntent.client_secret', 'pi_test_123_secret_test')
+            ->assertSet('paymentProvider', 'stripe')
+            ->assertSet('stripePaymentIntent', [])
             ->assertSet('cartToken', 'cart-token-123')
-            ->assertDispatched('stripe-payment-ready');
+            ->assertNotDispatched('stripe-payment-ready')
+            ->assertDispatched('payment-step-ready');
 
         Http::assertSent(fn ($request) => preg_match('#/orders$#', (string) $request->url())
             && $request->method() === 'POST'
@@ -148,9 +152,89 @@ class CheckoutFrontendTest extends TestCase
             && (int) $request['pickup_point_id'] === 101
             && $request['metadata']['pickup_point']['code'] === 'mr-paris-11');
 
-        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/orders/22/payments/stripe/payment-intent')
-            && $request->method() === 'POST'
-            && $request->hasHeader('Authorization', 'Bearer checkout-token'));
+        Http::assertNotSent(fn ($request) => str_contains((string) $request->url(), '/orders/22/payments/'));
+    }
+
+    public function test_payment_methods_are_preloaded_in_one_livewire_action(): void
+    {
+        Http::fake([
+            '*/orders/22/payments/stripe/payment-intent' => Http::response(['data' => $this->stripePaymentIntent()]),
+            '*/orders/22/payments/paypal/orders' => Http::response(['data' => $this->paypalOrder()]),
+        ]);
+
+        $this->withSession(['customer_api_token' => 'checkout-token']);
+
+        Livewire::test(CheckoutReview::class, [
+            'locale' => 'fr',
+            'user' => $this->user(),
+            'addresses' => [$this->address()],
+            'countries' => $this->countries(),
+        ])
+            ->set('confirmedOrder', $this->order())
+            ->call('preloadPaymentMethods')
+            ->assertSet('stripePaymentIntent.external_id', 'pi_test_123')
+            ->assertSet('paypalOrder.external_id', 'PAYPAL-ORDER-1')
+            ->assertSet('paymentProcessing', false)
+            ->assertDispatched('stripe-payment-ready')
+            ->assertDispatched('paypal-payment-ready');
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_paypal_express_checkout_redirects_guest_to_paypal_without_login_modal(): void
+    {
+        Http::fake([
+            '*/payments/paypal/express/orders' => Http::response(['data' => [
+                'checkout_token' => str_repeat('x', 64),
+                'external_id' => 'PAYPAL-ORDER-1',
+                'approval_url' => 'https://www.sandbox.paypal.com/checkoutnow?token=PAYPAL-ORDER-1',
+            ]]),
+        ]);
+
+        $this->withSession(['customer_api_token' => 'checkout-token']);
+
+        Livewire::test(CheckoutReview::class, [
+            'locale' => 'fr',
+            'user' => $this->user(),
+            'addresses' => [$this->address()],
+            'countries' => $this->countries(),
+        ])
+            ->set('cartToken', 'cart-token-123')
+            ->set('cart', $this->cart([$this->cartItem()]))
+            ->set('shippingMethods', $this->shippingMethods())
+            ->set('selectedShippingMethodId', 1)
+            ->set('carrier', 'mondial_relay_point_relais')
+            ->set('pickupPointOptions', [$this->pickupPoint()])
+            ->set('selectedPickupPoint', 'mr-paris-11')
+            ->call('startPaypalExpressCheckout')
+            ->assertDispatched('paypal-express-redirect');
+
+        $this->assertSame(str_repeat('x', 64), session('paypal_express_checkout.checkout_token'));
+        $this->assertSame('PAYPAL-ORDER-1', session('paypal_express_checkout.paypal_order_id'));
+    }
+
+    public function test_paypal_return_captures_express_payment(): void
+    {
+        Http::fake([
+            '*/payments/paypal/express/finalize' => Http::response(['data' => [
+                'token' => 'paypal-customer-token',
+                'user' => $this->user(),
+                'order' => $this->order(['payment_status' => 'paid']),
+            ]]),
+        ]);
+
+        $this->withSession([
+            'paypal_express_checkout' => [
+                'locale' => 'fr',
+                'checkout_token' => str_repeat('x', 64),
+                'paypal_order_id' => 'PAYPAL-ORDER-1',
+                'cart_token' => 'cart-token-123',
+            ],
+        ])->get('/checkout/paypal/return?token=PAYPAL-ORDER-1&PayerID=PAYER-1')
+            ->assertRedirect(route('checkout.show', ['locale' => 'fr']))
+            ->assertSessionHas('paypal_checkout_completed.payment_status', 'paid')
+            ->assertSessionHas('customer_api_token', 'paypal-customer-token')
+            ->assertSessionMissing('paypal_express_checkout');
     }
 
     public function test_successful_stripe_payment_clears_cart_and_confirms_checkout(): void

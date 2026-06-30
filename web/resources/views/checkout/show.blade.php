@@ -6,11 +6,19 @@
 @section('canonical', route('checkout.show', ['locale' => $locale]))
 
 @section('content')
+    @if (session('payment_notice') || $errors->has('payment'))
+        <div class="store-container pt-4">
+            <div class="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-black">
+                {{ session('payment_notice') ?: $errors->first('payment') }}
+            </div>
+        </div>
+    @endif
     <livewire:shop.checkout-review
         :locale="$locale"
         :user="$user"
         :addresses="$addresses"
         :countries="$countries"
+        :completed-order="$completedOrder"
         :visitor-country-code="$visitorContext['country_code'] ?? 'FR'"
     />
 @endsection
