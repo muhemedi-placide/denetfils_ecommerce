@@ -39,7 +39,7 @@ class BackOfficeController extends Controller
 
         $response = $accounts->login([
             ...$validated,
-            'device_name' => 'denetfils-admin-web',
+            'device_name' => \Illuminate\Support\Str::slug(config('shop.name')).'-admin-web',
         ]);
 
         if (! $response['ok']) {
@@ -387,6 +387,7 @@ class BackOfficeController extends Controller
             'description_en' => ['required', 'string', 'max:5000'],
             'sku' => ['required', 'string', 'max:80'],
             'price_eur' => ['required', 'numeric', 'min:0.01'],
+            'tax_class' => ['required', Rule::in(['food', 'standard'])],
             'stock_quantity' => ['required', 'integer', 'min:0'],
             'weight_grams' => ['nullable', 'integer', 'min:1'],
         ], 'product-create');
@@ -405,6 +406,7 @@ class BackOfficeController extends Controller
             'sku' => $validated['sku'],
             'price_cents' => $this->priceCents($validated['price_eur']),
             'currency' => 'EUR',
+            'tax_class' => $validated['tax_class'],
             'stock_quantity' => (int) $validated['stock_quantity'],
             'weight_grams' => $validated['weight_grams'] ?? null,
             'is_active' => $request->boolean('is_active'),
@@ -440,6 +442,29 @@ class BackOfficeController extends Controller
             $response,
             'Stock produit mis a jour.',
             "product-stock-{$product}",
+        );
+    }
+
+    public function updateProductTaxClass(Request $request, AdminApiClient $admin, string $locale, int $product): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'tax_class' => ['required', Rule::in(['food', 'standard'])],
+        ], "product-tax-{$product}");
+
+        $response = $admin->updateProduct($context['token'], $product, $validated);
+
+        return $this->redirectAfterAdminAction(
+            $request,
+            $response,
+            'Classe TVA mise à jour.',
+            "product-tax-{$product}",
         );
     }
 

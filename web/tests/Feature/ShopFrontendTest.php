@@ -102,7 +102,7 @@ class ShopFrontendTest extends TestCase
         Livewire::test(CartManager::class, ['locale' => 'en'])
             ->call('addToCart', 10)
             ->assertSet('cartToken', 'cart-token-123')
-            ->assertSet('isOpen', true);
+            ->assertSet('isOpen', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/carts')
             && $request->method() === 'POST');

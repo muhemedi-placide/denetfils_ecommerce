@@ -35,6 +35,7 @@ class Product extends Model
         'sku',
         'price_cents',
         'currency',
+        'tax_class',
         'weight_grams',
         'stock_quantity',
         'max_order_quantity',

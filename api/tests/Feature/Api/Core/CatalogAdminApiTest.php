@@ -96,6 +96,7 @@ class CatalogAdminApiTest extends TestCase
             'sku' => 'DEN-BOX-EU-001',
             'price_cents' => 2590,
             'currency' => 'EUR',
+            'tax_class' => 'standard',
             'weight_grams' => 1200,
             'stock_quantity' => 25,
             'max_order_quantity' => 6,
@@ -119,6 +120,7 @@ class CatalogAdminApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.sku', 'DEN-BOX-EU-001')
             ->assertJsonPath('data.currency', 'EUR')
+            ->assertJsonPath('data.tax_class', 'standard')
             ->assertJsonPath('data.short_description.en', 'Premium food box for Europe.')
             ->assertJsonPath('data.highlights.en.0', 'EUR pricing')
             ->assertJsonPath('data.max_order_quantity', 6)

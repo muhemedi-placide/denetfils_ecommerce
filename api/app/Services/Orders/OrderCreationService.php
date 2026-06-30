@@ -85,17 +85,26 @@ class OrderCreationService
                 'customer_name' => trim(($user->first_name ?: '') . ' ' . ($user->last_name ?: '')) ?: $user->name,
                 'customer_phone' => $user->phone,
                 'customer_locale' => $data['locale'] ?? $user->preferred_locale ?? 'fr',
-                'customer_country_code' => $user->country_code,
+                'customer_country_code' => data_get($quote, 'destination_country.code', $shippingAddress->country_code),
                 'delivery_method' => $selection?->method->delivery_type ?? ($data['delivery_method'] ?? null),
                 'carrier' => $selection?->method->carrier->code ?? ($data['carrier'] ?? null),
-                'metadata' => $selection ? [
-                    'shipping_method_code' => $selection->method->code,
-                    'pickup_point' => $selection->pickupPoint?->only(['external_id', 'type', 'country', 'name', 'address_line1', 'address_line2', 'postal_code', 'city']),
-                ] : ($data['metadata'] ?? null),
+                'metadata' => [
+                    ...($data['metadata'] ?? []),
+                    'prices_include_tax' => true,
+                    'tax_summary' => $quote['tax_summary'] ?? [],
+                    'shipping_method_code' => $selection?->method->code,
+                    'pickup_point' => $selection?->pickupPoint?->only(['external_id', 'type', 'country', 'name', 'address_line1', 'address_line2', 'postal_code', 'city']),
+                ],
                 'placed_at' => now(),
             ]);
 
-            $cart->items->each(fn (CartItem $item) => $this->createOrderItem($order, $item, $cart->currency));
+            $productTaxLines = collect($quote['tax_breakdown'] ?? [])->where('type', 'product')->values();
+            $cart->items->values()->each(fn (CartItem $item, int $index) => $this->createOrderItem(
+                $order,
+                $item,
+                $cart->currency,
+                $productTaxLines->get($index, []),
+            ));
             $this->createAddressSnapshot($order, $shippingAddress, 'shipping');
             $this->createAddressSnapshot($order, $billingAddress, 'billing');
 
@@ -178,7 +187,7 @@ class OrderCreationService
         });
     }
 
-    private function createOrderItem(Order $order, CartItem $item, string $currency): void
+    private function createOrderItem(Order $order, CartItem $item, string $currency, array $taxLine): void
     {
         /** @var Product $product */
         $product = $item->product;
@@ -205,6 +214,9 @@ class OrderCreationService
             'unit_price_cents' => $item->unit_price_cents,
             'line_total_cents' => $item->line_total_cents,
             'currency' => $currency,
+            'tax_class' => $taxLine['tax_class'] ?? $product->tax_class ?? 'food',
+            'tax_rate_percent' => $taxLine['rate_percent'] ?? 0,
+            'tax_cents' => $taxLine['tax_cents'] ?? 0,
         ]);
     }
 

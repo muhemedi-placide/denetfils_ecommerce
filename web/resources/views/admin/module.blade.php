@@ -7,6 +7,16 @@
 @section('content')
     <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div class="space-y-5">
+            @if (($module['active'] ?? null) === 'settings.shop')
+                <article class="admin-card p-5 sm:p-6">
+                    <p class="admin-kicker">Identite globale</p>
+                    <h2 class="mt-2 admin-heading">Nom de la boutique</h2>
+                    <p class="mt-2 admin-muted">Ce nom est utilise automatiquement dans le front-office, l’espace client, le back-office, les documents et le SEO.</p>
+                    <label for="shop-name" class="mt-5 block text-xs font-black uppercase tracking-[0.16em] text-cocoa/55 dark:text-cream/55">SHOP_NAME</label>
+                    <input id="shop-name" class="admin-input mt-2" type="text" value="{{ config('shop.name') }}" readonly>
+                </article>
+            @endif
+
             <article class="admin-card overflow-hidden">
                 <div class="border-b border-leaf/10 p-5 dark:border-white/10 sm:p-6">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

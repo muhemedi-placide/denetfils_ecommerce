@@ -1,14 +1,14 @@
 @php
-    $productName = $product['name'] ?? 'DEN & FILS';
+    $productName = $product['name'] ?? config('shop.name');
     $reviews = $currentLocale === 'fr'
         ? [
             ['name' => 'Client vérifié', 'title' => 'Très bon goût', 'body' => 'Produit bien présenté, facile à utiliser et fidèle à l’esprit de la cuisine haïtienne.', 'rating' => 5, 'date' => '2026-01-12'],
-            ['name' => 'Client DEN & FILS', 'title' => 'Pratique en cuisine', 'body' => 'Le format est pratique pour assaisonner rapidement sans perdre le goût recherché.', 'rating' => 5, 'date' => '2026-01-08'],
+            ['name' => 'Client '.config('shop.name'), 'title' => 'Pratique en cuisine', 'body' => 'Le format est pratique pour assaisonner rapidement sans perdre le goût recherché.', 'rating' => 5, 'date' => '2026-01-08'],
             ['name' => 'Avis client', 'title' => 'Bonne découverte', 'body' => 'Je recommande pour les personnes qui veulent retrouver des saveurs authentiques à la maison.', 'rating' => 4, 'date' => '2025-12-28'],
         ]
         : [
             ['name' => 'Verified customer', 'title' => 'Very good taste', 'body' => 'Well presented, easy to use and faithful to the spirit of Haitian cooking.', 'rating' => 5, 'date' => '2026-01-12'],
-            ['name' => 'DEN & FILS customer', 'title' => 'Practical in the kitchen', 'body' => 'The format is practical for quick seasoning while keeping the expected taste.', 'rating' => 5, 'date' => '2026-01-08'],
+            ['name' => config('shop.name').' customer', 'title' => 'Practical in the kitchen', 'body' => 'The format is practical for quick seasoning while keeping the expected taste.', 'rating' => 5, 'date' => '2026-01-08'],
             ['name' => 'Customer review', 'title' => 'Good discovery', 'body' => 'Recommended for anyone who wants authentic flavors at home.', 'rating' => 4, 'date' => '2025-12-28'],
         ];
     $average = (float) data_get($product, 'commerce.rating.average', collect($reviews)->avg('rating'));

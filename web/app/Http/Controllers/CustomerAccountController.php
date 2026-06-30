@@ -34,7 +34,7 @@ class CustomerAccountController extends Controller
 
         $response = $api->login([
             ...$validated,
-            'device_name' => 'denetfils-web',
+            'device_name' => \Illuminate\Support\Str::slug(config('shop.name')).'-web',
         ]);
 
         if (! $response['ok']) {
@@ -106,7 +106,7 @@ class CustomerAccountController extends Controller
             $api->logout($token);
         }
 
-        $request->session()->forget(['customer_api_token', 'customer_user']);
+        $request->session()->forget(['customer_api_token', 'customer_user', 'customer_shipping_country']);
 
         return redirect()
             ->route('home.localized', ['locale' => $locale])
@@ -130,10 +130,17 @@ class CustomerAccountController extends Controller
 
         $request->session()->put('customer_user', $me['data']);
 
+        $addresses = $api->addresses($token)['data'];
+        $shipping = collect($addresses)->where('type', 'shipping');
+        $shippingCountry = data_get($shipping->firstWhere('is_default', true) ?? $shipping->first(), 'country_code');
+        if ($shippingCountry) {
+            $request->session()->put('customer_shipping_country', strtoupper((string) $shippingCountry));
+        }
+
         return view('account.show', [
             'locale' => $locale,
             'user' => $me['data'],
-            'addresses' => $api->addresses($token)['data'],
+            'addresses' => $addresses,
             'orders' => $api->orders($token, $locale, 5)['data'],
             'countries' => $api->supportedCountries($locale)['data'],
             'activeMenu' => 'account',

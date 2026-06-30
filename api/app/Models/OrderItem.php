@@ -31,6 +31,9 @@ class OrderItem extends Model
         'unit_price_cents',
         'line_total_cents',
         'currency',
+        'tax_class',
+        'tax_rate_percent',
+        'tax_cents',
     ];
 
     protected $casts = [
@@ -38,6 +41,7 @@ class OrderItem extends Model
         'variant_name' => 'array',
         'category_name' => 'array',
         'image_alt_text' => 'array',
+        'tax_rate_percent' => 'decimal:2',
     ];
 
     public function order(): BelongsTo

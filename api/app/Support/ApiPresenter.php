@@ -43,6 +43,7 @@ class ApiPresenter
             'sku' => $product->sku,
             'price_cents' => $product->price_cents,
             'formatted_price' => MoneyFormatter::format($product->price_cents, $product->currency, $locale),
+            'tax_class' => $product->tax_class,
             'currency' => $product->currency,
             'weight_grams' => $product->weight_grams,
             'stock_quantity' => $product->stock_quantity,

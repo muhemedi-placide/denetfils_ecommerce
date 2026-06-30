@@ -20,6 +20,19 @@
             @if ($quoteError)
                 <div class="mb-4 rounded-xl border border-leaf/20 bg-mint px-4 py-3 text-sm font-semibold text-forest dark:border-white/10 dark:bg-white/5 dark:text-meadow">{{ $quoteError }}</div>
             @endif
+            @if (! empty($quote['is_estimate']))
+                <div class="mb-4 rounded-xl border border-leaf/20 bg-mint px-4 py-3 text-sm font-semibold text-forest dark:border-white/10 dark:bg-white/5 dark:text-meadow">
+                    @if (! ($quote['is_supported'] ?? true))
+                        {{ $locale === 'fr'
+                            ? "La livraison n’est pas disponible pour le pays détecté ({$visitorCountryCode}). Choisissez un pays pris en charge."
+                            : "Delivery is unavailable for the detected country ({$visitorCountryCode}). Choose a supported country." }}
+                    @else
+                        {{ $locale === 'fr' ? 'Estimation pour' : 'Estimate for' }}
+                        {{ data_get($quote, 'destination_country.name', $visitorCountryCode) }} —
+                        {{ $locale === 'fr' ? 'le montant final sera recalculé avec votre adresse de livraison.' : 'the final amount will be recalculated using your delivery address.' }}
+                    @endif
+                </div>
+            @endif
 
             <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_370px] lg:items-start">
                 <form class="space-y-4" wire:submit.prevent="confirm">
@@ -34,8 +47,8 @@
                                     </div>
                                     @if (! $isAuthenticated)
                                         <div class="grid gap-2 sm:flex">
-                                            <a href="{{ route('account.login', ['locale' => $locale]) }}" class="btn-primary px-4 py-2 text-xs" wire:navigate>{{ __('home.account.auth.sign_in') }}</a>
-                                            <a href="{{ route('account.register', ['locale' => $locale]) }}" class="btn-secondary px-4 py-2 text-xs" wire:navigate>{{ __('home.account.auth.create_account') }}</a>
+                                            <button type="button" class="btn-primary px-4 py-2 text-xs" wire:click="openAuthModal('login')">{{ __('home.account.auth.sign_in') }}</button>
+                                            <button type="button" class="btn-secondary px-4 py-2 text-xs" wire:click="openAuthModal('register')">{{ __('home.account.auth.create_account') }}</button>
                                         </div>
                                     @endif
                                 </div>
@@ -57,7 +70,7 @@
                                     </div>
                                 @else
                                     <div class="mt-4 rounded-xl bg-coral/10 px-4 py-3 text-sm font-semibold text-cocoa dark:text-cream">
-                                        {{ $locale === 'fr' ? 'Connexion requise pour continuer vers la livraison.' : 'Sign-in is required to continue to delivery.' }}
+                                        {{ $locale === 'fr' ? 'Votre panier reste ici. Identifiez-vous sans quitter cette page.' : 'Your cart stays here. Identify yourself without leaving this page.' }}
                                     </div>
                                 @endif
                             </div>
@@ -222,9 +235,9 @@
                         @endif
 
                         <div class="mt-4 space-y-2 border-t border-leaf/10 pt-4 text-sm text-cocoa/70 dark:border-white/10 dark:text-cream/70">
-                            <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Sous-total' : 'Subtotal' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_subtotal'] }}</strong></div>
-                            <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Livraison' : 'Shipping' }}</span><strong class="text-cocoa dark:text-cream">{{ $selectedCarrier['price'] ?? $displayQuote['formatted_shipping'] }}</strong></div>
-                            <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'TVA' : 'VAT' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_tax'] }}</strong></div>
+                            <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'Sous-total TTC' : 'Subtotal incl. tax' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_subtotal'] }}</strong></div>
+                            <div class="flex items-center justify-between"><span>{{ ! empty($quote['is_estimate']) ? ($locale === 'fr' ? 'Livraison à partir de' : 'Shipping from') : ($locale === 'fr' ? 'Livraison' : 'Shipping') }}</span><strong class="text-cocoa dark:text-cream">{{ $selectedCarrier['price'] ?? $displayQuote['formatted_shipping'] }}</strong></div>
+                            <div class="flex items-center justify-between"><span>{{ $locale === 'fr' ? 'TVA incluse' : 'VAT included' }}</span><strong class="text-cocoa dark:text-cream">{{ $displayQuote['formatted_tax'] }}</strong></div>
                             <div class="flex items-center justify-between gap-3"><span>{{ $locale === 'fr' ? 'Transporteur' : 'Carrier' }}</span><span class="truncate text-right font-semibold">{{ $selectedCarrier['name'] ?? '-' }}</span></div>
                             @if ($selectedPickupPointDetails)
                                 <div class="rounded-lg bg-mint p-3 text-xs leading-5 text-forest dark:bg-white/5 dark:text-meadow">
@@ -342,26 +355,121 @@
                 </div>
             </div>
         @endif
+
+        @if ($authModalOpen && ! $isAuthenticated)
+            <div class="fixed inset-0 z-[100] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" wire:key="checkout-auth-modal">
+                <section class="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-[28px] border bg-white p-5 shadow-2xl dark:bg-[#1a1a1c] sm:p-7" style="border-color:var(--store-border)">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="section-kicker">{{ $locale === 'fr' ? 'Continuer sans perdre le panier' : 'Continue without losing your cart' }}</p>
+                            <h2 class="mt-2 text-2xl font-bold text-cocoa dark:text-white">{{ $locale === 'fr' ? 'Vos informations de commande' : 'Your checkout details' }}</h2>
+                        </div>
+                        <button type="button" class="store-icon-button text-2xl" wire:click="closeAuthModal" aria-label="{{ $locale === 'fr' ? 'Fermer' : 'Close' }}">×</button>
+                    </div>
+
+                    @if ($authMode === 'choice')
+                        <div class="mt-7 grid gap-4 sm:grid-cols-2">
+                            <button type="button" class="store-button w-full" wire:click="openAuthModal('login')">{{ $locale === 'fr' ? 'J’ai déjà un compte' : 'I already have an account' }}</button>
+                            <button type="button" class="store-button store-button-outline w-full" wire:click="openAuthModal('register')">{{ $locale === 'fr' ? 'Je suis nouveau client' : 'I am a new customer' }}</button>
+                        </div>
+                    @elseif ($authMode === 'login')
+                        <form class="mt-6 space-y-4" wire:submit.prevent="loginInline">
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-login-email">Email</label>
+                                <input id="checkout-login-email" class="input-premium mt-2 w-full" type="email" wire:model="loginEmail" autocomplete="email">
+                                @error('loginEmail')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-login-password">{{ $locale === 'fr' ? 'Mot de passe' : 'Password' }}</label>
+                                <input id="checkout-login-password" class="input-premium mt-2 w-full" type="password" wire:model="loginPassword" autocomplete="current-password">
+                                @error('loginPassword')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="flex flex-col gap-3 sm:flex-row">
+                                <button class="store-button flex-1" type="submit" wire:loading.attr="disabled" wire:target="loginInline">{{ $locale === 'fr' ? 'Se connecter et continuer' : 'Sign in and continue' }}</button>
+                                <button class="store-button store-button-outline" type="button" wire:click="openAuthModal('choice')">{{ $locale === 'fr' ? 'Retour' : 'Back' }}</button>
+                            </div>
+                        </form>
+                    @else
+                        <form class="mt-6 grid gap-4 sm:grid-cols-2" wire:submit.prevent="registerInline">
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-first-name">{{ $locale === 'fr' ? 'Prénom' : 'First name' }}</label>
+                                <input id="checkout-first-name" class="input-premium mt-2 w-full" wire:model="firstName" autocomplete="given-name">
+                                @error('firstName')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-last-name">{{ $locale === 'fr' ? 'Nom' : 'Last name' }}</label>
+                                <input id="checkout-last-name" class="input-premium mt-2 w-full" wire:model="lastName" autocomplete="family-name">
+                                @error('lastName')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="text-sm font-bold" for="checkout-register-email">Email</label>
+                                <input id="checkout-register-email" class="input-premium mt-2 w-full" type="email" wire:model="checkoutEmail" autocomplete="email">
+                                @error('checkoutEmail')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-phone">{{ $locale === 'fr' ? 'Téléphone' : 'Phone' }}</label>
+                                <input id="checkout-phone" class="input-premium mt-2 w-full" wire:model="checkoutPhone" autocomplete="tel">
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-country">{{ $locale === 'fr' ? 'Pays' : 'Country' }}</label>
+                                <select id="checkout-country" class="input-premium mt-2 w-full" wire:model="countryCode">
+                                    @foreach ($countries as $country)<option value="{{ $country['code'] }}">{{ $country['name'] }}</option>@endforeach
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="text-sm font-bold" for="checkout-street">{{ $locale === 'fr' ? 'Adresse de livraison' : 'Delivery address' }}</label>
+                                <input id="checkout-street" class="input-premium mt-2 w-full" wire:model="streetLine1" autocomplete="address-line1">
+                                @error('streetLine1')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <input class="input-premium w-full" wire:model="streetLine2" autocomplete="address-line2" placeholder="{{ $locale === 'fr' ? 'Complément d’adresse (optionnel)' : 'Address line 2 (optional)' }}">
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-postal">{{ $locale === 'fr' ? 'Code postal' : 'Postal code' }}</label>
+                                <input id="checkout-postal" class="input-premium mt-2 w-full" wire:model="postalCode" autocomplete="postal-code">
+                                @error('postalCode')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-city">{{ $locale === 'fr' ? 'Ville' : 'City' }}</label>
+                                <input id="checkout-city" class="input-premium mt-2 w-full" wire:model="city" autocomplete="address-level2">
+                                @error('city')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-password">{{ $locale === 'fr' ? 'Créer un mot de passe' : 'Create a password' }}</label>
+                                <input id="checkout-password" class="input-premium mt-2 w-full" type="password" wire:model="checkoutPassword" autocomplete="new-password">
+                                @error('checkoutPassword')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="text-sm font-bold" for="checkout-password-confirmation">{{ $locale === 'fr' ? 'Confirmer le mot de passe' : 'Confirm password' }}</label>
+                                <input id="checkout-password-confirmation" class="input-premium mt-2 w-full" type="password" wire:model="checkoutPasswordConfirmation" autocomplete="new-password">
+                            </div>
+                            <p class="text-xs leading-5 text-cocoa/60 dark:text-white/60 sm:col-span-2">{{ $locale === 'fr' ? 'En continuant, vous acceptez les conditions et la politique de confidentialité. Le compte est créé immédiatement et un email de bienvenue vous est envoyé.' : 'By continuing, you accept the terms and privacy policy. Your account is created immediately and a welcome email is sent.' }}</p>
+                            <div class="grid gap-3 sm:col-span-2 sm:grid-cols-[1fr_auto]">
+                                <button class="store-button" type="submit" wire:loading.attr="disabled" wire:target="registerInline">{{ $locale === 'fr' ? 'Créer le compte et continuer' : 'Create account and continue' }}</button>
+                                <button class="store-button store-button-outline" type="button" wire:click="openAuthModal('choice')">{{ $locale === 'fr' ? 'Retour' : 'Back' }}</button>
+                            </div>
+                        </form>
+                    @endif
+                </section>
+            </div>
+        @endif
     </div>
 
     @script
         <script>
             (() => {
-            const checkoutStorageKey = 'marche_peyi_cart_token';
-            const legacyCheckoutStorageKey = 'denetfils_cart_token';
-            const checkoutStoredToken = localStorage.getItem(checkoutStorageKey) || localStorage.getItem(legacyCheckoutStorageKey);
+            const checkoutStorageKey = @js(\Illuminate\Support\Str::slug(config('shop.name'), '_').'_cart_token');
+            const checkoutStoredToken = localStorage.getItem(checkoutStorageKey);
             $wire.restoreFromBrowser(checkoutStoredToken);
             const checkoutPayload = (event) => Array.isArray(event) ? (event[0] || {}) : (event || {});
             $wire.on('cart-token-stored', (event) => {
                 const detail = checkoutPayload(event);
                 if (detail.token) {
                     localStorage.setItem(checkoutStorageKey, detail.token);
-                    localStorage.removeItem(legacyCheckoutStorageKey);
                 }
             });
             $wire.on('cart-token-cleared', () => {
                 localStorage.removeItem(checkoutStorageKey);
-                localStorage.removeItem(legacyCheckoutStorageKey);
             });
             $wire.on('checkout-confirmed', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
             const stripeState = { stripe: null, elements: null, clientSecret: null };

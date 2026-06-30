@@ -41,6 +41,7 @@ class EcommerceSeeder extends Seeder
 
         foreach ($this->products() as $productData) {
             $productData = array_replace_recursive($this->defaultProductExperience(), $productData);
+            $productData['tax_class'] = $productData['tax_class'] ?? 'food';
             $images = $productData['images'];
             $variants = $productData['variants'];
             $categorySlug = $productData['category_slug'];

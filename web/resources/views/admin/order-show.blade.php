@@ -71,7 +71,7 @@
 
     if (empty($sources)) {
         $sources = [
-            ['date' => $order['created_at'] ?? $order['placed_at'] ?? null, 'from' => 'Boutique web', 'to' => 'Checkout DEN & FILS'],
+            ['date' => $order['created_at'] ?? $order['placed_at'] ?? null, 'from' => 'Boutique web', 'to' => 'Checkout '.config('shop.name')],
             ['date' => $order['placed_at'] ?? null, 'from' => 'Panier client', 'to' => 'Commande API'],
         ];
     }
@@ -224,6 +224,7 @@
                                             <div>
                                                 <p class="font-semibold text-ink dark:text-cream">{{ data_get($item, 'product.name', '-') }}</p>
                                                 <p class="mt-1 text-xs text-cocoa/55 dark:text-cream/55">{{ data_get($item, 'product.sku', '-') }}</p>
+                                                <p class="mt-1 text-xs text-cocoa/55 dark:text-cream/55">TVA {{ number_format((float) ($item['tax_rate_percent'] ?? 0), 2, ',', ' ') }} % · {{ $item['formatted_tax'] ?? '-' }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -248,7 +249,7 @@
                 <div class="mt-8 ml-auto grid max-w-md gap-2 bg-linen p-5 text-sm dark:bg-white/5">
                     <div class="flex justify-between"><span>Produits</span><strong>{{ $order['formatted_subtotal'] ?? '-' }}</strong></div>
                     <div class="flex justify-between"><span>Livraison</span><strong>{{ $order['formatted_shipping'] ?? '-' }}</strong></div>
-                    <div class="flex justify-between"><span>TVA</span><strong>{{ $order['formatted_tax'] ?? '-' }}</strong></div>
+                    <div class="flex justify-between"><span>Dont TVA incluse</span><strong>{{ $order['formatted_tax'] ?? '-' }}</strong></div>
                     <div class="flex justify-between border-t border-leaf/10 pt-3 text-lg dark:border-white/10"><span class="font-black">Total</span><strong class="bg-ink px-2 py-1 text-white">{{ $order['formatted_total'] ?? '-' }}</strong></div>
                 </div>
                 <p class="mt-5 text-center text-sm text-cocoa/60 dark:text-cream/60">Pour ce groupe de clients, les prix sont affiches : <strong>TTC</strong>.</p>

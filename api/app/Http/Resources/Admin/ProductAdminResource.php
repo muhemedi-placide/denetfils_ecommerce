@@ -40,6 +40,7 @@ class ProductAdminResource extends JsonResource
             'sku' => $this->sku,
             'price_cents' => $this->price_cents,
             'currency' => $this->currency,
+            'tax_class' => $this->tax_class,
             'weight_grams' => $this->weight_grams,
             'stock_quantity' => $this->stock_quantity,
             'max_order_quantity' => $this->max_order_quantity,

@@ -22,7 +22,7 @@ class LoginForm extends Component
 
         $response = $api->login([
             ...$validated,
-            'device_name' => 'denetfils-web',
+            'device_name' => \Illuminate\Support\Str::slug(config('shop.name')).'-web',
         ]);
 
         if (! $response['ok']) {

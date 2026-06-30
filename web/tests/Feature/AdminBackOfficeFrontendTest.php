@@ -24,7 +24,7 @@ class AdminBackOfficeFrontendTest extends TestCase
         $this->withSession($session)
             ->get('/fr/admin')
             ->assertOk()
-            ->assertSee('Back-office Denetfils')
+            ->assertSee('Back-office '.config('shop.name'))
             ->assertSee('adminShell', false)
             ->assertSee('Objectifs rapides');
 
@@ -159,7 +159,7 @@ class AdminBackOfficeFrontendTest extends TestCase
             ],
         ])->get('/fr/admin/commandes/42/impression')
             ->assertOk()
-            ->assertSee('DEN &amp; FILS', false)
+            ->assertSee(config('shop.name'))
             ->assertSee('COMMANDE')
             ->assertSee('DF-20260616-ABC123')
             ->assertSee('document-footer', false)
@@ -186,7 +186,7 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertDownload('facture-DF-20260616-ABC123.pdf');
 
         $this->assertStringStartsWith('%PDF-1.4', $invoice->baseResponse->getContent());
-        $this->assertStringContainsString('DEN & FILS', $invoice->baseResponse->getContent());
+        $this->assertStringContainsString('March', $invoice->baseResponse->getContent());
         $this->assertStringContainsString('FACTURE', $invoice->baseResponse->getContent());
         $this->assertStringContainsString('Page 1 / 1', $invoice->baseResponse->getContent());
 

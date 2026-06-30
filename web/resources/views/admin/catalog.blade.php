@@ -105,6 +105,7 @@
                                         @if ($productId)
                                             <button type="button" data-dialog-target="product-show-{{ $productId }}" class="admin-btn-secondary min-h-0 px-3 py-2 text-xs">Voir</button>
                                             <button type="button" data-dialog-target="product-stock-{{ $productId }}" class="admin-btn-secondary min-h-0 px-3 py-2 text-xs">Stock</button>
+                                            <button type="button" data-dialog-target="product-tax-{{ $productId }}" class="admin-btn-secondary min-h-0 px-3 py-2 text-xs">TVA</button>
                                             <button type="button" data-dialog-target="product-publication-{{ $productId }}" class="admin-btn min-h-0 px-3 py-2 text-xs">{{ $isActive ? 'Retirer' : 'Publier' }}</button>
                                         @endif
                                     </div>
@@ -168,6 +169,13 @@
                     <input name="price_eur" value="{{ old('price_eur') }}" type="number" min="0.01" step="0.01" class="admin-input" required>
                 </label>
                 <label class="block">
+                    <span class="admin-kicker mb-2 block">Classe TVA</span>
+                    <select name="tax_class" class="admin-select" required>
+                        <option value="food" @selected(old('tax_class', 'food') === 'food')>Alimentaire (taux réduit)</option>
+                        <option value="standard" @selected(old('tax_class') === 'standard')>Standard</option>
+                    </select>
+                </label>
+                <label class="block">
                     <span class="admin-kicker mb-2 block">Stock</span>
                     <input name="stock_quantity" value="{{ old('stock_quantity', 0) }}" type="number" min="0" class="admin-input" required>
                 </label>
@@ -225,9 +233,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                     </button>
                 </div>
-                <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                <div class="mt-5 grid gap-3 sm:grid-cols-4">
                     <div class="admin-panel p-4"><p class="admin-kicker">Prix</p><p class="mt-2 text-xl font-black">{{ number_format((int) ($product['price_cents'] ?? 0) / 100, 2, ',', ' ') }} {{ $product['currency'] ?? 'EUR' }}</p></div>
                     <div class="admin-panel p-4"><p class="admin-kicker">Stock</p><p class="mt-2 text-xl font-black">{{ $product['stock_quantity'] ?? 0 }}</p></div>
+                    <div class="admin-panel p-4"><p class="admin-kicker">Classe TVA</p><p class="mt-2 text-xl font-black">{{ ($product['tax_class'] ?? 'food') === 'standard' ? 'Standard' : 'Alimentaire' }}</p></div>
                     <div class="admin-panel p-4"><p class="admin-kicker">Statut</p><p class="mt-2 text-xl font-black">{{ $isActive ? 'Publie' : 'Brouillon' }}</p></div>
                 </div>
                 <div class="mt-5 admin-panel p-4">
@@ -235,6 +244,26 @@
                     <p class="mt-2 text-sm leading-6 text-cocoa/70 dark:text-cream/70">{{ Str::limit(data_get($product, 'description.fr') ?: data_get($product, 'description.en') ?: 'Aucune description.', 420) }}</p>
                 </div>
             </div>
+        </dialog>
+
+        <dialog id="product-tax-{{ $productId }}" class="admin-dialog" @if(session('admin_modal') === "product-tax-{$productId}") data-open-on-load @endif>
+            <form method="POST" action="{{ route('admin.catalog.products.tax-class', ['locale' => $locale, 'product' => $productId]) }}" class="admin-modal-card p-5 sm:p-6">
+                @csrf
+                @method('PATCH')
+                <p class="admin-kicker">Fiscalité</p>
+                <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">{{ $name }}</h2>
+                <label class="mt-5 block">
+                    <span class="admin-kicker mb-2 block">Classe TVA</span>
+                    <select name="tax_class" class="admin-select" required>
+                        <option value="food" @selected(($product['tax_class'] ?? 'food') === 'food')>Alimentaire (taux réduit)</option>
+                        <option value="standard" @selected(($product['tax_class'] ?? 'food') === 'standard')>Standard</option>
+                    </select>
+                </label>
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                    <button type="button" data-dialog-close class="admin-btn-secondary">Annuler</button>
+                    <button class="admin-btn">Mettre à jour</button>
+                </div>
+            </form>
         </dialog>
 
         <dialog id="product-stock-{{ $productId }}" class="admin-dialog" @if(session('admin_modal') === "product-stock-{$productId}") data-open-on-load @endif>

@@ -5,6 +5,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\ShopIndexController;
+use App\Http\Controllers\VisitorPreferenceController;
 use App\Services\AdminApiClient;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,8 @@ use Illuminate\Support\Facades\Http;
 Route::get('/robots.txt', [ShopController::class, 'robots'])->name('seo.robots');
 Route::get('/sitemap.xml', [ShopController::class, 'sitemap'])->name('seo.sitemap');
 
-Route::get('/', [ShopController::class, 'home'])->name('home');
+Route::get('/', [VisitorPreferenceController::class, 'landing'])->name('home');
+Route::post('/preferences/visitor', [VisitorPreferenceController::class, 'update'])->name('visitor.preferences.update');
 
 Route::get('/{locale}/boutique', ShopIndexController::class)
     ->whereIn('locale', ['fr', 'en'])
@@ -69,6 +71,7 @@ Route::prefix('/{locale}/admin')
         Route::get('/catalogue/categories', [BackOfficeController::class, 'catalogCategories'])->name('admin.catalog.categories');
         Route::post('/catalogue/produits', [BackOfficeController::class, 'storeProduct'])->name('admin.catalog.products.store');
         Route::patch('/catalogue/produits/{product}/stock', [BackOfficeController::class, 'updateProductStock'])->name('admin.catalog.products.stock');
+        Route::patch('/catalogue/produits/{product}/classe-tva', [BackOfficeController::class, 'updateProductTaxClass'])->name('admin.catalog.products.tax-class');
         Route::post('/catalogue/produits/{product}/publication', [BackOfficeController::class, 'setProductPublication'])->name('admin.catalog.products.publication');
         Route::post('/catalogue/categories', [BackOfficeController::class, 'storeCategory'])->name('admin.catalog.categories.store');
         Route::post('/catalogue/categories/{category}/activation', [BackOfficeController::class, 'setCategoryActivation'])->name('admin.catalog.categories.activation');

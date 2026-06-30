@@ -33,7 +33,7 @@
     ];
 @endphp
 
-@section('title', data_get($product, 'seo.meta.title', $product['name'] . ' | Marche Peyi'))
+@section('title', data_get($product, 'seo.meta.title', $product['name'] . ' | ' . config('shop.name')))
 @section('description', data_get($product, 'seo.meta.description', $product['description'] ?? $product['short_description'] ?? ''))
 @section('canonical', data_get($product, 'seo.canonical', route('products.show', ['locale' => $locale, 'slug' => $product['slug']])))
 @section('og_type', data_get($product, 'seo.open_graph.type', 'product'))
@@ -97,7 +97,7 @@
                             @if ($index === 0)<span class="absolute right-4 top-4 rounded-full bg-cream px-3 py-1 text-xs font-black text-coral">🔥</span>@endif
                         </a>
                         <div class="p-6">
-                            <p class="text-xs font-black uppercase tracking-[0.22em] text-coral">{{ data_get($related, 'category.name', 'Epicerie') }} - {{ $related['origin'] ?? 'Marche Peyi' }}</p>
+                            <p class="text-xs font-black uppercase tracking-[0.22em] text-coral">{{ data_get($related, 'category.name', 'Epicerie') }} - {{ $related['origin'] ?? config('shop.name') }}</p>
                             <h3 class="mt-2 text-2xl font-black leading-tight text-forest dark:text-meadow">{{ $related['name'] }}</h3>
                             <p class="mt-1 line-clamp-1 text-sm font-semibold text-forest/65 dark:text-cream/70">{{ $related['short_description'] ?? $related['description'] ?? 'Produit authentique du marche.' }}</p>
                             <div class="mt-4 flex items-center gap-2 text-xs font-semibold text-forest/65 dark:text-cream/70"><span class="text-sunshine">★★★★★</span><span>{{ $relatedRating }} - {{ 64 + ($index * 44) }} {{ $locale === 'fr' ? 'avis' : 'reviews' }}</span></div>

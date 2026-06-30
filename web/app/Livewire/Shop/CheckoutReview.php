@@ -4,6 +4,7 @@ namespace App\Livewire\Shop;
 
 use App\Livewire\Shop\Concerns\InteractsWithCart;
 use App\Services\AccountApiClient;
+use App\Services\ShopApiClient;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -36,13 +37,39 @@ class CheckoutReview extends Component
     public array $shippingMethods = [];
     public ?int $selectedShippingMethodId = null;
     public ?array $confirmedOrder = null;
+    public bool $authModalOpen = false;
+    public string $authMode = 'choice';
+    public string $loginEmail = '';
+    public string $loginPassword = '';
+    public string $firstName = '';
+    public string $lastName = '';
+    public string $checkoutEmail = '';
+    public string $checkoutPhone = '';
+    public string $checkoutPassword = '';
+    public string $checkoutPasswordConfirmation = '';
+    public string $streetLine1 = '';
+    public string $streetLine2 = '';
+    public string $postalCode = '';
+    public string $city = '';
+    public string $countryCode = 'FR';
+    public string $visitorCountryCode = 'FR';
 
-    public function mount(string $locale, ?array $user = null, array $addresses = [], array $countries = []): void
+    public function mount(
+        string $locale,
+        ?array $user = null,
+        array $addresses = [],
+        array $countries = [],
+        string $visitorCountryCode = 'FR',
+    ): void
     {
         $this->locale = in_array($locale, ['fr', 'en'], true) ? $locale : 'fr';
         $this->user = $user;
         $this->addresses = $addresses;
         $this->countries = $countries;
+        $this->visitorCountryCode = strtoupper($visitorCountryCode);
+        $this->countryCode = collect($countries)->contains('code', $this->visitorCountryCode)
+            ? $this->visitorCountryCode
+            : 'FR';
         $this->selectedAddressId = $this->defaultAddressId();
         $this->initializeCart();
         $this->refreshShippingMethods();
@@ -81,7 +108,7 @@ class CheckoutReview extends Component
         }
 
         if (! $this->user) {
-            $this->checkoutError = $this->locale === 'fr' ? 'Connectez-vous pour continuer.' : 'Sign in to continue.';
+            $this->openAuthModal();
             return;
         }
 
@@ -118,6 +145,107 @@ class CheckoutReview extends Component
         $this->confirmedOrder = $response['data'];
         $this->quote = [];
         $this->prepareStripePayment($api);
+    }
+
+    public function openAuthModal(string $mode = 'choice'): void
+    {
+        $this->resetValidation();
+        $this->authMode = in_array($mode, ['choice', 'login', 'register'], true) ? $mode : 'choice';
+        $this->authModalOpen = true;
+    }
+
+    public function closeAuthModal(): void
+    {
+        $this->authModalOpen = false;
+        $this->resetValidation();
+    }
+
+    public function loginInline(AccountApiClient $api): void
+    {
+        $validated = $this->validate([
+            'loginEmail' => ['required', 'email:rfc', 'max:255'],
+            'loginPassword' => ['required', 'string'],
+        ]);
+
+        $response = $api->login([
+            'email' => $validated['loginEmail'],
+            'password' => $validated['loginPassword'],
+            'device_name' => \Illuminate\Support\Str::slug(config('shop.name')).'-checkout',
+        ]);
+
+        if (! $response['ok']) {
+            $this->applyApiErrors($response, 'loginEmail');
+            return;
+        }
+
+        $token = $response['data']['token'] ?? null;
+        session()->regenerate();
+        session()->put('customer_api_token', $token);
+        session()->put('customer_user', $response['data']['user'] ?? []);
+        $addresses = $token ? $api->addresses($token) : ['ok' => false, 'data' => []];
+        $this->finishInlineAuthentication($response['data']['user'] ?? [], $addresses['ok'] ? $addresses['data'] : []);
+    }
+
+    public function registerInline(AccountApiClient $api): void
+    {
+        $validated = $this->validate([
+            'firstName' => ['required', 'string', 'max:120'],
+            'lastName' => ['required', 'string', 'max:120'],
+            'checkoutEmail' => ['required', 'email:rfc', 'max:255'],
+            'checkoutPhone' => ['nullable', 'string', 'max:32'],
+            'checkoutPassword' => ['required', 'string', 'min:8', 'same:checkoutPasswordConfirmation'],
+            'checkoutPasswordConfirmation' => ['required', 'string', 'min:8'],
+            'streetLine1' => ['required', 'string', 'max:255'],
+            'streetLine2' => ['nullable', 'string', 'max:255'],
+            'postalCode' => ['required', 'string', 'max:32'],
+            'city' => ['required', 'string', 'max:120'],
+            'countryCode' => ['required', 'string', 'size:2'],
+        ]);
+
+        $response = $api->register([
+            'first_name' => $validated['firstName'],
+            'last_name' => $validated['lastName'],
+            'email' => $validated['checkoutEmail'],
+            'phone' => $validated['checkoutPhone'],
+            'password' => $validated['checkoutPassword'],
+            'password_confirmation' => $validated['checkoutPasswordConfirmation'],
+            'country_code' => $validated['countryCode'],
+            'preferred_locale' => $this->locale,
+            'timezone' => 'Europe/Paris',
+            'privacy_policy_consent' => true,
+            'terms_consent' => true,
+            'marketing_consent' => false,
+        ]);
+
+        if (! $response['ok']) {
+            $this->applyApiErrors($response, 'checkoutEmail');
+            return;
+        }
+
+        $token = $response['data']['token'] ?? null;
+        session()->regenerate();
+        session()->put('customer_api_token', $token);
+        session()->put('customer_user', $response['data']['user'] ?? []);
+
+        $addressResponse = $token ? $api->createAddress($token, [
+            'type' => 'shipping',
+            'label' => $this->locale === 'fr' ? 'Domicile' : 'Home',
+            'recipient_name' => trim($validated['firstName'].' '.$validated['lastName']),
+            'street_line_1' => $validated['streetLine1'],
+            'street_line_2' => $validated['streetLine2'],
+            'postal_code' => $validated['postalCode'],
+            'city' => $validated['city'],
+            'country_code' => $validated['countryCode'],
+            'phone' => $validated['checkoutPhone'],
+            'is_default' => true,
+        ]) : ['ok' => false, 'data' => []];
+
+        if (! $addressResponse['ok']) {
+            $this->applyApiErrors($addressResponse, 'streetLine1');
+            return;
+        }
+
+        $this->finishInlineAuthentication($response['data']['user'] ?? [], [$addressResponse['data']]);
     }
 
     public function selectPaymentProvider(string $provider, AccountApiClient $api): void
@@ -323,8 +451,27 @@ class CheckoutReview extends Component
     {
         $this->quoteError = null;
 
-        if (! $this->token() || ! $this->cartToken || empty($this->cartItems()) || ! $this->selectedAddressId) {
+        if (! $this->cartToken || empty($this->cartItems())) {
             $this->quote = [];
+            return;
+        }
+
+        if (! $this->token() || ! $this->selectedAddressId) {
+            $response = app(ShopApiClient::class)->estimateCart(
+                $this->cartToken,
+                $this->locale,
+                $this->visitorCountryCode,
+            );
+
+            if (! $response['ok']) {
+                $this->quote = [];
+                $this->quoteError = $this->locale === 'fr'
+                    ? 'L’estimation TVA et livraison est indisponible.'
+                    : 'VAT and delivery estimate is unavailable.';
+                return;
+            }
+
+            $this->quote = $response['data'];
             return;
         }
 
@@ -539,6 +686,45 @@ class CheckoutReview extends Component
             'formatted_tax' => $this->locale === 'fr' ? 'À calculer' : 'To calculate',
             'formatted_total' => $this->formattedTotal(),
         ], $this->quote);
+    }
+
+    private function finishInlineAuthentication(array $user, array $addresses): void
+    {
+        $this->user = $user;
+        $this->addresses = $addresses;
+        $this->selectedAddressId = $this->defaultAddressId();
+        $this->authModalOpen = false;
+        $this->authMode = 'choice';
+        $this->checkoutError = null;
+        $this->refreshShippingMethods();
+        $this->refreshPickupPoints();
+        $this->refreshQuote();
+    }
+
+    private function applyApiErrors(array $response, string $fallbackField): void
+    {
+        if (! empty($response['errors']) && is_array($response['errors'])) {
+            foreach ($response['errors'] as $field => $messages) {
+                $property = match ($field) {
+                    'email' => $fallbackField,
+                    'first_name' => 'firstName',
+                    'last_name' => 'lastName',
+                    'phone' => 'checkoutPhone',
+                    'password' => 'checkoutPassword',
+                    'street_line_1' => 'streetLine1',
+                    'street_line_2' => 'streetLine2',
+                    'postal_code' => 'postalCode',
+                    'country_code' => 'countryCode',
+                    default => $field,
+                };
+                foreach ((array) $messages as $message) {
+                    $this->addError($property, $message);
+                }
+            }
+            return;
+        }
+
+        $this->addError($fallbackField, $response['message'] ?: __('home.account.api_error'));
     }
 
     private function token(): ?string

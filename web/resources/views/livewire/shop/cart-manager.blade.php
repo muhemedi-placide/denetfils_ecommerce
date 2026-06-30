@@ -1,8 +1,8 @@
 <div>
-    <button type="button" data-testid="header-cart-open-button" class="inline-flex min-h-[40px] items-center justify-center rounded-full bg-forest px-3 py-2 text-sm font-black text-cream shadow-sm transition hover:bg-leaf sm:min-h-[44px] sm:px-4" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="open">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7Z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
-        <span class="ml-2 hidden sm:inline">{{ __('home.cart.title') }}</span>
-        <span class="ml-2 rounded-full bg-sunshine px-2 py-0.5 text-xs text-forest">{{ $this->itemCount() }}</span>
+    <button type="button" data-testid="header-cart-open-button" class="store-icon-button relative" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="open">
+        <x-icon name="cart" class="h-5 w-5" />
+        <span class="sr-only">{{ __('home.cart.title') }}</span>
+        <span class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#f97316] px-1 text-[10px] font-bold text-white">{{ $this->itemCount() }}</span>
     </button>
 
     @teleport('body')
@@ -16,7 +16,7 @@
                         </div>
                     </div>
 
-                    <div class="min-h-0 flex-1 overflow-y-auto bg-linen px-4 py-4 dark:bg-[#172414] sm:px-5">
+                    <div class="min-h-0 flex-1 overflow-y-auto bg-linen px-4 py-4 dark:bg-[#111111] sm:px-5">
                         <div wire:loading.flex class="mb-4 items-center gap-3 rounded-[1rem] border border-leaf/10 bg-white px-4 py-3 text-sm font-semibold text-cocoa/70 dark:border-white/10 dark:bg-white/5 dark:text-cream/70">{{ __('home.cart.loading') }}</div>
                         @if ($cartError)<div class="mb-4 rounded-[1rem] border border-coral/25 bg-coral/10 px-4 py-3 text-sm font-semibold text-cocoa dark:text-cream">{{ $cartError }}</div>@endif
                         @if (! $cartLoading && count($this->cartItems()) === 0)

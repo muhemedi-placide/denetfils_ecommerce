@@ -48,14 +48,15 @@ class CheckoutQuoteApiTest extends TestCase
             ->assertJsonPath('data.delivery_method', 'standard')
             ->assertJsonPath('data.subtotal_cents', 1780)
             ->assertJsonPath('data.shipping_cents', 590)
-            ->assertJsonPath('data.tax_cents', 216)
-            ->assertJsonPath('data.total_cents', 2586)
+            ->assertJsonPath('data.tax_cents', 191)
+            ->assertJsonPath('data.total_cents', 2370)
+            ->assertJsonPath('data.prices_include_tax', true)
             ->assertJsonPath('data.tax_breakdown.0.type', 'product')
             ->assertJsonPath('data.tax_breakdown.0.rate_percent', 5.5)
-            ->assertJsonPath('data.tax_breakdown.0.tax_cents', 98)
+            ->assertJsonPath('data.tax_breakdown.0.tax_cents', 93)
             ->assertJsonPath('data.tax_breakdown.1.type', 'shipping')
             ->assertJsonPath('data.tax_breakdown.1.rate_percent', 20)
-            ->assertJsonPath('data.tax_breakdown.1.tax_cents', 118);
+            ->assertJsonPath('data.tax_breakdown.1.tax_cents', 98);
     }
 
     public function test_checkout_quote_supports_country_code_without_saved_address(): void
@@ -114,8 +115,34 @@ class CheckoutQuoteApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.subtotal_cents', 7120)
             ->assertJsonPath('data.shipping_cents', 0)
-            ->assertJsonPath('data.tax_cents', 392)
-            ->assertJsonPath('data.total_cents', 7512);
+            ->assertJsonPath('data.tax_cents', 371)
+            ->assertJsonPath('data.total_cents', 7120);
+    }
+
+    public function test_checkout_quote_uses_each_products_tax_class(): void
+    {
+        $user = $this->customer();
+        $food = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+        $standard = Product::query()->whereKeyNot($food->id)->firstOrFail();
+        $standard->update(['tax_class' => 'standard']);
+        $cartToken = $this->cartWithProduct($food);
+        $this->postJson("/api/v1/carts/{$cartToken}/items", [
+            'product_id' => $standard->id,
+            'quantity' => 1,
+        ])->assertCreated();
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/v1/checkout/quote', [
+            'cart_token' => $cartToken,
+            'country_code' => 'FR',
+        ])->assertOk();
+
+        $productLines = collect($response->json('data.tax_breakdown'))->where('type', 'product')->values();
+        $this->assertSame('food', $productLines[0]['tax_class']);
+        $this->assertSame(5.5, $productLines[0]['rate_percent']);
+        $this->assertSame('standard', $productLines[1]['tax_class']);
+        $this->assertSame(20, $productLines[1]['rate_percent']);
     }
 
     public function test_checkout_quote_rejects_empty_or_invalid_cart(): void

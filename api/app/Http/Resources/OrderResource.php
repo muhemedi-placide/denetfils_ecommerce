@@ -104,6 +104,10 @@ class OrderResource extends JsonResource
             'line_total_cents' => $item->line_total_cents,
             'formatted_line_total' => MoneyFormatter::format($item->line_total_cents, $item->currency, $locale),
             'currency' => $item->currency,
+            'tax_class' => $item->tax_class,
+            'tax_rate_percent' => (float) $item->tax_rate_percent,
+            'tax_cents' => $item->tax_cents,
+            'formatted_tax' => MoneyFormatter::format($item->tax_cents, $item->currency, $locale),
         ];
     }
 

@@ -52,10 +52,13 @@ class OrdersApiTest extends TestCase
             ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
             ->assertJsonPath('data.customer.email', $user->email)
             ->assertJsonPath('data.shipping_cents', 590)
-            ->assertJsonPath('data.tax_cents', 216)
-            ->assertJsonPath('data.total_cents', 2586)
+            ->assertJsonPath('data.tax_cents', 191)
+            ->assertJsonPath('data.total_cents', 2370)
             ->assertJsonPath('data.items.0.product.name', 'Miel de montagne')
             ->assertJsonPath('data.items.0.quantity', 2)
+            ->assertJsonPath('data.items.0.tax_class', 'food')
+            ->assertJsonPath('data.items.0.tax_rate_percent', 5.5)
+            ->assertJsonPath('data.items.0.tax_cents', 93)
             ->assertJsonPath('data.addresses.0.type', 'shipping')
             ->assertJsonPath('data.addresses.1.type', 'billing')
             ->assertJsonPath('data.carrier', 'chronopost_home');
@@ -69,8 +72,8 @@ class OrdersApiTest extends TestCase
             'payment_status' => 'unpaid',
             'fulfillment_status' => 'unfulfilled',
             'shipping_cents' => 590,
-            'tax_cents' => 216,
-            'total_cents' => 2586,
+            'tax_cents' => 191,
+            'total_cents' => 2370,
         ]);
         $this->assertDatabaseHas('order_items', [
             'order_id' => $response->json('data.id'),
@@ -78,9 +81,20 @@ class OrdersApiTest extends TestCase
             'quantity' => 2,
             'unit_price_cents' => $product->price_cents,
             'line_total_cents' => $product->price_cents * 2,
+            'tax_class' => 'food',
+            'tax_rate_percent' => 5.50,
+            'tax_cents' => 93,
         ]);
         $this->assertDatabaseCount('order_addresses', 2);
         $this->assertSame($product->stock_quantity, $product->fresh()->stock_quantity);
+
+        $product->update(['tax_class' => 'standard']);
+        \App\Models\SupportedCountry::query()->where('code', 'FR')->update(['food_vat_rate_percent' => 10]);
+        $this->getJson('/api/v1/orders/'.$response->json('data.id'))
+            ->assertOk()
+            ->assertJsonPath('data.items.0.tax_class', 'food')
+            ->assertJsonPath('data.items.0.tax_rate_percent', 5.5)
+            ->assertJsonPath('data.items.0.tax_cents', 93);
     }
 
     public function test_customer_can_list_and_read_only_own_orders(): void

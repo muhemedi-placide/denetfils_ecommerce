@@ -136,6 +136,14 @@ class ShopApiClient
         ]);
     }
 
+    public function estimateCart(string $token, string $locale, string $countryCode): array
+    {
+        return $this->send('post', "carts/{$token}/estimate", [
+            'locale' => $this->locale($locale),
+            'country_code' => strtoupper($countryCode),
+        ]);
+    }
+
     public function sitemapXml(): ?string
     {
         try {

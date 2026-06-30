@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Denetfils API",
-        "description": "Backend REST API for the Denetfils ecommerce platform: catalog, carts, identity, RBAC, GDPR consent and admin core.",
+        "title": "Ecommerce API",
+        "description": "Backend REST API for the ecommerce platform: catalog, carts, identity, RBAC, GDPR consent and admin core.",
         "version": "1.0.0"
     },
     "servers": [
@@ -866,6 +866,73 @@
                     },
                     "404": {
                         "description": "Cart not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/carts/{cartToken}/estimate": {
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "operationId": "cartEstimateStore",
+                "parameters": [
+                    {
+                        "name": "cartToken",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "country_code"
+                                ],
+                                "properties": {
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "FR",
+                                        "maxLength": 2,
+                                        "minLength": 2
+                                    },
+                                    "locale": {
+                                        "type": "string",
+                                        "example": "fr",
+                                        "enum": [
+                                            "fr",
+                                            "en"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tax-inclusive guest estimate",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CartEstimate"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid or empty cart"
                     }
                 }
             }
@@ -2245,7 +2312,7 @@
                     },
                     "company": {
                         "type": "string",
-                        "example": "Denetfils",
+                        "example": "Boutique",
                         "nullable": true
                     },
                     "street_line_1": {
@@ -2409,6 +2476,14 @@
                         "type": "string",
                         "example": "EUR"
                     },
+                    "tax_class": {
+                        "type": "string",
+                        "example": "food",
+                        "enum": [
+                            "food",
+                            "standard"
+                        ]
+                    },
                     "stock_quantity": {
                         "type": "integer",
                         "example": 35
@@ -2544,7 +2619,7 @@
                 "properties": {
                     "brand": {
                         "type": "string",
-                        "example": "Denetfils"
+                        "example": "Boutique"
                     },
                     "availability": {
                         "type": "string",
@@ -2818,6 +2893,14 @@
                         "type": "string",
                         "example": "EUR"
                     },
+                    "tax_class": {
+                        "type": "string",
+                        "example": "food",
+                        "enum": [
+                            "food",
+                            "standard"
+                        ]
+                    },
                     "weight_grams": {
                         "type": "integer",
                         "example": 250,
@@ -2985,6 +3068,14 @@
                         "type": "string",
                         "example": "EUR"
                     },
+                    "tax_class": {
+                        "type": "string",
+                        "example": "standard",
+                        "enum": [
+                            "food",
+                            "standard"
+                        ]
+                    },
                     "weight_grams": {
                         "type": "integer",
                         "example": 1200,
@@ -3118,6 +3209,65 @@
                     "line_total_cents": {
                         "type": "integer",
                         "example": 1780
+                    }
+                },
+                "type": "object"
+            },
+            "CartEstimate": {
+                "properties": {
+                    "cart_token": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "EUR"
+                    },
+                    "country_source": {
+                        "type": "string",
+                        "example": "visitor_context"
+                    },
+                    "is_estimate": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_supported": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "prices_include_tax": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "subtotal_cents": {
+                        "type": "integer",
+                        "example": 1780
+                    },
+                    "shipping_from_cents": {
+                        "type": "integer",
+                        "example": 390,
+                        "nullable": true
+                    },
+                    "tax_cents": {
+                        "type": "integer",
+                        "example": 191,
+                        "nullable": true
+                    },
+                    "total_cents": {
+                        "type": "integer",
+                        "example": 2170,
+                        "nullable": true
+                    },
+                    "shipping_options": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "tax_breakdown": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
                     }
                 },
                 "type": "object"
@@ -3257,7 +3407,7 @@
                     "email": {
                         "type": "string",
                         "format": "email",
-                        "example": "admin@denetfils.fr"
+                        "example": "admin@example.com"
                     },
                     "password": {
                         "type": "string",

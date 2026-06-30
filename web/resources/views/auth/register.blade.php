@@ -1,6 +1,6 @@
 @extends('layouts.shop')
 
-@section('title', __('home.account.auth.register_title') . ' | DEN & FILS')
+@section('title', __('home.account.auth.register_title') . ' | ' . config('shop.name'))
 @section('description', __('home.account.auth.register_intro'))
 @section('robots', 'noindex,nofollow')
 

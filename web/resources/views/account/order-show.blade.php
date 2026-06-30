@@ -30,7 +30,7 @@
     };
 @endphp
 
-@section('title', ($isEnglish ? 'Order ' : 'Commande ') . $orderNumber . ' | DEN & FILS')
+@section('title', ($isEnglish ? 'Order ' : 'Commande ') . $orderNumber . ' | ' . config('shop.name'))
 @section('description', $isEnglish ? 'Customer order detail.' : 'Detail de la commande client.')
 @section('robots', 'noindex,nofollow')
 
@@ -54,7 +54,7 @@
                 {{ $isEnglish ? 'Back to account' : 'Retour au compte' }}
             </a>
 
-            <div class="overflow-hidden rounded-2xl border border-leaf/10 bg-[#f8f7f3] shadow-tropical dark:border-white/10 dark:bg-[#101b10]">
+            <div class="overflow-hidden rounded-2xl border border-leaf/10 bg-[#f8f8f8] shadow-tropical dark:border-white/10 dark:bg-[#111111]">
                 <header class="border-b border-leaf/10 bg-white p-5 dark:border-white/10 dark:bg-white/5 sm:p-6">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
@@ -141,6 +141,7 @@
                                             <div class="min-w-0">
                                                 <p class="truncate text-base font-black text-cocoa dark:text-cream">{{ $productName }}</p>
                                                 <p class="mt-1 text-xs font-semibold text-cocoa/55 dark:text-cream/55">{{ data_get($item, 'product.sku') ?: data_get($item, 'variant.sku') }}</p>
+                                                <p class="mt-1 text-xs text-cocoa/55 dark:text-cream/55">{{ $isEnglish ? 'VAT included' : 'TVA incluse' }} {{ number_format((float) ($item['tax_rate_percent'] ?? 0), 2, ',', ' ') }} % · {{ $item['formatted_tax'] ?? '-' }}</p>
                                             </div>
                                         </div>
                                         <p class="text-sm font-black text-cocoa/70 dark:text-cream/70">x {{ $item['quantity'] ?? 1 }}</p>
@@ -191,7 +192,7 @@
                                 <article class="chat-bubble {{ $isOwn ? 'chat-bubble-own' : 'chat-bubble-other' }}">
                                     <div class="chat-meta">
                                         <p class="{{ $isOwn ? 'text-cream/70' : 'text-cocoa/45 dark:text-cream/45' }}">
-                                            {{ $isOwn ? ($isEnglish ? 'You' : 'Vous') : 'DEN & FILS' }}
+                                            {{ $isOwn ? ($isEnglish ? 'You' : 'Vous') : config('shop.name') }}
                                         </p>
                                         <span class="shrink-0 {{ $isOwn ? 'text-cream/70' : ($messageStatus === 'unread' ? 'text-coral' : 'text-cocoa/45 dark:text-cream/45') }}">
                                             {{ $messageStatus === 'unread' ? ($isEnglish ? 'Unread' : 'Non lu') : ($isEnglish ? 'Read' : 'Lu') }}

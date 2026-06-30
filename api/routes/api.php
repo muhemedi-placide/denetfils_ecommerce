@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\Admin\ShipmentController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\CartEstimateController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\MeController;
@@ -59,6 +60,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/carts/{cartToken}/items', [CartController::class, 'addItem']);
     Route::patch('/carts/{cartToken}/items/{item}', [CartController::class, 'updateItem']);
     Route::delete('/carts/{cartToken}/items/{item}', [CartController::class, 'destroyItem']);
+    Route::post('/carts/{cartToken}/estimate', [CartEstimateController::class, 'store'])->middleware('throttle:60,1');
 
     Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);

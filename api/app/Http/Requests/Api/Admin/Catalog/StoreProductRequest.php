@@ -44,6 +44,7 @@ class StoreProductRequest extends FormRequest
             'sku' => ['required', 'string', 'max:80', Rule::unique('products', 'sku')],
             'price_cents' => ['required', 'integer', 'min:1'],
             'currency' => ['nullable', 'string', 'size:3', Rule::in(['EUR'])],
+            'tax_class' => ['nullable', Rule::in(['food', 'standard'])],
             'weight_grams' => ['nullable', 'integer', 'min:1'],
             'stock_quantity' => ['required', 'integer', 'min:0'],
             'max_order_quantity' => ['nullable', 'integer', 'min:1'],

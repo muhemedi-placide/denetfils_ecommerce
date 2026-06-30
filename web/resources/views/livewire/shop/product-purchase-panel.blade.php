@@ -21,7 +21,7 @@
             <input class="w-full bg-transparent text-center text-base font-black outline-none" type="number" min="1" wire:model.live="quantity">
             <button type="button" class="text-xl font-black transition hover:bg-mint dark:hover:bg-white/10" wire:click="incrementQuantity">+</button>
         </div>
-        <button type="button" data-testid="product-detail-add-button" class="min-h-[54px] w-full rounded-full bg-forest px-8 py-4 text-sm font-black uppercase tracking-wide text-cream transition hover:bg-leaf disabled:pointer-events-none disabled:opacity-50 sm:w-auto" x-on:click="window.dispatchEvent(new CustomEvent('cart-opening'))" wire:click="addToCart" wire:loading.attr="disabled" @disabled(! $isAvailable)>
+        <button type="button" data-testid="product-detail-add-button" class="min-h-[54px] w-full rounded-full bg-forest px-8 py-4 text-sm font-black uppercase tracking-wide text-cream transition hover:bg-leaf disabled:pointer-events-none disabled:opacity-50 sm:w-auto" wire:click="addToCart" wire:loading.attr="disabled" @disabled(! $isAvailable)>
             <span wire:loading.remove wire:target="addToCart">{{ $locale === 'fr' ? 'Ajouter au panier' : 'Add to cart' }}</span>
             <span wire:loading wire:target="addToCart">{{ __('home.cart.loading') }}</span>
         </button>

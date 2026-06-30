@@ -56,7 +56,7 @@ class AccountFrontendTest extends TestCase
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/auth/login')
             && $request['email'] === 'jean@example.test'
-            && $request['device_name'] === 'denetfils-web');
+            && $request['device_name'] === \Illuminate\Support\Str::slug(config('shop.name')).'-web');
     }
 
     public function test_account_page_consumes_me_and_addresses_api(): void
@@ -168,7 +168,7 @@ class AccountFrontendTest extends TestCase
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/auth/login')
             && $request['email'] === 'jean@example.test'
-            && $request['device_name'] === 'denetfils-web');
+            && $request['device_name'] === \Illuminate\Support\Str::slug(config('shop.name')).'-web');
     }
 
     public function test_profile_update_is_sent_to_authenticated_api(): void

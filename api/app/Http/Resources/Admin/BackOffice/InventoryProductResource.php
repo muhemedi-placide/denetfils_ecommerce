@@ -44,6 +44,7 @@ class InventoryProductResource extends JsonResource
             ] : null,
             'price_cents' => $this->price_cents,
             'currency' => $this->currency,
+            'tax_class' => $this->tax_class,
             'variants' => $this->whenLoaded('variants', fn () => $this->variants->map(fn ($variant) => [
                 'id' => $variant->id,
                 'sku' => $variant->sku,

@@ -20,7 +20,8 @@ class CheckoutFrontendTest extends TestCase
             ->assertOk()
             ->assertDontSee('Vérifier avant paiement.')
             ->assertDontSee('Le panier vient')
-            ->assertSee('Connexion requise pour continuer vers la livraison.')
+            ->assertSee('Votre panier reste ici. Identifiez-vous sans quitter cette page.')
+            ->assertSee("openAuthModal('login')", false)
             ->assertSee('Connectez-vous pour sélectionner une adresse.')
             ->assertSee('wire:submit.prevent="confirm"', false)
             ->assertSee('noindex,nofollow', false);
@@ -64,7 +65,7 @@ class CheckoutFrontendTest extends TestCase
             ->get('/en/commande')
             ->assertOk()
             ->assertSessionMissing('customer_api_token')
-            ->assertSee('Sign-in is required to continue to delivery.');
+            ->assertSee('Your cart stays here. Identify yourself without leaving this page.');
     }
 
     public function test_checkout_restore_fetches_real_quote(): void

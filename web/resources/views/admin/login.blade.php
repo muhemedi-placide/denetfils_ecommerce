@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Connexion back-office | Denetfils</title>
+        <title>Connexion back-office | {{ config('shop.name') }}</title>
         <meta name="robots" content="noindex,nofollow">
         <script>
             let storedTheme = null;
@@ -28,20 +28,20 @@
     </head>
     <body class="theme-page surface-transition min-h-screen bg-cream text-cocoa antialiased dark:bg-ink dark:text-cream">
         <main class="admin-shell-backdrop grid min-h-screen lg:grid-cols-[1fr_520px]">
-            <section class="relative hidden overflow-hidden bg-forest p-10 text-white dark:bg-[#172414] lg:block">
+            <section class="relative hidden overflow-hidden bg-forest p-10 text-white dark:bg-[#111111] lg:block">
                 <div class="relative flex h-full flex-col justify-between">
                     <div>
                         <div class="flex items-center gap-3">
                             <span class="grid h-14 w-14 place-items-center rounded-full bg-white text-sm font-black text-forest">DF</span>
                             <div>
-                                <p class="text-sm font-black uppercase tracking-[0.24em]">Denetfils</p>
+                                <p class="text-sm font-black uppercase tracking-[0.24em]">{{ config('shop.name') }}</p>
                                 <p class="text-sm text-white/65">Back-office commerce</p>
                             </div>
                         </div>
                         <div class="mt-20 max-w-xl">
                             <p class="text-xs font-black uppercase tracking-[0.24em] text-meadow">Admin office</p>
                             <h1 class="mt-4 text-5xl font-black leading-tight">Piloter le catalogue, le stock et les operations avec clarte.</h1>
-                            <p class="mt-5 text-base leading-8 text-white/70">Un espace dedie a l equipe DEN & FILS pour suivre les alertes, verifier les donnees API et garder une vue propre sur les priorites du jour.</p>
+                            <p class="mt-5 text-base leading-8 text-white/70">Un espace dedie a l equipe {{ config('shop.name') }} pour suivre les alertes, verifier les donnees API et garder une vue propre sur les priorites du jour.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-3">

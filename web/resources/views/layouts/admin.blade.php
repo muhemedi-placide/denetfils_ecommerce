@@ -1,7 +1,7 @@
 @php
     $currentLocale = $locale ?? app()->getLocale();
     $alternateLocale = $currentLocale === 'fr' ? 'en' : 'fr';
-    $adminName = data_get($adminUser ?? [], 'name', 'Admin Denetfils');
+    $adminName = data_get($adminUser ?? [], 'name', 'Admin '.config('shop.name'));
     $adminEmail = data_get($adminUser ?? [], 'email', '');
     $navSections = [
         [
@@ -140,7 +140,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>@yield('title', 'Back-office') | Denetfils</title>
+        <title>@yield('title', 'Back-office') | {{ config('shop.name') }}</title>
         <meta name="robots" content="noindex,nofollow">
         <script>
             let storedTheme = null;
@@ -184,7 +184,7 @@
                     <a href="{{ route('admin.dashboard', ['locale' => $currentLocale]) }}" class="flex min-w-0 items-center gap-3">
                         <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-forest text-sm font-black text-white dark:bg-meadow dark:text-ink">DF</span>
                         <span x-show="sidebarExpanded()" x-cloak x-transition.opacity class="min-w-0">
-                            <span class="block truncate text-sm font-black uppercase tracking-[0.18em] text-cocoa dark:text-cream">Denetfils</span>
+                            <span class="block truncate text-sm font-black uppercase tracking-[0.18em] text-cocoa dark:text-cream">{{ config('shop.name') }}</span>
                             <span class="block truncate text-xs font-semibold text-cocoa/55 dark:text-cream/55">Back-office commerce</span>
                         </span>
                     </a>
@@ -268,9 +268,9 @@
 
             <div class="min-h-screen min-w-0 transition-[padding] duration-300" :class="sidebarExpanded() ? 'lg:pl-72' : 'lg:pl-[5.75rem]'">
                 <header class="sticky top-0 z-30 border-b border-leaf/10 bg-white/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-ink/95">
-                    <div class="border-b border-leaf/10 bg-linen px-4 py-2 text-xs font-semibold text-leaf dark:border-white/10 dark:bg-[#172414] dark:text-meadow sm:px-6 lg:px-8">
+                    <div class="border-b border-leaf/10 bg-linen px-4 py-2 text-xs font-semibold text-leaf dark:border-white/10 dark:bg-[#111111] dark:text-meadow sm:px-6 lg:px-8">
                         <div class="mx-auto flex max-w-7xl items-center justify-between gap-3">
-                            <p class="truncate">Back-office connecte a la boutique Denetfils</p>
+                            <p class="truncate">Back-office connecte a la boutique {{ config('shop.name') }}</p>
                             <div class="hidden items-center gap-4 text-cocoa/60 dark:text-cream/60 sm:flex">
                                 <a href="{{ route('home.localized', ['locale' => $currentLocale]) }}" class="transition hover:text-leaf dark:hover:text-meadow">Boutique</a>
                                 <a href="{{ route('admin.dashboard', ['locale' => $alternateLocale]) }}" class="transition hover:text-leaf dark:hover:text-meadow">{{ strtoupper($alternateLocale) }}</a>
@@ -285,7 +285,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></svg>
                                 </button>
                                 <div class="min-w-0">
-                                    <p class="truncate text-xs font-black uppercase tracking-[0.2em] text-leaf dark:text-meadow">Back-office Denetfils</p>
+                                    <p class="truncate text-xs font-black uppercase tracking-[0.2em] text-leaf dark:text-meadow">Back-office {{ config('shop.name') }}</p>
                                     <h1 class="truncate text-xl font-black text-cocoa dark:text-cream sm:text-2xl">@yield('page_title', 'Administration')</h1>
                                     @hasSection('page_subtitle')
                                         <p class="hidden max-w-2xl truncate text-sm font-semibold text-cocoa/55 dark:text-cream/55 sm:block">@yield('page_subtitle')</p>

@@ -76,6 +76,7 @@ class CatalogManagementService
             $product = Product::create([
                 ...Arr::except($data, ['images', 'variants']),
                 'currency' => $data['currency'] ?? 'EUR',
+                'tax_class' => $data['tax_class'] ?? 'food',
                 'is_active' => $data['is_active'] ?? true,
             ]);
 

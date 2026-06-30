@@ -53,6 +53,7 @@ class UpdateProductRequest extends FormRequest
             'sku' => ['sometimes', 'string', 'max:80', Rule::unique('products', 'sku')->ignore($product?->id)],
             'price_cents' => ['sometimes', 'integer', 'min:1'],
             'currency' => ['sometimes', 'string', 'size:3', Rule::in(['EUR'])],
+            'tax_class' => ['sometimes', Rule::in(['food', 'standard'])],
             'weight_grams' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'stock_quantity' => ['sometimes', 'integer', 'min:0'],
             'max_order_quantity' => ['sometimes', 'nullable', 'integer', 'min:1'],

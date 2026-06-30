@@ -52,7 +52,7 @@
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-2xl border border-leaf/10 bg-[#f6f4ee] shadow-tropical dark:border-white/10 dark:bg-[#101b10]">
+    <div class="overflow-hidden rounded-2xl border border-leaf/10 bg-[#f7f7f7] shadow-tropical dark:border-white/10 dark:bg-[#111111]">
         <header class="flex min-h-[72px] items-center justify-between border-b border-leaf/10 bg-white px-4 dark:border-white/10 dark:bg-white/5 sm:px-6">
             <div>
                 <p class="text-xs font-black uppercase tracking-[0.2em] text-leaf dark:text-meadow">{{ __('home.account.nav') }}</p>
@@ -122,7 +122,7 @@
                 </nav>
             </aside>
 
-            <main class="min-w-0 bg-[#f8f7f3] p-4 dark:bg-[#0f2110] sm:p-6">
+            <main class="min-w-0 bg-[#f5f5f5] p-4 dark:bg-[#000000] sm:p-6">
                 <section id="overview" x-show="activeTab === 'orders'" x-transition.opacity.duration.180ms class="grid gap-4 sm:grid-cols-3">
                     <div class="{{ $panel }} p-4">
                         <p class="text-xs font-black uppercase tracking-wide text-cocoa/45 dark:text-cream/45">{{ __('home.account.overview.orders') }}</p>

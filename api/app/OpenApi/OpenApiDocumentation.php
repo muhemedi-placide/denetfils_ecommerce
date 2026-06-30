@@ -142,6 +142,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'price_cents', type: 'integer', example: 890),
         new OA\Property(property: 'formatted_price', type: 'string', example: '8,90 EUR'),
         new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'tax_class', type: 'string', enum: ['food', 'standard'], example: 'food'),
         new OA\Property(property: 'stock_quantity', type: 'integer', example: 35),
         new OA\Property(property: 'primary_image', ref: '#/components/schemas/OptimizedImage', nullable: true),
         new OA\Property(property: 'images', type: 'array', items: new OA\Items(ref: '#/components/schemas/OptimizedImage')),
@@ -280,6 +281,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'sku', type: 'string', example: 'DEN-MIEL-250'),
         new OA\Property(property: 'price_cents', type: 'integer', example: 890),
         new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'tax_class', type: 'string', enum: ['food', 'standard'], example: 'food'),
         new OA\Property(property: 'weight_grams', type: 'integer', nullable: true, example: 250),
         new OA\Property(property: 'stock_quantity', type: 'integer', example: 35),
         new OA\Property(property: 'max_order_quantity', type: 'integer', nullable: true, example: 12),
@@ -324,6 +326,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'sku', type: 'string', example: 'DEN-BOX-EU-001'),
         new OA\Property(property: 'price_cents', type: 'integer', example: 2590),
         new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'tax_class', type: 'string', enum: ['food', 'standard'], example: 'standard'),
         new OA\Property(property: 'weight_grams', type: 'integer', nullable: true, example: 1200),
         new OA\Property(property: 'stock_quantity', type: 'integer', example: 25),
         new OA\Property(property: 'max_order_quantity', type: 'integer', nullable: true, example: 6),
@@ -363,6 +366,24 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'quantity', type: 'integer', example: 2),
         new OA\Property(property: 'unit_price_cents', type: 'integer', example: 890),
         new OA\Property(property: 'line_total_cents', type: 'integer', example: 1780),
+    ],
+)]
+#[OA\Schema(
+    schema: 'CartEstimate',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'cart_token', type: 'string'),
+        new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'country_source', type: 'string', example: 'visitor_context'),
+        new OA\Property(property: 'is_estimate', type: 'boolean', example: true),
+        new OA\Property(property: 'is_supported', type: 'boolean', example: true),
+        new OA\Property(property: 'prices_include_tax', type: 'boolean', example: true),
+        new OA\Property(property: 'subtotal_cents', type: 'integer', example: 1780),
+        new OA\Property(property: 'shipping_from_cents', type: 'integer', nullable: true, example: 390),
+        new OA\Property(property: 'tax_cents', type: 'integer', nullable: true, example: 191),
+        new OA\Property(property: 'total_cents', type: 'integer', nullable: true, example: 2170),
+        new OA\Property(property: 'shipping_options', type: 'array', items: new OA\Items(type: 'object')),
+        new OA\Property(property: 'tax_breakdown', type: 'array', items: new OA\Items(type: 'object')),
     ],
 )]
 #[OA\Schema(
@@ -712,6 +733,31 @@ class OpenApiDocumentation
         ],
     )]
     public function cartsShow(): void
+    {
+    }
+
+    #[OA\Post(
+        path: '/api/v1/carts/{cartToken}/estimate',
+        operationId: 'cartEstimateStore',
+        tags: ['Cart'],
+        parameters: [
+            new OA\Parameter(name: 'cartToken', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(
+            required: ['country_code'],
+            properties: [
+                new OA\Property(property: 'country_code', type: 'string', minLength: 2, maxLength: 2, example: 'FR'),
+                new OA\Property(property: 'locale', type: 'string', enum: ['fr', 'en'], example: 'fr'),
+            ],
+        )),
+        responses: [
+            new OA\Response(response: 200, description: 'Tax-inclusive guest estimate', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/CartEstimate'),
+            ])),
+            new OA\Response(response: 422, description: 'Invalid or empty cart'),
+        ],
+    )]
+    public function cartEstimateStore(): void
     {
     }
 
