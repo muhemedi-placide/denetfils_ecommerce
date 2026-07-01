@@ -13,7 +13,7 @@ class HealthTest extends TestCase
         $response
             ->assertOk()
             ->assertJson([
-                'service' => 'denetfils-api',
+                'service' => \Illuminate\Support\Str::slug(config('shop.name')).'-api',
                 'status' => 'ok',
                 'version' => 'v1',
             ]);

@@ -8,9 +8,14 @@ use Illuminate\Support\Facades\Http;
 
 class AdminApiClient
 {
+    public function login(array $payload): array
+    {
+        return $this->send('post', 'admin/auth/login', $payload);
+    }
+
     public function me(string $token): array
     {
-        return $this->send('get', 'auth/me', [], $token);
+        return $this->send('get', 'admin/auth/me', [], $token);
     }
 
     public function dashboard(string $token, string $locale, array $filters = []): array
@@ -24,6 +29,7 @@ class AdminApiClient
     public function products(string $token, array $filters = []): array
     {
         return $this->send('get', 'admin/products', $this->clean([
+            'locale' => $filters['locale'] ?? null,
             'q' => $filters['q'] ?? null,
             'category_id' => $filters['category_id'] ?? null,
             'publication_status' => $filters['publication_status'] ?? null,
@@ -33,9 +39,27 @@ class AdminApiClient
         ]), $token);
     }
 
+    public function catalogHealth(string $token, string $locale, array $filters = []): array
+    {
+        return $this->send('get', 'admin/catalog-health', $this->clean([
+            'locale' => $this->locale($locale),
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'page' => $filters['page'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+        ]), $token);
+    }
+
     public function createProduct(string $token, array $payload): array
     {
         return $this->send('post', 'admin/products', $payload, $token);
+    }
+
+    public function product(string $token, int|string $product, string $locale): array
+    {
+        return $this->send('get', "admin/products/{$product}", [
+            'locale' => $this->locale($locale),
+        ], $token);
     }
 
     public function updateProduct(string $token, int|string $product, array $payload): array
@@ -125,9 +149,82 @@ class AdminApiClient
         ], $token);
     }
 
+    public function invoices(string $token, string $locale, array $filters = []): array
+    {
+        return $this->send('get', 'admin/invoices', $this->clean([
+            'locale' => $this->locale($locale),
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'payment_status' => $filters['payment_status'] ?? null,
+            'date_from' => $filters['date_from'] ?? null,
+            'date_to' => $filters['date_to'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+            'page' => $filters['page'] ?? null,
+        ]), $token);
+    }
+
+    public function invoice(string $token, int|string $invoice, string $locale): array
+    {
+        return $this->send('get', "admin/invoices/{$invoice}", [
+            'locale' => $this->locale($locale),
+        ], $token);
+    }
+
+    public function carts(string $token, string $locale, array $filters = []): array
+    {
+        return $this->send('get', 'admin/carts', $this->clean([
+            'locale' => $this->locale($locale),
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'date_from' => $filters['date_from'] ?? null,
+            'date_to' => $filters['date_to'] ?? null,
+            'page' => $filters['page'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+        ]), $token);
+    }
+
+    public function cart(string $token, int|string $cart, string $locale): array
+    {
+        return $this->send('get', "admin/carts/{$cart}", [
+            'locale' => $this->locale($locale),
+        ], $token);
+    }
+
+    public function createCartRecoveryLink(string $token, int|string $cart): array
+    {
+        return $this->send('post', "admin/carts/{$cart}/recovery-links", [], $token);
+    }
+
     public function updateOrder(string $token, int|string $order, array $payload): array
     {
         return $this->send('patch', "admin/orders/{$order}", $this->clean($payload), $token);
+    }
+
+    public function orderConversation(string $token, int|string $order): array
+    {
+        return $this->send('get', "admin/orders/{$order}/conversation", [], $token);
+    }
+
+    public function openOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/open", [], $token);
+    }
+
+    public function sendOrderMessage(string $token, int|string $order, string $body): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/messages", [
+            'body' => $body,
+        ], $token);
+    }
+
+    public function markOrderConversationRead(string $token, int|string $order): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/read", [], $token);
+    }
+
+    public function closeOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "admin/orders/{$order}/conversation/close", [], $token);
     }
 
     public function users(string $token, array $filters = []): array
@@ -139,6 +236,27 @@ class AdminApiClient
             'country_code' => $filters['country_code'] ?? null,
             'per_page' => $filters['per_page'] ?? 25,
         ]), $token);
+    }
+
+    public function customers(string $token, array $filters = []): array
+    {
+        return $this->send('get', 'admin/customers', $this->clean([
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'country_code' => $filters['country_code'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+            'page' => $filters['page'] ?? null,
+        ]), $token);
+    }
+
+    public function customer(string $token, int|string $customer): array
+    {
+        return $this->send('get', "admin/customers/{$customer}", [], $token);
+    }
+
+    public function updateCustomer(string $token, int|string $customer, array $payload): array
+    {
+        return $this->send('patch', "admin/customers/{$customer}", $payload, $token);
     }
 
     public function createUser(string $token, array $payload): array
@@ -166,6 +284,13 @@ class AdminApiClient
         return $this->send('get', 'admin/roles', [], $token);
     }
 
+    public function syncRolePermissions(string $token, int|string $role, array $permissions): array
+    {
+        return $this->send('patch', "admin/roles/{$role}/permissions", [
+            'permissions' => array_values($permissions),
+        ], $token);
+    }
+
     public function permissions(string $token): array
     {
         return $this->send('get', 'admin/permissions', [], $token);
@@ -179,6 +304,48 @@ class AdminApiClient
             'auditable_type' => $filters['auditable_type'] ?? null,
             'per_page' => $filters['per_page'] ?? 50,
         ]), $token);
+    }
+
+    public function paymentMethodSchemas(string $token): array
+    {
+        return $this->send('get', 'admin/payment-methods/schemas', [], $token);
+    }
+
+    public function paymentMethods(string $token, array $filters = []): array
+    {
+        return $this->send('get', 'admin/payment-methods', $this->clean([
+            'provider' => $filters['provider'] ?? null,
+            'environment' => $filters['environment'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'is_enabled' => $filters['is_enabled'] ?? null,
+            'q' => $filters['q'] ?? null,
+            'per_page' => $filters['per_page'] ?? 50,
+        ]), $token);
+    }
+
+    public function createPaymentMethod(string $token, array $payload): array
+    {
+        return $this->send('post', 'admin/payment-methods', $payload, $token);
+    }
+
+    public function updatePaymentMethod(string $token, int|string $paymentMethod, array $payload): array
+    {
+        return $this->send('patch', "admin/payment-methods/{$paymentMethod}", $payload, $token);
+    }
+
+    public function activatePaymentMethod(string $token, int|string $paymentMethod): array
+    {
+        return $this->send('post', "admin/payment-methods/{$paymentMethod}/activate", [], $token);
+    }
+
+    public function deactivatePaymentMethod(string $token, int|string $paymentMethod): array
+    {
+        return $this->send('post', "admin/payment-methods/{$paymentMethod}/deactivate", [], $token);
+    }
+
+    public function testPaymentMethod(string $token, int|string $paymentMethod): array
+    {
+        return $this->send('post', "admin/payment-methods/{$paymentMethod}/test-connection", [], $token);
     }
 
     private function send(string $method, string $uri, array $payload = [], ?string $token = null): array

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -58,9 +59,89 @@ class AccountApiClient
         return $this->send('post', 'checkout/quote', $payload, $token);
     }
 
+    public function shippingMethods(string $token, array $payload): array
+    {
+        return $this->send('get', 'shipping/methods', $payload, $token);
+    }
+
+    public function shippingPickupPoints(string $token, array $payload): array
+    {
+        return $this->send('post', 'shipping/pickup-points/search', $payload, $token);
+    }
+
+    public function selectShipping(string $token, array $payload): array
+    {
+        return $this->send('post', 'shipping/selection', $payload, $token);
+    }
+
+    public function shipmentTracking(array $payload): array
+    {
+        return $this->send('post', 'shipping/tracking', $payload);
+    }
+
     public function createOrder(string $token, array $payload): array
     {
         return $this->send('post', 'orders', $payload, $token);
+    }
+
+    public function createStripePaymentIntent(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/payments/stripe/payment-intent", [], $token);
+    }
+
+    public function confirmStripePaymentIntent(string $token, int|string $order, string $paymentIntentId): array
+    {
+        return $this->send('post', "orders/{$order}/payments/stripe/payment-intent/confirm", [
+            'payment_intent_id' => $paymentIntentId,
+        ], $token);
+    }
+
+    public function createPaypalOrder(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/payments/paypal/orders", [], $token);
+    }
+
+    public function createPaypalExpressOrder(array $payload): array
+    {
+        return $this->send('post', 'payments/paypal/express/orders', $payload);
+    }
+
+    public function finalizePaypalExpressOrder(array $payload): array
+    {
+        return $this->send('post', 'payments/paypal/express/finalize', $payload);
+    }
+
+    public function preloadPaymentMethods(string $token, int|string $order): array
+    {
+        try {
+            $baseUrl = $this->baseUrl();
+            $responses = Http::pool(fn (Pool $pool) => [
+                $pool->as('stripe')
+                    ->withToken($token)
+                    ->acceptJson()
+                    ->timeout(8)
+                    ->post("{$baseUrl}/orders/{$order}/payments/stripe/payment-intent"),
+                $pool->as('paypal')
+                    ->withToken($token)
+                    ->acceptJson()
+                    ->timeout(8)
+                    ->post("{$baseUrl}/orders/{$order}/payments/paypal/orders"),
+            ]);
+
+            return [
+                'stripe' => $this->responseResult($responses['stripe'] ?? null),
+                'paypal' => $this->responseResult($responses['paypal'] ?? null),
+            ];
+        } catch (\Throwable) {
+            $failure = $this->connectionFailure();
+
+            return ['stripe' => $failure, 'paypal' => $failure];
+        }
+    }
+
+    public function capturePaypalOrder(string $token, int|string $order, string $paypalOrderId): array
+    {
+        return $this->send('post', "orders/{$order}/payments/paypal/orders/{$paypalOrderId}/capture", [], $token);
     }
 
     public function orders(string $token, string $locale = 'fr', int $perPage = 5): array
@@ -69,6 +150,40 @@ class AccountApiClient
             'locale' => $this->locale($locale),
             'per_page' => max(5, min(15, $perPage)),
         ], $token);
+    }
+
+    public function order(string $token, int|string $order, string $locale = 'fr'): array
+    {
+        return $this->send('get', "orders/{$order}", [
+            'locale' => $this->locale($locale),
+        ], $token);
+    }
+
+    public function orderConversation(string $token, int|string $order): array
+    {
+        return $this->send('get', "orders/{$order}/conversation", [], $token);
+    }
+
+    public function openOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/open", [], $token);
+    }
+
+    public function sendOrderMessage(string $token, int|string $order, string $body): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/messages", [
+            'body' => $body,
+        ], $token);
+    }
+
+    public function markOrderConversationRead(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/read", [], $token);
+    }
+
+    public function closeOrderConversation(string $token, int|string $order): array
+    {
+        return $this->send('post', "orders/{$order}/conversation/close", [], $token);
     }
 
     public function supportedCountries(string $locale): array
@@ -108,22 +223,36 @@ class AccountApiClient
                 ? $request->{$method}($uri, $payload)
                 : $request->{$method}($uri, $payload);
 
-            return [
-                'ok' => $response->successful(),
-                'status' => $response->status(),
-                'data' => $response->json('data', []),
-                'message' => $response->json('message'),
-                'errors' => $response->json('errors', []),
-            ];
+            return $this->responseResult($response);
         } catch (ConnectionException) {
-            return [
-                'ok' => false,
-                'status' => 0,
-                'data' => [],
-                'message' => __('home.account.api_error'),
-                'errors' => [],
-            ];
+            return $this->connectionFailure();
         }
+    }
+
+    private function responseResult(mixed $response): array
+    {
+        if (! $response instanceof Response) {
+            return $this->connectionFailure();
+        }
+
+        return [
+            'ok' => $response->successful(),
+            'status' => $response->status(),
+            'data' => $response->json('data', []),
+            'message' => $response->json('message'),
+            'errors' => $response->json('errors', []),
+        ];
+    }
+
+    private function connectionFailure(): array
+    {
+        return [
+            'ok' => false,
+            'status' => 0,
+            'data' => [],
+            'message' => __('home.account.api_error'),
+            'errors' => [],
+        ];
     }
 
     private function baseUrl(): string

@@ -11,7 +11,7 @@ class CustomerProfile extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'customer_id',
         'accepts_marketing',
         'marketing_consented_at',
         'preferences',
@@ -23,8 +23,8 @@ class CustomerProfile extends Model
         'preferences' => 'array',
     ];
 
-    public function user(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
     }
 }

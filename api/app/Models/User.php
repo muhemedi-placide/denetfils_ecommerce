@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,7 +15,11 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles {
+        assignRole as protected assignSpatieRole;
+        syncRoles as protected syncSpatieRoles;
+    }
+    use Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -23,6 +28,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'role_id',
         'first_name',
         'last_name',
         'email',
@@ -58,29 +64,30 @@ class User extends Authenticatable
         ];
     }
 
-    public function customerProfile(): HasOne
-    {
-        return $this->hasOne(CustomerProfile::class);
-    }
-
     public function staffProfile(): HasOne
     {
         return $this->hasOne(StaffProfile::class);
     }
 
-    public function addresses(): HasMany
+    public function role(): BelongsTo
     {
-        return $this->hasMany(UserAddress::class);
+        return $this->belongsTo(\Spatie\Permission\Models\Role::class);
     }
 
-    public function orders(): HasMany
+    public function assignRole(...$roles)
     {
-        return $this->hasMany(Order::class);
+        $result = $this->assignSpatieRole(...$roles);
+        $this->syncPrimaryRoleColumn();
+
+        return $result;
     }
 
-    public function privacyConsents(): HasMany
+    public function syncRoles(...$roles)
     {
-        return $this->hasMany(PrivacyConsent::class);
+        $result = $this->syncSpatieRoles(...$roles);
+        $this->syncPrimaryRoleColumn();
+
+        return $result;
     }
 
     public function auditLogs(): HasMany
@@ -88,8 +95,23 @@ class User extends Authenticatable
         return $this->hasMany(AuditLog::class, 'actor_id');
     }
 
+    public function orderMessages(): HasMany
+    {
+        return $this->hasMany(OrderMessage::class);
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    private function syncPrimaryRoleColumn(): void
+    {
+        $roleId = $this->roles()->orderBy('roles.id')->value('roles.id');
+
+        if ($this->role_id !== $roleId) {
+            $this->forceFill(['role_id' => $roleId])->saveQuietly();
+            $this->unsetRelation('role');
+        }
     }
 }

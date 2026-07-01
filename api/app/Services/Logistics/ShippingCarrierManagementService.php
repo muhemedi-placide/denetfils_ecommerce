@@ -6,6 +6,10 @@ use App\Models\ShippingCarrier;
 use App\Models\User;
 use App\Services\Core\AuditLogger;
 use App\Support\ShippingCarrierCatalog;
+use App\Services\Shipping\ShippingManager;
+use App\Models\ShippingMethod;
+use App\Models\ShippingRate;
+use App\Models\ShippingZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -13,12 +17,15 @@ use Illuminate\Support\Str;
 
 class ShippingCarrierManagementService
 {
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(private readonly AuditLogger $auditLogger, private readonly ShippingManager $shipping) {}
 
     public function create(array $data, User $actor, Request $request): ShippingCarrier
     {
         return DB::transaction(function () use ($data, $actor, $request) {
             $carrier = ShippingCarrier::create($this->attributes($data));
+            if (! empty($data['method'])) {
+                $this->createMethod($carrier, $data['method'], $data['countries'] ?? []);
+            }
             $this->auditLogger->record($actor, 'shipping.carriers.created', $carrier, $request, [
                 'code' => $carrier->code,
                 'provider' => $carrier->provider,
@@ -70,9 +77,18 @@ class ShippingCarrierManagementService
         $schema = ShippingCarrierCatalog::provider($carrier->provider);
         $missing = $this->missingRequiredCredentials($carrier);
         $status = $missing === [] ? 'ready' : 'missing_credentials';
-        $message = $missing === []
-            ? 'La configuration Mondial Relay est structurellement complete. Aucun appel externe n est execute depuis ce test admin.'
-            : 'Identifiants manquants: '.implode(', ', $missing).'.';
+        $message = $missing === [] ? 'Configuration prête.' : 'Identifiants manquants: '.implode(', ', $missing).'.';
+        $result = null;
+        if ($missing === []) {
+            try {
+                $result = $this->shipping->provider($carrier->provider)->test($carrier);
+                $status = 'success';
+                $message = $result['message'];
+            } catch (\Throwable $exception) {
+                $status = 'failed';
+                $message = mb_substr($exception->getMessage(), 0, 500);
+            }
+        }
 
         $carrier->forceFill([
             'last_tested_at' => now(),
@@ -94,8 +110,9 @@ class ShippingCarrierManagementService
             'status' => $status,
             'message' => $message,
             'missing_credentials' => $missing,
-            'external_call_executed' => false,
-            'signature_strategy' => 'Mondial Relay SOAP: MD5 majuscule des parametres ordonnes et de la cle privee.',
+            'external_call_executed' => $missing === [],
+            'result' => $result,
+            'signature_strategy' => $carrier->provider === 'mondial_relay' ? 'Mondial Relay SOAP: MD5 majuscule des paramètres ordonnés et de la clé privée.' : null,
             'test_reference' => Str::upper(Str::random(10)),
         ];
     }
@@ -112,7 +129,7 @@ class ShippingCarrierManagementService
             : $existing?->public_config ?? ($schema['default_public_config'] ?? []);
 
         return array_filter([
-            ...Arr::except($data, ['credentials', 'public_config']),
+            ...Arr::except($data, ['credentials', 'public_config', 'method']),
             'delivery_modes' => $data['delivery_modes'] ?? $existing?->delivery_modes ?? collect($schema['delivery_modes'] ?? [])->pluck('key')->all(),
             'credentials' => $credentials,
             'public_config' => $publicConfig,
@@ -139,5 +156,39 @@ class ShippingCarrierManagementService
             ->pluck('key')
             ->values()
             ->all();
+    }
+
+    private function createMethod(ShippingCarrier $carrier, array $data, array $countries): void
+    {
+        $deliveryType = (string) $data['delivery_type'];
+        $method = ShippingMethod::query()->create([
+            'shipping_carrier_id' => $carrier->id,
+            'code' => $data['code'],
+            'name' => ['fr' => data_get($data, 'name.fr'), 'en' => data_get($data, 'name.en') ?: data_get($data, 'name.fr')],
+            'description' => null,
+            'delivery_type' => $deliveryType,
+            'service_code' => strtoupper((string) $data['service_code']),
+            'is_active' => true,
+            'requires_pickup_point' => (bool) ($data['requires_pickup_point'] ?? in_array($deliveryType, ['pickup_point', 'locker'], true)),
+            'requires_phone' => true,
+            'max_weight_grams' => $carrier->max_weight_grams,
+            'min_delivery_days' => $data['min_delivery_days'] ?? null,
+            'max_delivery_days' => $data['max_delivery_days'] ?? null,
+        ]);
+
+        $zone = ShippingZone::query()->create([
+            'name' => $carrier->display_name['fr'].' - '.implode(', ', $countries),
+            'countries' => array_values($countries),
+            'is_active' => true,
+        ]);
+        ShippingRate::query()->create([
+            'shipping_method_id' => $method->id,
+            'shipping_zone_id' => $zone->id,
+            'min_weight_grams' => 0,
+            'max_weight_grams' => $carrier->max_weight_grams ?: 70000,
+            'price_cents' => (int) $data['price_cents'],
+            'currency' => strtoupper((string) ($data['currency'] ?? 'EUR')),
+            'is_active' => true,
+        ]);
     }
 }

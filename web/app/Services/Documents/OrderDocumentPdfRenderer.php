@@ -21,14 +21,19 @@ class OrderDocumentPdfRenderer
 
     private string $title = 'FACTURE';
 
+    private string $locale = 'fr';
+
     private array $order = [];
 
     private array $shop = [];
 
-    public function render(string $type, array $order): string
+    public function render(string $type, array $order, string $locale = 'fr'): string
     {
         $this->type = $type === 'delivery-note' ? 'delivery-note' : 'invoice';
-        $this->title = $this->type === 'invoice' ? 'FACTURE' : 'BON DE LIVRAISON';
+        $this->locale = $locale === 'en' ? 'en' : 'fr';
+        $this->title = $this->type === 'invoice'
+            ? $this->t('FACTURE', 'INVOICE')
+            : $this->t('BON DE LIVRAISON', 'DELIVERY NOTE');
         $this->order = $order;
         $this->shop = config('documents.shop', []);
         $this->pages = [];
@@ -51,13 +56,13 @@ class OrderDocumentPdfRenderer
 
     private function drawPageHeader(int $page): void
     {
-        $this->rect(0, 810, self::PAGE_WIDTH, 32, [0.12, 0.39, 0.25]);
-        $this->rect(self::MARGIN, 724, self::PAGE_WIDTH - (self::MARGIN * 2), 1, [0.87, 0.91, 0.86]);
-        $this->rect(self::MARGIN, 692, self::PAGE_WIDTH - (self::MARGIN * 2), 1, [0.87, 0.91, 0.86]);
+        $this->rect(0, 810, self::PAGE_WIDTH, 32, [0, 0, 0]);
+        $this->rect(self::MARGIN, 724, self::PAGE_WIDTH - (self::MARGIN * 2), 1, [0.87, 0.87, 0.87]);
+        $this->rect(self::MARGIN, 692, self::PAGE_WIDTH - (self::MARGIN * 2), 1, [0.87, 0.87, 0.87]);
 
         $this->text(self::MARGIN, 821, (string) ($this->shop['tagline'] ?? 'Boutique alimentaire premium'), 9, 'F2', [1, 1, 1]);
-        $this->text(self::MARGIN, 780, (string) ($this->shop['brand'] ?? 'DEN & FILS'), 24, 'F2', [0.08, 0.10, 0.08]);
-        $this->text(self::MARGIN, 760, (string) ($this->shop['trade_name'] ?? 'Denetfils'), 10, 'F1', [0.33, 0.30, 0.25]);
+        $this->text(self::MARGIN, 780, (string) ($this->shop['brand'] ?? config('shop.name')), 24, 'F2', [0.08, 0.08, 0.08]);
+        $this->text(self::MARGIN, 760, (string) ($this->shop['trade_name'] ?? config('shop.name')), 10, 'F1', [0.15, 0.15, 0.15]);
 
         $contactLines = array_filter([
             $this->shop['website'] ?? null,
@@ -67,40 +72,35 @@ class OrderDocumentPdfRenderer
         $contactY = 780;
 
         foreach ($contactLines as $line) {
-            $this->text(172, $contactY, (string) $line, 8.5, 'F1', [0.33, 0.30, 0.25]);
+            $this->text(172, $contactY, (string) $line, 8.5, 'F1', [0.30, 0.30, 0.30]);
             $contactY -= 13;
         }
 
         $documentRef = $this->documentReference();
-        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 782, $this->title, 20, 'F2', [0.08, 0.10, 0.08]);
-        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 760, $documentRef, 10, 'F2', [0.12, 0.39, 0.25]);
-        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 744, 'Date: '.$this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null), 8.5, 'F1', [0.33, 0.30, 0.25]);
+        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 782, $this->title, 20, 'F2', [0.08, 0.08, 0.08]);
+        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 760, $documentRef, 10, 'F2', [0, 0, 0]);
+        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 744, $this->t('Date : ', 'Date: ').$this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null), 8.5, 'F1', [0.30, 0.30, 0.30]);
 
         if ($page > 1) {
-            $this->textRight(self::PAGE_WIDTH - self::MARGIN, 708, 'Suite du document', 8.5, 'F2', [0.33, 0.30, 0.25]);
+            $this->textRight(self::PAGE_WIDTH - self::MARGIN, 708, $this->t('Suite du document', 'Document continued'), 8.5, 'F2', [0.30, 0.30, 0.30]);
         }
     }
 
     private function drawOrderSummary(): void
     {
-        $this->sectionTitle('Commande');
+        $this->sectionTitle($this->t('Commande', 'Order'));
 
-        $status = $this->labelFromMap($this->order['status'] ?? null, [
-            'pending_payment' => 'Paiement en attente',
-            'confirmed' => 'Confirmee',
-            'processing' => 'En traitement',
-            'completed' => 'Terminee',
-            'cancelled' => 'Annulee',
-            'refunded' => 'Remboursee',
-        ]);
+        $status = $this->labelFromMap($this->order['status'] ?? null, $this->locale === 'en'
+            ? ['pending_payment' => 'Payment pending', 'confirmed' => 'Confirmed', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'refunded' => 'Refunded']
+            : ['pending_payment' => 'Paiement en attente', 'confirmed' => 'Confirmée', 'processing' => 'En traitement', 'completed' => 'Terminée', 'cancelled' => 'Annulée', 'refunded' => 'Remboursée']);
 
         $this->infoGrid([
-            ['Reference', (string) ($this->order['order_number'] ?? '-')],
-            ['ID commande', (string) ($this->order['id'] ?? '-')],
-            ['Date commande', $this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null)],
-            ['Etat', $status],
-            ['Paiement', (string) (data_get($this->order, 'payment_method') ?: data_get($this->order, 'metadata.payment.method') ?: '-')],
-            ['Transporteur', (string) ($this->order['carrier'] ?? '-')],
+            [$this->t('Référence', 'Reference'), (string) ($this->order['order_number'] ?? '-')],
+            [$this->t('ID commande', 'Order ID'), (string) ($this->order['id'] ?? '-')],
+            [$this->t('Date de commande', 'Order date'), $this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null)],
+            [$this->t('État', 'Status'), $status],
+            [$this->t('Paiement', 'Payment'), (string) (data_get($this->order, 'payment_method') ?: data_get($this->order, 'metadata.payment.method') ?: '-')],
+            [$this->t('Transporteur', 'Carrier'), (string) ($this->order['carrier'] ?? '-')],
         ]);
     }
 
@@ -117,8 +117,8 @@ class OrderDocumentPdfRenderer
 
         $this->box($left, $top - $height, 240, $height);
         $this->box($right, $top - $height, 240, $height);
-        $this->text($left + 14, $top - 22, 'Adresse de livraison', 11, 'F2', [0.08, 0.10, 0.08]);
-        $this->text($right + 14, $top - 22, 'Adresse de facturation', 11, 'F2', [0.08, 0.10, 0.08]);
+        $this->text($left + 14, $top - 22, $this->t('Adresse de livraison', 'Shipping address'), 11, 'F2', [0.08, 0.08, 0.08]);
+        $this->text($right + 14, $top - 22, $this->t('Adresse de facturation', 'Billing address'), 11, 'F2', [0.08, 0.08, 0.08]);
 
         $this->addressLines($left + 14, $top - 42, $shipping);
         $this->addressLines($right + 14, $top - 42, $billing);
@@ -127,15 +127,15 @@ class OrderDocumentPdfRenderer
 
     private function drawItemsTable(): void
     {
-        $this->sectionTitle('Articles');
+        $this->sectionTitle($this->t('Articles', 'Items'));
 
         $columns = $this->type === 'invoice'
             ? [
                 ['label' => 'Ref.', 'x' => self::MARGIN + 8, 'w' => 70],
-                ['label' => 'Produit', 'x' => self::MARGIN + 84, 'w' => 202],
-                ['label' => 'PU TTC', 'x' => self::MARGIN + 300, 'w' => 70, 'align' => 'right'],
+                ['label' => $this->t('Produit', 'Product'), 'x' => self::MARGIN + 84, 'w' => 202],
+                ['label' => $this->t('PU TTC', 'Unit price'), 'x' => self::MARGIN + 300, 'w' => 70, 'align' => 'right'],
                 ['label' => 'Qt.', 'x' => self::MARGIN + 384, 'w' => 42, 'align' => 'right'],
-                ['label' => 'Total TTC', 'x' => self::MARGIN + 440, 'w' => 70, 'align' => 'right'],
+                ['label' => $this->t('Total TTC', 'Total'), 'x' => self::MARGIN + 440, 'w' => 70, 'align' => 'right'],
             ]
             : [
                 ['label' => 'Ref.', 'x' => self::MARGIN + 8, 'w' => 80],
@@ -146,27 +146,38 @@ class OrderDocumentPdfRenderer
         $this->drawTableHeader($columns);
 
         foreach (($this->order['items'] ?? []) as $item) {
-            $name = (string) data_get($item, 'product.name', 'Produit');
+            $name = (string) data_get($item, 'product.name', $this->t('Produit', 'Product'));
             $nameLines = $this->wrap($name, $this->type === 'invoice' ? 42 : 62);
-            $rowHeight = max(34, count($nameLines) * 12 + 16);
+            $rowHeight = max(34, count($nameLines) * 12 + 16 + ($this->type === 'invoice' ? 12 : 0));
             $this->ensureTableSpace($rowHeight, $columns);
             $rowTop = $this->y;
 
-            $this->line(self::MARGIN, $rowTop, self::PAGE_WIDTH - self::MARGIN, $rowTop, [0.90, 0.90, 0.87]);
-            $this->text($columns[0]['x'], $rowTop - 20, (string) (data_get($item, 'product.sku') ?: data_get($item, 'product_id') ?: '-'), 8.5, 'F1', [0.25, 0.24, 0.21]);
+            $this->line(self::MARGIN, $rowTop, self::PAGE_WIDTH - self::MARGIN, $rowTop, [0.90, 0.90, 0.90]);
+            $this->text($columns[0]['x'], $rowTop - 20, (string) (data_get($item, 'product.sku') ?: data_get($item, 'product_id') ?: '-'), 8.5, 'F1', [0.24, 0.24, 0.24]);
             $lineY = $rowTop - 20;
 
             foreach ($nameLines as $line) {
-                $this->text($columns[1]['x'], $lineY, $line, 9, 'F2', [0.08, 0.10, 0.08]);
+                $this->text($columns[1]['x'], $lineY, $line, 9, 'F2', [0.08, 0.08, 0.08]);
                 $lineY -= 12;
             }
 
             if ($this->type === 'invoice') {
-                $this->textRight($columns[2]['x'] + $columns[2]['w'], $rowTop - 20, (string) ($item['formatted_unit_price'] ?? '-'), 8.5, 'F1', [0.25, 0.24, 0.21]);
-                $this->textRight($columns[3]['x'] + $columns[3]['w'], $rowTop - 20, (string) ($item['quantity'] ?? 0), 8.5, 'F1', [0.25, 0.24, 0.21]);
-                $this->textRight($columns[4]['x'] + $columns[4]['w'], $rowTop - 20, (string) ($item['formatted_line_total'] ?? '-'), 8.5, 'F2', [0.08, 0.10, 0.08]);
+                $this->text(
+                    $columns[1]['x'],
+                    $lineY,
+                    $this->t('TVA ', 'VAT ').number_format((float) ($item['tax_rate_percent'] ?? 0), 2, ',', ' ').$this->t('% incluse : ', '% included: ').(string) ($item['formatted_tax'] ?? '-'),
+                    7.5,
+                    'F1',
+                    [0.35, 0.35, 0.35],
+                );
+            }
+
+            if ($this->type === 'invoice') {
+                $this->textRight($columns[2]['x'] + $columns[2]['w'], $rowTop - 20, (string) ($item['formatted_unit_price'] ?? '-'), 8.5, 'F1', [0.24, 0.24, 0.24]);
+                $this->textRight($columns[3]['x'] + $columns[3]['w'], $rowTop - 20, (string) ($item['quantity'] ?? 0), 8.5, 'F1', [0.24, 0.24, 0.24]);
+                $this->textRight($columns[4]['x'] + $columns[4]['w'], $rowTop - 20, (string) ($item['formatted_line_total'] ?? '-'), 8.5, 'F2', [0.08, 0.08, 0.08]);
             } else {
-                $this->textRight($columns[2]['x'] + $columns[2]['w'], $rowTop - 20, (string) ($item['quantity'] ?? 0), 8.5, 'F2', [0.08, 0.10, 0.08]);
+                $this->textRight($columns[2]['x'] + $columns[2]['w'], $rowTop - 20, (string) ($item['quantity'] ?? 0), 8.5, 'F2', [0.08, 0.08, 0.08]);
             }
 
             $this->y -= $rowHeight;
@@ -174,11 +185,11 @@ class OrderDocumentPdfRenderer
 
         if (empty($this->order['items'])) {
             $this->ensureTableSpace(38, $columns);
-            $this->text(self::MARGIN + 8, $this->y - 22, 'Aucun article dans cette commande.', 9, 'F1', [0.33, 0.30, 0.25]);
+            $this->text(self::MARGIN + 8, $this->y - 22, $this->t('Aucun article dans cette commande.', 'No items in this order.'), 9, 'F1', [0.30, 0.30, 0.30]);
             $this->y -= 38;
         }
 
-        $this->line(self::MARGIN, $this->y, self::PAGE_WIDTH - self::MARGIN, $this->y, [0.90, 0.90, 0.87]);
+        $this->line(self::MARGIN, $this->y, self::PAGE_WIDTH - self::MARGIN, $this->y, [0.90, 0.90, 0.90]);
         $this->y -= 26;
     }
 
@@ -191,11 +202,11 @@ class OrderDocumentPdfRenderer
             $w = 213;
             $top = $this->y;
             $this->box($x, $top - 116, $w, 116);
-            $this->totalLine($x, $top - 24, 'Produits', (string) ($this->order['formatted_subtotal'] ?? '-'));
-            $this->totalLine($x, $top - 44, 'Livraison', (string) ($this->order['formatted_shipping'] ?? '-'));
-            $this->totalLine($x, $top - 64, 'TVA', (string) ($this->order['formatted_tax'] ?? '-'));
-            $this->line($x + 14, $top - 78, $x + $w - 14, $top - 78, [0.87, 0.91, 0.86]);
-            $this->totalLine($x, $top - 98, 'Total TTC', (string) ($this->order['formatted_total'] ?? '-'), true);
+            $this->totalLine($x, $top - 24, $this->t('Produits', 'Products'), (string) ($this->order['formatted_subtotal'] ?? '-'));
+            $this->totalLine($x, $top - 44, $this->t('Livraison', 'Shipping'), (string) ($this->order['formatted_shipping'] ?? '-'));
+            $this->totalLine($x, $top - 64, $this->t('Dont TVA incluse', 'Including VAT'), (string) ($this->order['formatted_tax'] ?? '-'));
+            $this->line($x + 14, $top - 78, $x + $w - 14, $top - 78, [0.87, 0.87, 0.87]);
+            $this->totalLine($x, $top - 98, $this->t('Total TTC', 'Total'), (string) ($this->order['formatted_total'] ?? '-'), true);
             $this->drawFooterNote($top - 140);
             $this->y = $top - 158;
 
@@ -205,12 +216,12 @@ class OrderDocumentPdfRenderer
         $tracking = data_get($this->order, 'tracking.number');
         $pickup = data_get($this->order, 'metadata.pickup_point');
         $this->box(self::MARGIN, $this->y - 102, self::PAGE_WIDTH - (self::MARGIN * 2), 102);
-        $this->text(self::MARGIN + 14, $this->y - 24, 'Instructions logistiques', 11, 'F2', [0.08, 0.10, 0.08]);
-        $this->text(self::MARGIN + 14, $this->y - 45, 'Transporteur: '.(string) ($this->order['carrier'] ?? '-'), 9, 'F1', [0.25, 0.24, 0.21]);
-        $this->text(self::MARGIN + 14, $this->y - 62, 'Numero de suivi: '.($tracking ?: '-'), 9, 'F1', [0.25, 0.24, 0.21]);
+        $this->text(self::MARGIN + 14, $this->y - 24, 'Instructions logistiques', 11, 'F2', [0.08, 0.08, 0.08]);
+        $this->text(self::MARGIN + 14, $this->y - 45, 'Transporteur: '.(string) ($this->order['carrier'] ?? '-'), 9, 'F1', [0.24, 0.24, 0.24]);
+        $this->text(self::MARGIN + 14, $this->y - 62, 'Numero de suivi: '.($tracking ?: '-'), 9, 'F1', [0.24, 0.24, 0.24]);
 
         if ($pickup) {
-            $this->text(self::MARGIN + 14, $this->y - 79, 'Point relais: '.(string) data_get($pickup, 'name', '-').' - '.(string) data_get($pickup, 'address', '-'), 8.5, 'F1', [0.33, 0.30, 0.25]);
+            $this->text(self::MARGIN + 14, $this->y - 79, 'Point relais: '.(string) data_get($pickup, 'name', '-').' - '.(string) data_get($pickup, 'address', '-'), 8.5, 'F1', [0.30, 0.30, 0.30]);
         }
 
         $this->drawFooterNote($this->y - 128);
@@ -220,15 +231,15 @@ class OrderDocumentPdfRenderer
     private function drawFooterNote(float $y): void
     {
         $lines = $this->shop['legal'] ?? [];
-        $this->text(self::MARGIN, $y, (string) ($lines[0] ?? 'Document genere par le back-office Denetfils.'), 8.5, 'F1', [0.33, 0.30, 0.25]);
-        $this->text(self::MARGIN, $y - 14, (string) ($lines[1] ?? 'Merci de verifier la commande avant expedition.'), 8.5, 'F1', [0.33, 0.30, 0.25]);
+        $this->text(self::MARGIN, $y, (string) ($lines[0] ?? $this->t('Document généré par le back-office ', 'Document generated by the back office ').config('shop.name').'.'), 8.5, 'F1', [0.15, 0.15, 0.15]);
+        $this->text(self::MARGIN, $y - 14, (string) ($lines[1] ?? $this->t('Merci de vérifier la commande avant expédition.', 'Please verify the order before shipment.')), 8.5, 'F1', [0.30, 0.30, 0.30]);
     }
 
     private function sectionTitle(string $title): void
     {
         $this->ensureSpace(42);
-        $this->text(self::MARGIN, $this->y, $title, 14, 'F2', [0.08, 0.10, 0.08]);
-        $this->rect(self::MARGIN, $this->y - 10, 42, 3, [0.12, 0.39, 0.25]);
+        $this->text(self::MARGIN, $this->y, $title, 14, 'F2', [0.08, 0.08, 0.08]);
+        $this->rect(self::MARGIN, $this->y - 10, 42, 3, [0, 0, 0]);
         $this->y -= 30;
     }
 
@@ -246,8 +257,8 @@ class OrderDocumentPdfRenderer
             $row = intdiv($index, 3);
             $cellX = $x + ($column * $columnWidth) + 14;
             $cellY = $top - 24 - ($row * 40);
-            $this->text($cellX, $cellY, $label, 7.5, 'F2', [0.45, 0.42, 0.36]);
-            $this->text($cellX, $cellY - 14, $this->shorten((string) $value, 28), 9.5, 'F2', [0.08, 0.10, 0.08]);
+            $this->text($cellX, $cellY, $label, 7.5, 'F2', [0.42, 0.42, 0.42]);
+            $this->text($cellX, $cellY - 14, $this->shorten((string) $value, 28), 9.5, 'F2', [0.08, 0.08, 0.08]);
         }
 
         $this->y = $top - 106;
@@ -270,7 +281,7 @@ class OrderDocumentPdfRenderer
         }
 
         foreach ($lines as $line) {
-            $this->text($x, $y, $this->shorten((string) $line, 39), 8.8, 'F1', [0.25, 0.24, 0.21]);
+            $this->text($x, $y, $this->shorten((string) $line, 39), 8.8, 'F1', [0.24, 0.24, 0.24]);
             $y -= 13;
         }
     }
@@ -278,10 +289,10 @@ class OrderDocumentPdfRenderer
     private function drawTableHeader(array $columns): void
     {
         $this->ensureSpace(42);
-        $this->rect(self::MARGIN, $this->y - 26, self::PAGE_WIDTH - (self::MARGIN * 2), 26, [0.94, 0.96, 0.93]);
+        $this->rect(self::MARGIN, $this->y - 26, self::PAGE_WIDTH - (self::MARGIN * 2), 26, [0.95, 0.95, 0.95]);
 
         foreach ($columns as $column) {
-            $this->drawAlignedText($column, $this->y - 17, $column['label'], 8, 'F2', [0.08, 0.10, 0.08]);
+            $this->drawAlignedText($column, $this->y - 17, $column['label'], 8, 'F2', [0.08, 0.08, 0.08]);
         }
 
         $this->y -= 26;
@@ -307,8 +318,8 @@ class OrderDocumentPdfRenderer
 
     private function totalLine(float $x, float $y, string $label, string $value, bool $strong = false): void
     {
-        $this->text($x + 14, $y, $label, $strong ? 10.5 : 9, $strong ? 'F2' : 'F1', [0.08, 0.10, 0.08]);
-        $this->textRight($x + 198, $y, $value, $strong ? 11 : 9, 'F2', [0.08, 0.10, 0.08]);
+        $this->text($x + 14, $y, $label, $strong ? 10.5 : 9, $strong ? 'F2' : 'F1', [0.08, 0.08, 0.08]);
+        $this->textRight($x + 198, $y, $value, $strong ? 11 : 9, 'F2', [0.08, 0.08, 0.08]);
     }
 
     private function drawAlignedText(array $column, float $y, string $value, float $size, string $font, array $color): void
@@ -320,6 +331,11 @@ class OrderDocumentPdfRenderer
         }
 
         $this->text($column['x'], $y, $value, $size, $font, $color);
+    }
+
+    private function t(string $french, string $english): string
+    {
+        return $this->locale === 'en' ? $english : $french;
     }
 
     private function documentReference(): string
@@ -378,8 +394,8 @@ class OrderDocumentPdfRenderer
 
     private function box(float $x, float $y, float $w, float $h): void
     {
-        $this->rect($x, $y, $w, $h, [0.99, 0.99, 0.98]);
-        $this->strokeRect($x, $y, $w, $h, [0.87, 0.91, 0.86]);
+        $this->rect($x, $y, $w, $h, [0.99, 0.99, 0.99]);
+        $this->strokeRect($x, $y, $w, $h, [0.87, 0.87, 0.87]);
     }
 
     private function rect(float $x, float $y, float $w, float $h, array $color): void
@@ -506,7 +522,7 @@ class OrderDocumentPdfRenderer
             "BT 0.250 0.240 0.210 rg /F2 8.00 Tf %.2F %.2F Td (%s) Tj ET\n",
             self::MARGIN,
             40,
-            $this->pdfText((string) ($this->shop['brand'] ?? 'DEN & FILS').' - '.(string) ($this->shop['website'] ?? 'denetfils.fr').' - '.(string) ($this->shop['email'] ?? 'support@denetfils.fr')),
+            $this->pdfText((string) ($this->shop['brand'] ?? config('shop.name')).' - '.(string) ($this->shop['website'] ?? config('shop.website')).' - '.(string) ($this->shop['email'] ?? config('shop.email'))),
         );
         $footer .= sprintf(
             "BT 0.450 0.420 0.360 rg /F1 7.50 Tf %.2F %.2F Td (%s) Tj ET\n",

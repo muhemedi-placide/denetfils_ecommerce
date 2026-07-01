@@ -23,7 +23,7 @@ class ApiPresenter
 
     public static function product(Product $product, string $locale): array
     {
-        $product->loadMissing(['category', 'images', 'variants']);
+        $product->loadMissing(['category', 'images', 'iconImage', 'variants']);
 
         $primaryImage = $product->images->first();
         $seo = app(SeoPayloadBuilder::class);
@@ -41,14 +41,27 @@ class ApiPresenter
             'short_description' => $product->localized('short_description', $locale),
             'origin' => $product->localized('origin', $locale),
             'sku' => $product->sku,
+            'barcode' => $product->barcode,
+            'brand' => $product->brand,
             'price_cents' => $product->price_cents,
             'formatted_price' => MoneyFormatter::format($product->price_cents, $product->currency, $locale),
+            'compare_at_price_cents' => $product->compare_at_price_cents,
+            'formatted_compare_at_price' => $product->compare_at_price_cents
+                ? MoneyFormatter::format($product->compare_at_price_cents, $product->currency, $locale)
+                : null,
+            'discount_percent' => $product->compare_at_price_cents && $product->compare_at_price_cents > $product->price_cents
+                ? (int) round((1 - ($product->price_cents / $product->compare_at_price_cents)) * 100)
+                : 0,
+            'price_includes_tax' => $product->price_includes_tax,
+            'tax_class' => $product->tax_class,
             'currency' => $product->currency,
             'weight_grams' => $product->weight_grams,
+            'unit_label' => $product->unit_label,
             'stock_quantity' => $product->stock_quantity,
             'max_order_quantity' => $product->max_order_quantity,
             'is_active' => $product->is_active,
             'primary_image' => $primaryImage ? self::productImage($primaryImage, $locale, true) : null,
+            'icon_image' => $product->iconImage ? self::productImage($product->iconImage, $locale) : null,
             'images' => $product->images
                 ->map(fn (ProductImage $image) => self::productImage($image, $locale, $primaryImage?->id === $image->id))
                 ->values()
@@ -66,11 +79,37 @@ class ApiPresenter
 
     public static function cart(Cart $cart, string $locale): array
     {
-        $cart->loadMissing(['items.product.images', 'items.variant']);
+        $cart->loadMissing(['items.product.category', 'items.product.images', 'items.variant', 'customer', 'order']);
+
+        $itemCount = (int) $cart->items->sum('quantity');
+        $weight = (int) $cart->items->sum(
+            fn ($item) => ((int) ($item->product?->weight_grams ?? 0)) * (int) $item->quantity,
+        );
+        $status = $cart->order
+            ? 'converted'
+            : ($cart->expires_at?->isPast() ? 'expired' : ($itemCount === 0 ? 'empty' : 'active'));
 
         return [
             'cart_token' => $cart->cart_token,
+            'reference' => 'CRT-'.strtoupper(substr(hash('sha256', $cart->cart_token), 0, 10)),
+            'status' => $status,
             'currency' => $cart->currency,
+            'distinct_items_count' => $cart->items->count(),
+            'items_count' => $itemCount,
+            'total_weight_grams' => $weight,
+            'created_at' => $cart->created_at?->toIso8601String(),
+            'updated_at' => $cart->updated_at?->toIso8601String(),
+            'last_activity_at' => $cart->last_activity_at?->toIso8601String(),
+            'expires_at' => $cart->expires_at?->toIso8601String(),
+            'customer' => $cart->customer ? [
+                'id' => $cart->customer->id,
+                'name' => $cart->customer->name,
+                'email' => $cart->customer->email,
+            ] : null,
+            'order' => $cart->order ? [
+                'id' => $cart->order->id,
+                'order_number' => $cart->order->order_number,
+            ] : null,
             'subtotal_cents' => $cart->subtotal_cents,
             'formatted_subtotal' => MoneyFormatter::format($cart->subtotal_cents, $cart->currency, $locale),
             'tax_cents' => $cart->tax_cents,
@@ -96,13 +135,23 @@ class ApiPresenter
                             'id' => $product->id,
                             'name' => $product->localized('name', $locale),
                             'slug' => $product->slug,
+                            'sku' => $product->sku,
                             'origin' => $product->localized('origin', $locale),
+                            'weight_grams' => $product->weight_grams,
+                            'stock_quantity' => $product->stock_quantity,
+                            'is_active' => $product->is_active,
+                            'category' => $product->category ? [
+                                'id' => $product->category->id,
+                                'name' => $product->category->localized('name', $locale),
+                            ] : null,
                             'image' => $primaryImage ? self::productImage($primaryImage, $locale) : null,
                         ] : null,
                         'variant' => $variant ? [
                             'id' => $variant->id,
                             'name' => $variant->localized('name', $locale),
                             'sku' => $variant->sku,
+                            'stock_quantity' => $variant->stock_quantity,
+                            'is_active' => $variant->is_active,
                         ] : null,
                     ];
                 })
@@ -157,7 +206,7 @@ class ApiPresenter
         };
 
         return [
-            'brand' => config('seo.brand_name', 'Denetfils'),
+            'brand' => $product->brand ?: config('seo.brand_name', config('shop.name')),
             'availability' => $stockState,
             'is_available' => $product->is_active && $product->stock_quantity > 0,
             'max_order_quantity' => $product->max_order_quantity

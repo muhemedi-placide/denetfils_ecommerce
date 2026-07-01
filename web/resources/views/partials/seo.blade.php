@@ -1,5 +1,5 @@
 @php
-    $siteName = 'Marché Peyi';
+    $siteName = config('shop.name');
     $siteUrl = rtrim((string) config('app.url', 'https://www.marchepeyi.fr'), '/');
     $seoPayload = $seoPayload ?? [];
     $seoMeta = data_get($seoPayload, 'meta', []);
@@ -26,8 +26,8 @@
             [
                 '@type' => ['Organization', 'OnlineStore'],
                 '@id' => $siteUrl . '/#organization',
-                'name' => 'Marché Peyi',
-                'alternateName' => 'Marche Peyi',
+                'name' => $siteName,
+                'alternateName' => $siteName,
                 'url' => $siteUrl,
                 'slogan' => 'Exotic & Tropical Tastes',
                 'email' => 'bonjour@marchepeyi.com',
@@ -61,24 +61,9 @@
 <meta name="robots" content="{{ $robots }}">
 <meta name="author" content="{{ $siteName }}">
 <meta name="application-name" content="{{ $siteName }}">
-<meta name="theme-color" content="#fff7df" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0f2110" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
-<style>
-@media (max-width: 1023px) {
-#shop-app > header > div:nth-of-type(2) > div { position: relative; display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 0; }
-#shop-app > header > div:nth-of-type(2) > div > a:first-child { position: absolute; left: 50%; z-index: 1; max-width: min(58vw, 240px); transform: translateX(-50%); }
-#shop-app > header > div:nth-of-type(2) > div > div:last-child { z-index: 2; display: flex !important; width: 100%; flex-direction: row-reverse; align-items: center; justify-content: space-between !important; gap: .5rem; }
-#shop-app > header > div:nth-of-type(2) > div > div:last-child > a, #shop-app > header > div:nth-of-type(2) > div > div:last-child > button { display: none !important; }
-#shop-app > header > div:nth-of-type(2) [data-mobile-menu-toggle] { width: 2.75rem; height: 2.75rem; border: 0 !important; font-size: 0 !important; }
-#shop-app > header > div:nth-of-type(2) [data-mobile-menu-icon='open']::before { content: '☰'; font-size: 1.55rem; line-height: 1; }
-#shop-app > header > div:nth-of-type(2) [data-mobile-menu-icon='close'] { font-size: 1.9rem !important; line-height: 1; }
-#shop-app > header > div:nth-of-type(2) > div > a:first-child > span:first-child { width: 1.6rem !important; height: 1.6rem !important; background: transparent !important; color: var(--mp-forest) !important; font-size: 0 !important; box-shadow: none !important; }
-#shop-app > header > div:nth-of-type(2) > div > a:first-child > span:first-child::before { content: '⌂'; font-size: 1.55rem; line-height: 1; }
-#shop-app > header > div:nth-of-type(2) > div > a:first-child > span:last-child { font-size: 1.28rem; line-height: 1; }
-[data-testid='header-cart-open-button'] { min-height: 2.5rem; padding: .5rem .75rem; }
-}
-</style>
 <link rel="canonical" href="{{ $canonicalUrl }}">
 @if (! empty($hreflangLinks))
     @foreach ($hreflangLinks as $link)

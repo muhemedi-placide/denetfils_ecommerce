@@ -34,7 +34,7 @@ class CustomerAccountController extends Controller
 
         $response = $api->login([
             ...$validated,
-            'device_name' => 'denetfils-web',
+            'device_name' => \Illuminate\Support\Str::slug(config('shop.name')).'-web',
         ]);
 
         if (! $response['ok']) {
@@ -106,7 +106,7 @@ class CustomerAccountController extends Controller
             $api->logout($token);
         }
 
-        $request->session()->forget(['customer_api_token', 'customer_user']);
+        $request->session()->forget(['customer_api_token', 'customer_user', 'customer_shipping_country']);
 
         return redirect()
             ->route('home.localized', ['locale' => $locale])
@@ -130,14 +130,81 @@ class CustomerAccountController extends Controller
 
         $request->session()->put('customer_user', $me['data']);
 
+        $addresses = $api->addresses($token)['data'];
+        $shipping = collect($addresses)->where('type', 'shipping');
+        $shippingCountry = data_get($shipping->firstWhere('is_default', true) ?? $shipping->first(), 'country_code');
+        if ($shippingCountry) {
+            $request->session()->put('customer_shipping_country', strtoupper((string) $shippingCountry));
+        }
+
         return view('account.show', [
             'locale' => $locale,
             'user' => $me['data'],
-            'addresses' => $api->addresses($token)['data'],
+            'addresses' => $addresses,
             'orders' => $api->orders($token, $locale, 5)['data'],
             'countries' => $api->supportedCountries($locale)['data'],
             'activeMenu' => 'account',
         ]);
+    }
+
+    public function showOrder(Request $request, AccountApiClient $api, string $locale, int $order): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $token = $this->token($request);
+
+        if (! $token) {
+            return $this->loginRedirect($locale);
+        }
+
+        $me = $api->me($token);
+
+        if (! $me['ok']) {
+            return $this->expiredSessionRedirect($request, $locale);
+        }
+
+        $orderResponse = $api->order($token, $order, $locale);
+
+        if (! $orderResponse['ok']) {
+            abort(404);
+        }
+
+        $conversation = $api->orderConversation($token, $order);
+
+        return view('account.order-show', [
+            'locale' => $locale,
+            'user' => $me['data'],
+            'order' => $orderResponse['data'],
+            'conversation' => $conversation['ok'] ? $conversation['data'] : [
+                'status' => 'not_started',
+                'messages' => [],
+                'customer_unread_count' => 0,
+            ],
+            'activeMenu' => 'account',
+        ]);
+    }
+
+    public function openOrderDiscussion(Request $request, AccountApiClient $api, string $locale, int $order): RedirectResponse
+    {
+        return $this->discussionAction($request, $api, $locale, $order, fn (string $token) => $api->openOrderConversation($token, $order));
+    }
+
+    public function sendOrderDiscussionMessage(Request $request, AccountApiClient $api, string $locale, int $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'min:2', 'max:2000'],
+        ]);
+
+        return $this->discussionAction($request, $api, $locale, $order, fn (string $token) => $api->sendOrderMessage($token, $order, $validated['body']));
+    }
+
+    public function markOrderDiscussionRead(Request $request, AccountApiClient $api, string $locale, int $order): RedirectResponse
+    {
+        return $this->discussionAction($request, $api, $locale, $order, fn (string $token) => $api->markOrderConversationRead($token, $order));
+    }
+
+    public function closeOrderDiscussion(Request $request, AccountApiClient $api, string $locale, int $order): RedirectResponse
+    {
+        return $this->discussionAction($request, $api, $locale, $order, fn (string $token) => $api->closeOrderConversation($token, $order));
     }
 
     public function updateProfile(Request $request, AccountApiClient $api, string $locale): RedirectResponse
@@ -252,6 +319,28 @@ class CustomerAccountController extends Controller
             ...$validated,
             'is_default' => $request->boolean('is_default'),
         ];
+    }
+
+    private function discussionAction(Request $request, AccountApiClient $api, string $locale, int $order, callable $callback): RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $token = $this->token($request);
+
+        if (! $token) {
+            return $this->loginRedirect($locale);
+        }
+
+        $response = $callback($token);
+
+        if (! $response['ok']) {
+            return back()
+                ->withErrors($this->responseErrors($response, 'body'))
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('account.orders.show', ['locale' => $locale, 'order' => $order])
+            ->with('status', $locale === 'en' ? 'Discussion updated.' : 'Discussion mise a jour.');
     }
 
     private function storeCustomerSession(Request $request, array $data): void

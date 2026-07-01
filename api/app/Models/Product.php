@@ -33,9 +33,17 @@ class Product extends Model
         'return_policy',
         'guarantee',
         'sku',
+        'barcode',
+        'brand',
+        'supplier_reference',
+        'purchase_price_cents',
         'price_cents',
+        'compare_at_price_cents',
         'currency',
+        'price_includes_tax',
+        'tax_class',
         'weight_grams',
+        'unit_label',
         'stock_quantity',
         'max_order_quantity',
         'rating_average',
@@ -72,6 +80,7 @@ class Product extends Model
         'seo_keywords' => 'array',
         'published_at' => 'datetime',
         'is_active' => 'boolean',
+        'price_includes_tax' => 'boolean',
     ];
 
     public function category(): BelongsTo
@@ -81,11 +90,34 @@ class Product extends Model
 
     public function images(): HasMany
     {
+        return $this->hasMany(ProductImage::class)
+            ->where('role', 'gallery')
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order');
+    }
+
+    public function media(): HasMany
+    {
         return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    public function iconImage(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ProductImage::class)->where('role', 'icon');
     }
 
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('id');
+    }
+
+    public function cartItems(): HasMany
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

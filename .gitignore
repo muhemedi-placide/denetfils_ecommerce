@@ -13,6 +13,7 @@
 /web/database/*.sqlite
 /api/public/build/
 /web/public/build/
+/cridentials/
 /.phpunit.cache/
 /.idea/
 /.vscode/

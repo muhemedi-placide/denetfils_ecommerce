@@ -1,6 +1,6 @@
 @extends('layouts.shop')
 
-@section('title', $post['title'] . ' | Denetfils')
+@section('title', $post['title'] . ' | ' . config('shop.name'))
 @section('description', $post['description'])
 @section('canonical', route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]))
 @section('og_type', 'article')
@@ -17,8 +17,8 @@
             'image' => [$post['image']],
             'datePublished' => $articleDate,
             'dateModified' => $articleDate,
-            'author' => ['@type' => 'Organization', 'name' => 'DEN & FILS'],
-            'publisher' => ['@type' => 'Organization', 'name' => 'DEN & FILS'],
+            'author' => ['@type' => 'Organization', 'name' => config('shop.name')],
+            'publisher' => ['@type' => 'Organization', 'name' => config('shop.name')],
             'mainEntityOfPage' => route('blog.show', ['locale' => $locale, 'slug' => $post['slug']]),
         ];
         $breadcrumbSchema = [
@@ -84,7 +84,7 @@
 
                     <aside class="lg:sticky lg:top-36">
                         <div class="rounded-[1.5rem] border border-leaf/10 bg-linen p-5 dark:border-white/10 dark:bg-white/5">
-                            <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">DEN & FILS</p>
+                            <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ config('shop.name') }}</p>
                             <h2 class="mt-3 text-xl font-extrabold text-cocoa dark:text-cream">{{ $locale === 'fr' ? 'À retenir' : 'Key takeaway' }}</h2>
                             <p class="mt-3 text-sm leading-7 text-cocoa/65 dark:text-cream/65">{{ $post['description'] }}</p>
                             <livewire:shop.cart-open-button button-class="btn-secondary mt-5 w-full" />
@@ -95,7 +95,7 @@
         </section>
 
         @if (! empty($relatedPosts))
-            <section class="bg-linen px-4 py-12 dark:bg-[#172414] sm:px-8 lg:py-14">
+            <section class="bg-linen px-4 py-12 dark:bg-[#111111] sm:px-8 lg:py-14">
                 <div class="mx-auto max-w-7xl">
                     <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                         <div>

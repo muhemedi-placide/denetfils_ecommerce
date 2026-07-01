@@ -7,7 +7,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\UserAddress;
 use App\Services\Checkout\CheckoutQuoteService;
 use Illuminate\Support\Facades\DB;
@@ -20,12 +20,22 @@ class OrderCreationService
     {
     }
 
-    public function createFromCart(User $user, array $data): Order
+    public function createFromCart(Customer $user, array $data): Order
     {
         return DB::transaction(function () use ($user, $data) {
             $cart = $this->cart((string) $data['cart_token']);
 
-            if (Order::query()->where('cart_id', $cart->id)->exists()) {
+            $existingOrder = Order::query()
+                ->where('cart_id', $cart->id)
+                ->first();
+
+            if ($existingOrder && (int) $existingOrder->customer_id === (int) $user->id) {
+                app(InvoiceService::class)->syncForOrder($existingOrder);
+
+                return $existingOrder->load(['items', 'addresses', 'shipments.method', 'shipments.pickupPoint']);
+            }
+
+            if ($existingOrder) {
                 throw ValidationException::withMessages([
                     'cart_token' => 'This cart has already been converted to an order.',
                 ]);
@@ -46,6 +56,14 @@ class OrderCreationService
 
             $this->assertOrderableItems($cart);
             $quote = $this->quotes->quoteForUser($user, $data);
+            $selection = $cart->shippingSelection()->with(['method.carrier', 'pickupPoint'])->first();
+
+            if (! empty($data['shipping_method_id']) && (! $selection || $selection->shipping_method_id !== (int) $data['shipping_method_id'])) {
+                throw ValidationException::withMessages(['shipping_method_id' => 'Save the shipping selection before creating the order.']);
+            }
+            if ($selection?->method->requires_pickup_point && ! $selection->pickupPoint) {
+                throw ValidationException::withMessages(['pickup_point_id' => 'A pickup point is required for the selected method.']);
+            }
 
             $shippingCents = (int) $quote['shipping_cents'];
             $taxCents = (int) $quote['tax_cents'];
@@ -54,7 +72,7 @@ class OrderCreationService
 
             $order = Order::query()->create([
                 'order_number' => $this->orderNumber(),
-                'user_id' => $user->id,
+                'customer_id' => $user->id,
                 'cart_id' => $cart->id,
                 'status' => 'pending_payment',
                 'payment_status' => 'unpaid',
@@ -69,18 +87,40 @@ class OrderCreationService
                 'customer_name' => trim(($user->first_name ?: '') . ' ' . ($user->last_name ?: '')) ?: $user->name,
                 'customer_phone' => $user->phone,
                 'customer_locale' => $data['locale'] ?? $user->preferred_locale ?? 'fr',
-                'customer_country_code' => $user->country_code,
-                'delivery_method' => $data['delivery_method'] ?? null,
-                'carrier' => $data['carrier'] ?? null,
-                'metadata' => $data['metadata'] ?? null,
+                'customer_country_code' => data_get($quote, 'destination_country.code', $shippingAddress->country_code),
+                'delivery_method' => $selection?->method->delivery_type ?? ($data['delivery_method'] ?? null),
+                'carrier' => $selection?->method->carrier->code ?? ($data['carrier'] ?? null),
+                'metadata' => [
+                    ...($data['metadata'] ?? []),
+                    'prices_include_tax' => true,
+                    'tax_summary' => $quote['tax_summary'] ?? [],
+                    'shipping_method_code' => $selection?->method->code,
+                    'pickup_point' => $selection?->pickupPoint?->only(['external_id', 'type', 'country', 'name', 'address_line1', 'address_line2', 'postal_code', 'city']),
+                ],
                 'placed_at' => now(),
             ]);
 
-            $cart->items->each(fn (CartItem $item) => $this->createOrderItem($order, $item, $cart->currency));
+            $productTaxLines = collect($quote['tax_breakdown'] ?? [])->where('type', 'product')->values();
+            $cart->items->values()->each(fn (CartItem $item, int $index) => $this->createOrderItem(
+                $order,
+                $item,
+                $cart->currency,
+                $productTaxLines->get($index, []),
+            ));
             $this->createAddressSnapshot($order, $shippingAddress, 'shipping');
             $this->createAddressSnapshot($order, $billingAddress, 'billing');
+            app(InvoiceService::class)->syncForOrder($order);
 
-            return $order->load(['items', 'addresses']);
+            if ($selection) {
+                $order->shipments()->create([
+                    'shipping_carrier_id' => $selection->method->shipping_carrier_id,
+                    'shipping_method_id' => $selection->shipping_method_id,
+                    'pickup_point_id' => $selection->pickup_point_id,
+                    'status' => 'pending',
+                ]);
+            }
+
+            return $order->load(['items', 'addresses', 'shipments.method', 'shipments.pickupPoint']);
         });
     }
 
@@ -102,7 +142,7 @@ class OrderCreationService
         return $cart;
     }
 
-    private function address(User $user, int $addressId, string $field): UserAddress
+    private function address(Customer $user, int $addressId, string $field): UserAddress
     {
         $address = $user->addresses()->whereKey($addressId)->first();
 
@@ -150,7 +190,7 @@ class OrderCreationService
         });
     }
 
-    private function createOrderItem(Order $order, CartItem $item, string $currency): void
+    private function createOrderItem(Order $order, CartItem $item, string $currency, array $taxLine): void
     {
         /** @var Product $product */
         $product = $item->product;
@@ -177,6 +217,9 @@ class OrderCreationService
             'unit_price_cents' => $item->unit_price_cents,
             'line_total_cents' => $item->line_total_cents,
             'currency' => $currency,
+            'tax_class' => $taxLine['tax_class'] ?? $product->tax_class ?? 'food',
+            'tax_rate_percent' => $taxLine['rate_percent'] ?? 0,
+            'tax_cents' => $taxLine['tax_cents'] ?? 0,
         ]);
     }
 

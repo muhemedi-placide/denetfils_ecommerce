@@ -23,7 +23,6 @@ class CartManager extends Component
     #[On('cart:add')]
     public function addToCart(int $productId, int|string|null $variantId = null, int $quantity = 1): void
     {
-        $this->isOpen = true;
         $this->addProductToCart($productId, $variantId, max(1, $quantity));
     }
 
@@ -36,6 +35,10 @@ class CartManager extends Component
     #[On('cart:changed')]
     public function syncCart(?string $token = null): void
     {
+        if ($token && $token === $this->cartToken) {
+            return;
+        }
+
         $this->restoreCart($token ?: $this->cartToken);
     }
 

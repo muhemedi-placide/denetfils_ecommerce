@@ -16,9 +16,9 @@ class SeoPayloadBuilder
 
         return [
             'meta' => [
-                'title' => $locale === 'en'
-                    ? 'Denetfils - Premium food shop'
-                    : 'Denetfils - Boutique alimentaire premium',
+                'title' => config('shop.name').' - '.($locale === 'en'
+                    ? 'Premium food shop'
+                    : 'Boutique alimentaire premium'),
                 'description' => $locale === 'en'
                     ? 'Discover curated grocery products, natural drinks and premium food boxes for Europe.'
                     : 'Decouvrez des produits alimentaires selectionnes, boissons naturelles et coffrets premium pour l Europe.',
@@ -26,8 +26,8 @@ class SeoPayloadBuilder
             ],
             'canonical' => $url,
             'hreflang' => $this->hreflang('/{locale}'),
-            'open_graph' => $this->openGraph('website', $url, 'Denetfils', null, null, $locale),
-            'twitter_card' => $this->twitterCard('Denetfils', null, null),
+            'open_graph' => $this->openGraph('website', $url, config('shop.name'), null, null, $locale),
+            'twitter_card' => $this->twitterCard(config('shop.name'), null, null),
             'json_ld' => [
                 'organization' => $this->organizationSchema(),
                 'website' => $this->websiteSchema($locale),
@@ -306,7 +306,7 @@ class SeoPayloadBuilder
             'sku' => $product->sku,
             'brand' => [
                 '@type' => 'Brand',
-                'name' => config('seo.brand_name'),
+                'name' => $product->brand ?: config('seo.brand_name'),
             ],
             'category' => $product->category?->localized('name', $locale),
             'image' => $imageUrls,
@@ -321,6 +321,18 @@ class SeoPayloadBuilder
                 'priceValidUntil' => now()->addMonths(6)->toDateString(),
             ],
         ];
+
+        if (filled($product->barcode)) {
+            $schema[strlen($product->barcode) === 13 ? 'gtin13' : 'gtin'] = $product->barcode;
+        }
+
+        if ($product->weight_grams) {
+            $schema['weight'] = [
+                '@type' => 'QuantitativeValue',
+                'value' => $product->weight_grams,
+                'unitCode' => 'GRM',
+            ];
+        }
 
         if ($product->rating_count > 0) {
             $schema['aggregateRating'] = [

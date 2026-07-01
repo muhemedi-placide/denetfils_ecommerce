@@ -12,6 +12,7 @@ class InventoryProductResource extends JsonResource
     {
         $threshold = max(0, min(100, (int) $request->query('threshold', 5)));
         $metrics = app(BackOfficeMetricsService::class);
+        $primaryImage = $this->relationLoaded('images') ? $this->images->first() : null;
 
         return [
             'id' => $this->id,
@@ -32,8 +33,18 @@ class InventoryProductResource extends JsonResource
             'stock_status' => $metrics->stockStatus($this->resource, $threshold),
             'low_stock_threshold' => $threshold,
             'is_active' => $this->is_active,
+            'primary_image' => $primaryImage ? [
+                'id' => $primaryImage->id,
+                'url' => $primaryImage->url,
+                'width' => $primaryImage->width,
+                'height' => $primaryImage->height,
+                'dominant_color' => $primaryImage->dominant_color,
+                'alt_text' => $primaryImage->alt_text,
+                'sort_order' => $primaryImage->sort_order,
+            ] : null,
             'price_cents' => $this->price_cents,
             'currency' => $this->currency,
+            'tax_class' => $this->tax_class,
             'variants' => $this->whenLoaded('variants', fn () => $this->variants->map(fn ($variant) => [
                 'id' => $variant->id,
                 'sku' => $variant->sku,

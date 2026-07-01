@@ -11,7 +11,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Impression commande {{ $order['order_number'] ?? $order['id'] ?? '' }} | Denetfils</title>
+        <title>Impression commande {{ $order['order_number'] ?? $order['id'] ?? '' }} | {{ config('shop.name') }}</title>
         <style>
             @page {
                 size: A4;
@@ -24,8 +24,8 @@
 
             body {
                 margin: 0;
-                background: #f5f2ea;
-                color: #111811;
+                background: #f5f5f5;
+                color: #171717;
                 font-family: Arial, Helvetica, sans-serif;
                 font-size: 13px;
                 line-height: 1.45;
@@ -37,8 +37,8 @@
             }
 
             .print-button {
-                border: 1px solid #111811;
-                background: #111811;
+                border: 1px solid #171717;
+                background: #171717;
                 color: #fff;
                 cursor: pointer;
                 font-weight: 800;
@@ -52,7 +52,7 @@
                 background: #fff;
                 padding: 34mm 16mm 24mm;
                 position: relative;
-                box-shadow: 0 18px 60px rgba(17, 24, 17, .14);
+                box-shadow: 0 18px 60px rgba(0, 0, 0, .14);
             }
 
             .document-header,
@@ -64,14 +64,14 @@
 
             .document-header {
                 top: 12mm;
-                border-bottom: 1px solid #d9e4d7;
+                border-bottom: 1px solid #d4d4d4;
                 padding-bottom: 12px;
             }
 
             .document-footer {
                 bottom: 10mm;
-                border-top: 1px solid #d9e4d7;
-                color: #6e675d;
+                border-top: 1px solid #d4d4d4;
+                color: #737373;
                 display: flex;
                 font-size: 11px;
                 justify-content: space-between;
@@ -79,7 +79,7 @@
             }
 
             .top-line {
-                background: #1f643f;
+                background: #000000;
                 color: #fff;
                 font-size: 11px;
                 font-weight: 800;
@@ -120,12 +120,12 @@
             }
 
             .muted {
-                color: #6e675d;
+                color: #737373;
             }
 
             .panel {
-                border: 1px solid #d9e4d7;
-                background: #fbfbf7;
+                border: 1px solid #d4d4d4;
+                background: #fafafa;
                 padding: 14px;
             }
 
@@ -138,12 +138,12 @@
             }
 
             .summary-grid div {
-                border: 1px solid #d9e4d7;
+                border: 1px solid #d4d4d4;
                 padding: 10px;
             }
 
             .summary-grid span {
-                color: #6e675d;
+                color: #737373;
                 display: block;
                 font-size: 10px;
                 font-weight: 800;
@@ -161,8 +161,8 @@
             }
 
             th {
-                background: #eef4ec;
-                color: #111811;
+                background: #f5f5f5;
+                color: #171717;
                 font-size: 11px;
                 text-align: left;
                 text-transform: uppercase;
@@ -170,9 +170,24 @@
 
             th,
             td {
-                border-bottom: 1px solid #d9e4d7;
+                border-bottom: 1px solid #d4d4d4;
                 padding: 10px 8px;
                 vertical-align: top;
+            }
+
+            .product-cell {
+                align-items: center;
+                display: flex;
+                gap: 10px;
+            }
+
+            .product-thumb {
+                background: #f5f5f5;
+                border: 1px solid #d4d4d4;
+                border-radius: 10px;
+                height: 44px;
+                object-fit: cover;
+                width: 44px;
             }
 
             .right {
@@ -192,7 +207,7 @@
             }
 
             .totals .grand-total {
-                border-top: 2px solid #111811;
+                border-top: 2px solid #171717;
                 font-size: 16px;
                 font-weight: 900;
                 margin-top: 4px;
@@ -250,9 +265,9 @@
                 <div class="top-line">{{ $shop['tagline'] ?? 'Boutique alimentaire premium' }}</div>
                 <div class="header-grid">
                     <div>
-                        <h1>{{ $shop['brand'] ?? 'DEN & FILS' }}</h1>
-                        <p class="muted">{{ $shop['trade_name'] ?? 'Denetfils' }}</p>
-                        <p class="muted">{{ $shop['website'] ?? 'denetfils.fr' }} - {{ $shop['email'] ?? 'support@denetfils.fr' }}</p>
+                        <h1>{{ $shop['brand'] ?? config('shop.name') }}</h1>
+                        <p class="muted">{{ $shop['trade_name'] ?? config('shop.name') }}</p>
+                        <p class="muted">{{ $shop['website'] ?? config('shop.website') }} - {{ $shop['email'] ?? config('shop.email') }}</p>
                     </div>
                     <div>
                         <h2>COMMANDE</h2>
@@ -303,9 +318,20 @@
                     </thead>
                     <tbody>
                         @forelse ($items as $item)
+                            @php
+                                $imageUrl = data_get($item, 'product.image.url');
+                                $productName = data_get($item, 'product.name', '-');
+                            @endphp
                             <tr>
                                 <td>{{ data_get($item, 'product.sku', '-') }}</td>
-                                <td>{{ data_get($item, 'product.name', '-') }}</td>
+                                <td>
+                                    <div class="product-cell">
+                                        @if ($imageUrl)
+                                            <img src="{{ $imageUrl }}" alt="{{ $productName }}" class="product-thumb">
+                                        @endif
+                                        <span>{{ $productName }}<br><small>TVA {{ number_format((float) ($item['tax_rate_percent'] ?? 0), 2, ',', ' ') }} % · {{ $item['formatted_tax'] ?? '-' }}</small></span>
+                                    </div>
+                                </td>
                                 <td class="right">{{ $item['formatted_unit_price'] ?? '-' }}</td>
                                 <td class="right">{{ $item['quantity'] ?? 0 }}</td>
                                 <td class="right"><strong>{{ $item['formatted_line_total'] ?? '-' }}</strong></td>
@@ -319,14 +345,14 @@
                 <div class="totals">
                     <div><span>Produits</span><strong>{{ $order['formatted_subtotal'] ?? '-' }}</strong></div>
                     <div><span>Livraison</span><strong>{{ $order['formatted_shipping'] ?? '-' }}</strong></div>
-                    <div><span>TVA</span><strong>{{ $order['formatted_tax'] ?? '-' }}</strong></div>
+                    <div><span>Dont TVA incluse</span><strong>{{ $order['formatted_tax'] ?? '-' }}</strong></div>
                     <div class="grand-total"><span>Total TTC</span><strong>{{ $order['formatted_total'] ?? '-' }}</strong></div>
                 </div>
             </section>
 
             <footer class="document-footer">
-                <span>{{ $shop['brand'] ?? 'DEN & FILS' }} - {{ $shop['website'] ?? 'denetfils.fr' }} - {{ $shop['email'] ?? 'support@denetfils.fr' }}</span>
-                <span>Document genere par le back-office Denetfils</span>
+                <span>{{ $shop['brand'] ?? config('shop.name') }} - {{ $shop['website'] ?? config('shop.website') }} - {{ $shop['email'] ?? config('shop.email') }}</span>
+                <span>Document genere par le back-office {{ config('shop.name') }}</span>
             </footer>
         </main>
     </body>

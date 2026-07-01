@@ -2,13 +2,13 @@
 
 return [
     'meta' => [
-        'title' => 'Denetfils: Haitian food shop in Europe',
-        'description' => 'DEN & FILS offers Haitian and Caribbean food products: djon djon paste, Edenne pepper paste, SELAKAY epis, drinks, sauces and authentic recipes.',
+        'title' => config('shop.name').': Haitian food shop in Europe',
+        'description' => config('shop.name').' offers Haitian and Caribbean food products: djon djon paste, Edenne pepper paste, SELAKAY epis, drinks, sauces and authentic recipes.',
     ],
     'announcement' => 'Free delivery from €35 · Poto mitan kizin ou · Authentic Haitian products',
     'announcements' => [
         'Special offer: free delivery from €35.',
-        'DEN & FILS — Poto mitan kizin ou, the cornerstone of your kitchen.',
+        config('shop.name').' — Poto mitan kizin ou, the cornerstone of your kitchen.',
         'Authentic products, family recipes and Haitian flavors delivered to your home.',
     ],
     'nav' => [
@@ -40,27 +40,27 @@ return [
         ],
     ],
     'slider' => [
-        'badge' => 'Denetfils selection',
+        'badge' => config('shop.name').' selection',
         'items' => [
             ['label' => 'Cooking aids', 'title' => 'Djon djon paste & Edenne pepper to bring your dishes back to life.', 'body' => 'Two essentials of Haitian cooking: djon djon to perfume your meals and Edenne pepper for controlled heat.', 'image' => 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1400&q=85'],
             ['label' => 'Haitian grocery', 'title' => 'Cereals, starches, sauces and drinks for generous cooking.', 'body' => 'Carefully selected products to preserve taste, tradition and quality in every basket.', 'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=85'],
-            ['label' => 'Recipes & heritage', 'title' => 'A family house bringing Haitian flavors across borders.', 'body' => 'DEN & FILS extends a culinary heritage transmitted over generations, between family memory and modern standards.', 'image' => 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1400&q=85'],
+            ['label' => 'Recipes & heritage', 'title' => 'A family house bringing Haitian flavors across borders.', 'body' => config('shop.name').' extends a culinary heritage transmitted over generations, between family memory and modern standards.', 'image' => 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?auto=format&fit=crop&w=1400&q=85'],
         ],
     ],
     'about' => [
-        'eyebrow' => 'About DEN & FILS',
+        'eyebrow' => 'About '.config('shop.name'),
         'title' => 'Real taste, without shortcuts.',
-        'body' => 'A family house bringing Haitian flavors across borders. DEN & FILS grew from a story transmitted with love for more than five generations, highlighting ancestral recipes around djon djon paste, Edenne pepper paste and SELAKAY cooking aids.',
+        'body' => 'A family house bringing Haitian flavors across borders. '.config('shop.name').' grew from a story transmitted with love for more than five generations, highlighting ancestral recipes around djon djon paste, Edenne pepper paste and SELAKAY cooking aids.',
         'image_alt' => 'Haitian food products and cooking ingredients.',
         'image_caption' => 'Each product carries family memory, know-how and culinary culture.',
         'story_title' => 'Our story',
-        'story_body' => 'Built on recipes inherited from grandmothers, great-great-grandmothers and mother Edenne, DEN & FILS preserves the gestures, tastes and traditions passed down through generations. Each jar tells the story of authentic, generous Haitian cooking.',
+        'story_body' => 'Built on recipes inherited from grandmothers, great-great-grandmothers and mother Edenne, '.config('shop.name').' preserves the gestures, tastes and traditions passed down through generations. Each jar tells the story of authentic, generous Haitian cooking.',
         'vision_title' => 'Our vision',
-        'vision_body' => 'Based in France, DEN & FILS supervises import, selection, production and distribution. The company carries the LAKAY, SELAKAY and KETIKOTI brands, with a clear aim: protect recipe authenticity and guarantee consistent quality.',
+        'vision_body' => 'Based in France, '.config('shop.name').' supervises import, selection, production and distribution. The company carries the LAKAY, SELAKAY and KETIKOTI brands, with a clear aim: protect recipe authenticity and guarantee consistent quality.',
         'reach_title' => 'International presence',
-        'reach_items' => ['Europe: distribution through specialized wholesalers.', 'Canada: reliable commercial partnerships.', 'United States: presence through SELAKAY LLC and DEN & FILS LLC.'],
+        'reach_items' => ['Europe: distribution through specialized wholesalers.', 'Canada: reliable commercial partnerships.', 'United States: commercial presence.'],
         'commitment_title' => 'Our commitment',
-        'commitment_body' => 'DEN & FILS works with local cooperatives selected for quality, human respect and local development. The company also states a social mission: supporting children’s education in Haiti, especially in vulnerable areas.',
+        'commitment_body' => config('shop.name').' works with local cooperatives selected for quality, human respect and local development. The company also states a social mission: supporting children’s education in Haiti, especially in vulnerable areas.',
         'points' => [
             ['eyebrow' => 'Authenticity', 'title' => 'Family recipes', 'body' => 'Products inspired by Haitian culinary heritage passed down from generation to generation.'],
             ['eyebrow' => 'Quality', 'title' => 'Careful selection', 'body' => 'Ingredients, recipes and partners chosen to preserve taste and trust.'],
@@ -73,7 +73,7 @@ return [
         'company' => 'DEN et FILS',
         'address' => '4 Rue des Grands Champs, 51520 Saint Martin sur le Pré, France',
         'phone' => '+33 6 95 73 73 90',
-        'email' => 'contact@denetfils.fr',
+        'email' => config('shop.email'),
         'vat' => 'VAT No.: FR88 939445672',
     ],
     'stats' => [
@@ -104,9 +104,9 @@ return [
         'title' => 'Recipes & inspiration',
         'body' => 'Discover how to use our products in simple, generous, flavor-packed dishes.',
         'posts' => [
-            ['date' => '16/12/2025', 'category' => 'New', 'title' => 'The Spice Your Kitchen Was Waiting For', 'body' => 'DEN & FILS presents a complete spice inspired by Haitian heritage, designed to simplify everyday cooking.'],
+            ['date' => '16/12/2025', 'category' => 'New', 'title' => 'The Spice Your Kitchen Was Waiting For', 'body' => config('shop.name').' presents a complete spice inspired by Haitian heritage, designed to simplify everyday cooking.'],
             ['date' => '20/11/2025', 'category' => 'Story', 'title' => 'Can taste alone keep a legend alive? The story of djon djon paste', 'body' => 'A story around Edenne, djon djon and the family transmission behind the modern paste.'],
-            ['date' => '19/11/2025', 'category' => 'Brand', 'title' => 'Why do so many people choose Denetfils?', 'body' => 'An article explaining the Denetfils difference: authenticity, history, taste and trust.'],
+            ['date' => '19/11/2025', 'category' => 'Brand', 'title' => 'Why do so many people choose '.config('shop.name').'?', 'body' => 'An article explaining the '.config('shop.name').' difference: authenticity, history, taste and trust.'],
             ['date' => '17/11/2025', 'category' => 'Recipe', 'title' => 'Spicy fish with Edenne pepper & djon djon paste', 'body' => 'A recipe idea combining Edenne pepper and djon djon in a generous dish.'],
             ['date' => '05/11/2025', 'category' => 'Recipe', 'title' => 'Djon djon rice recipe', 'body' => 'A Haitian classic for cooking rice with SELAKAY djon djon paste.'],
         ],
@@ -126,7 +126,7 @@ return [
         'category' => 'Category',
         'all_categories' => 'All categories',
         'sort' => 'Sort',
-        'sort_options' => ['default' => 'Denetfils selection', 'latest' => 'Latest', 'price_asc' => 'Price: low to high', 'price_desc' => 'Price: high to low'],
+        'sort_options' => ['default' => config('shop.name').' selection', 'latest' => 'Latest', 'price_asc' => 'Price: low to high', 'price_desc' => 'Price: high to low'],
         'apply' => 'Search',
         'reset' => 'Reset',
     ],
@@ -175,7 +175,7 @@ return [
         ],
         'overview' => [
             'eyebrow' => 'Customer area',
-            'fallback_name' => 'Denetfils customer',
+            'fallback_name' => config('shop.name').' customer',
             'title' => 'Hello :name',
             'body' => 'Review your account details, addresses and latest orders synchronized with the customer API.',
             'orders' => 'Orders',
@@ -251,7 +251,7 @@ return [
     ],
     'checkout' => [
         'eyebrow' => 'Useful information',
-        'title' => 'Ordering from Denetfils.',
+        'title' => 'Ordering from '.config('shop.name').'.',
         'body' => 'Find the details that help customers order with confidence: delivery, availability and customer support.',
         'steps' => [
             ['number' => '01', 'title' => 'Delivery', 'body' => 'Free delivery from €35 and key information visible before confirmation.'],
@@ -261,40 +261,41 @@ return [
     ],
     'utility_pages' => [
         'delivery' => [
-            'eyebrow' => 'Useful links', 'title' => 'Delivery', 'intro' => 'Find the essential information to prepare your DEN & FILS order.',
+            'eyebrow' => 'Useful links', 'title' => 'Delivery', 'intro' => 'Find the essential information to prepare your '.config('shop.name').' order.',
             'sections' => [
                 ['title' => 'Free delivery from €35', 'body' => 'The shop special offer shows free delivery from €35. Exact conditions are displayed during checkout according to the address and basket.'],
                 ['title' => 'Delivery address', 'body' => 'The customer must enter a complete and valid address. Delivery options and fees are confirmed before order validation.'],
-                ['title' => 'Support', 'body' => 'For any question, DEN & FILS can be contacted by phone at +33 6 95 73 73 90 or by email at contact@denetfils.fr.'],
+                ['title' => 'Support', 'body' => 'For any question, '.config('shop.name').' can be contacted by phone or email.'],
             ],
         ],
         'legal' => [
             'eyebrow' => 'Useful links', 'title' => 'Legal notice', 'intro' => 'Official information for DEN et FILS.',
             'sections' => [
                 ['title' => 'Website publisher', 'body' => 'DEN et FILS, 4 Rue des Grands Champs, 51520 Saint Martin sur le Pré, France.'],
-                ['title' => 'Contact', 'body' => 'Phone: +33 6 95 73 73 90. Email: contact@denetfils.fr.'],
+                ['title' => 'Contact', 'body' => 'Email: '.config('shop.email').'.'],
                 ['title' => 'VAT', 'body' => 'VAT No.: FR88 939445672.'],
+                ['title' => 'Automatic location', 'body' => 'The visitor country may be estimated from Cloudflare or IPinfo to select a language and display indicative VAT and delivery fees. The IP address is not stored by the shop for this purpose, and the confirmed delivery address determines the final order amounts.'],
             ],
         ],
         'terms' => [
-            'eyebrow' => 'Useful links', 'title' => 'Terms of use', 'intro' => 'General rules for using the DEN & FILS shop.',
+            'eyebrow' => 'Useful links', 'title' => 'Terms of use', 'intro' => 'General rules for using the '.config('shop.name').' shop.',
             'sections' => [
-                ['title' => 'Website use', 'body' => 'Visitors use the website to view products, add items to the cart and access DEN & FILS commercial information.'],
+                ['title' => 'Website use', 'body' => 'Visitors use the website to view products, add items to the cart and access '.config('shop.name').' commercial information.'],
                 ['title' => 'Product information', 'body' => 'Descriptions, prices and availability may change. Customers should check the order summary before validation.'],
                 ['title' => 'Newsletter and data', 'body' => 'Newsletter subscription allows customers to receive offers, new products and news. Customers can unsubscribe at any time.'],
             ],
         ],
         'payment' => [
-            'eyebrow' => 'Useful links', 'title' => 'Secure payment', 'intro' => 'DEN & FILS highlights a simple and secure ordering experience.',
+            'eyebrow' => 'Useful links', 'title' => 'Secure payment', 'intro' => config('shop.name').' highlights a simple and secure ordering experience.',
             'sections' => [
                 ['title' => 'Secure order', 'body' => 'Payment takes place in the order flow after checking the basket, delivery details and amount to pay.'],
                 ['title' => 'Basket check', 'body' => 'Customers can review products, quantities, prices and fees before finalizing the purchase.'],
-                ['title' => 'Customer support', 'body' => 'If needed before payment, customers can contact DEN & FILS by phone or email.'],
+                ['title' => 'Customer support', 'body' => 'If needed before payment, customers can contact '.config('shop.name').' by phone or email.'],
             ],
         ],
     ],
     'footer' => [
-        'line' => 'DEN & FILS — Haitian food products, family tradition and delivery in Europe.',
+        'line' => config('shop.name').' — Haitian food products, family tradition and delivery in Europe.',
         'products_title' => 'Shop',
         'promotions' => 'Promotions',
         'new_products' => 'New products',

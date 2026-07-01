@@ -41,6 +41,7 @@ class EcommerceSeeder extends Seeder
 
         foreach ($this->products() as $productData) {
             $productData = array_replace_recursive($this->defaultProductExperience(), $productData);
+            $productData['tax_class'] = $productData['tax_class'] ?? 'food';
             $images = $productData['images'];
             $variants = $productData['variants'];
             $categorySlug = $productData['category_slug'];
@@ -111,7 +112,7 @@ class EcommerceSeeder extends Seeder
                     'fr' => 'Un melange aromatique equilibre pour relever legumes, viandes et plats mijotes.',
                     'en' => 'A balanced aromatic blend for vegetables, meats and slow-cooked dishes.',
                 ],
-                'origin' => ['fr' => 'Recette Denetfils', 'en' => 'Denetfils recipe'],
+                'origin' => ['fr' => 'Recette '.config('shop.name'), 'en' => config('shop.name').' recipe'],
                 'sku' => 'DEN-EPICES-120',
                 'price_cents' => 1250,
                 'currency' => 'EUR',
@@ -267,8 +268,8 @@ class EcommerceSeeder extends Seeder
     {
         return [
             'short_description' => [
-                'fr' => 'Produit selectionne par Denetfils pour une experience alimentaire fiable, claire et adaptee au marche europeen.',
-                'en' => 'A Denetfils selected product for a clear, reliable food shopping experience tailored for Europe.',
+                'fr' => 'Produit selectionne par '.config('shop.name').' pour une experience alimentaire fiable, claire et adaptee au marche europeen.',
+                'en' => 'A '.config('shop.name').' selected product for a clear, reliable food shopping experience tailored for Europe.',
             ],
             'highlights' => [
                 'fr' => ['Selection premium', 'Prix en EUR', 'Preparation soignee', 'Fiche produit detaillee'],
@@ -279,8 +280,8 @@ class EcommerceSeeder extends Seeder
                 'en' => ['Best seller', 'Tracked stock', 'EU delivery'],
             ],
             'tags' => [
-                'fr' => ['epicerie', 'premium', 'denetfils'],
-                'en' => ['grocery', 'premium', 'denetfils'],
+                'fr' => ['epicerie', 'premium', \Illuminate\Support\Str::slug(config('shop.name'))],
+                'en' => ['grocery', 'premium', \Illuminate\Support\Str::slug(config('shop.name'))],
             ],
             'ingredients' => [
                 'fr' => 'Voir les informations detaillees sur l emballage fournisseur.',
@@ -337,16 +338,16 @@ class EcommerceSeeder extends Seeder
             'rating_count' => 38,
             'sales_count' => 240,
             'seo_title' => [
-                'fr' => 'Produit alimentaire premium Denetfils',
-                'en' => 'Denetfils premium food product',
+                'fr' => 'Produit alimentaire premium '.config('shop.name'),
+                'en' => config('shop.name').' premium food product',
             ],
             'seo_description' => [
-                'fr' => 'Achetez ce produit alimentaire Denetfils avec prix en EUR, details complets, livraison europeenne et fiche SEO structuree.',
-                'en' => 'Shop this Denetfils food product with EUR pricing, complete details, European delivery and structured SEO data.',
+                'fr' => 'Achetez ce produit alimentaire '.config('shop.name').' avec prix en EUR, details complets, livraison europeenne et fiche SEO structuree.',
+                'en' => 'Shop this '.config('shop.name').' food product with EUR pricing, complete details, European delivery and structured SEO data.',
             ],
             'seo_keywords' => [
-                'fr' => ['denetfils', 'boutique alimentaire', 'produit premium'],
-                'en' => ['denetfils', 'food shop', 'premium product'],
+                'fr' => [\Illuminate\Support\Str::slug(config('shop.name')), 'boutique alimentaire', 'produit premium'],
+                'en' => [\Illuminate\Support\Str::slug(config('shop.name')), 'food shop', 'premium product'],
             ],
             'published_at' => now(),
         ];

@@ -1,0 +1,524 @@
+Tu dois travailler dans le repo `denetfils_ecommerce`, sur le module `livraison`, en respectant l’architecture existante Laravel + Livewire + Tailwind + Alpine.js.
+
+Objectif : coder de A à Z un module de livraison flexible, propre, bilingue FR/EN, compatible mobile-first, avec intégration Mondial Relay en priorité, et prévu pour ajouter plus tard d’autres transporteurs comme Chrono Relais, Colissimo, DPD, GLS, UPS, etc.
+
+Avant de coder, lis d’abord :
+
+1. La documentation officielle Mondial Relay WebService / Widget / API.
+2. Le fichier des credentials Mondial Relay situé dans `cridentials/mondial relay.txt`.
+3. Le code existant du projet, surtout les modules panier, checkout, commande, adresse client, admin/back-office, configuration et traduction.
+4. Le cahier des charges du projet s’il existe dans le repo.
+
+Important : ne jamais hardcoder les credentials dans le code. Les déplacer proprement vers `.env`, `config/services.php` ou `config/shipping.php`. Le fichier `cridentials/mondial relay.txt` doit uniquement servir de source de lecture initiale. Vérifie aussi que ce dossier n’est pas exposé publiquement et ajoute-le au `.gitignore` si nécessaire.
+
+## 1. Analyse préalable obligatoire
+
+Avant l’implémentation, fais un audit rapide du module livraison existant.
+
+Vérifie :
+
+* Les tables existantes liées à la livraison.
+* Les modèles existants : carrier, shipping method, delivery mode, order shipping, customer address, cart, order.
+* Les pages Livewire existantes du checkout.
+* Les routes web/API existantes.
+* Les traductions FR/EN existantes.
+* Les règles de design existantes.
+* Si les modes de livraison actuels ont déjà une logique Point Relais, carte, sélection de point de retrait, tracking, étiquette, frais par poids/pays ou configuration transporteur.
+* Si le projet possède déjà une table `carriers`, `shipping_methods`, `shipping_rates`, `shipping_zones`, `shipping_options`, `order_shipments`, ou équivalent.
+
+Si des éléments existent déjà, ne les duplique pas. Étends-les proprement. Si rien n’existe, crée une architecture propre et évolutive.
+
+## 2. Architecture attendue
+
+Créer une architecture livraison générique, pas uniquement Mondial Relay.
+
+Prévoir au minimum :
+
+### Tables recommandées
+
+Créer ou adapter les migrations suivantes selon l’existant :
+
+* `carriers`
+
+  * `id`
+  * `code` : ex. `mondial_relay`
+  * `name`
+  * `is_active`
+  * `logo`
+  * `description_fr`
+  * `description_en`
+  * `created_at`
+  * `updated_at`
+
+* `shipping_methods`
+
+  * `id`
+  * `carrier_id`
+  * `code` : ex. `mondial_relay_point_relais`, `mondial_relay_locker`, `mondial_relay_home`
+  * `name_fr`
+  * `name_en`
+  * `description_fr`
+  * `description_en`
+  * `delivery_type` : `pickup_point`, `locker`, `home`
+  * `service_code` : ex. `24R`, `24L`, `24X`, `APM`
+  * `is_active`
+  * `requires_pickup_point`
+  * `requires_phone`
+  * `max_weight_grams`
+  * `created_at`
+  * `updated_at`
+
+* `shipping_zones`
+
+  * `id`
+  * `name`
+  * `countries` JSON
+  * `is_active`
+  * `created_at`
+  * `updated_at`
+
+* `shipping_rates`
+
+  * `id`
+  * `shipping_method_id`
+  * `shipping_zone_id`
+  * `min_weight_grams`
+  * `max_weight_grams`
+  * `price_cents`
+  * `currency`
+  * `is_active`
+  * `created_at`
+  * `updated_at`
+
+* `pickup_points`
+
+  * `id`
+  * `carrier_code`
+  * `external_id`
+  * `country`
+  * `name`
+  * `address_line1`
+  * `address_line2`
+  * `postal_code`
+  * `city`
+  * `latitude`
+  * `longitude`
+  * `opening_hours` JSON nullable
+  * `raw_payload` JSON nullable
+  * `created_at`
+  * `updated_at`
+
+* `cart_shipping_selections`
+
+  * `id`
+  * `cart_id`
+  * `shipping_method_id`
+  * `pickup_point_id` nullable
+  * `shipping_price_cents`
+  * `country`
+  * `postal_code`
+  * `city`
+  * `address_snapshot` JSON nullable
+  * `created_at`
+  * `updated_at`
+
+* `order_shipments`
+
+  * `id`
+  * `order_id`
+  * `carrier_id`
+  * `shipping_method_id`
+  * `pickup_point_id` nullable
+  * `tracking_number` nullable
+  * `label_url` nullable
+  * `label_path` nullable
+  * `external_shipment_id` nullable
+  * `status`
+  * `raw_payload` JSON nullable
+  * `created_at`
+  * `updated_at`
+
+Adapte les noms si le projet possède déjà une convention différente.
+
+## 3. Services backend à créer
+
+Créer une couche service propre :
+
+* `app/Services/Shipping/ShippingManager.php`
+* `app/Services/Shipping/Contracts/CarrierProviderInterface.php`
+* `app/Services/Shipping/MondialRelay/MondialRelayProvider.php`
+* `app/Services/Shipping/MondialRelay/MondialRelayClient.php`
+* `app/Services/Shipping/MondialRelay/MondialRelaySignature.php`
+* `app/Services/Shipping/DTO/ShippingQuoteData.php`
+* `app/Services/Shipping/DTO/PickupPointData.php`
+* `app/Services/Shipping/DTO/ShipmentData.php`
+
+Le `ShippingManager` doit permettre :
+
+* Obtenir les transporteurs actifs.
+* Obtenir les méthodes actives selon pays, panier, poids total et adresse.
+* Calculer les frais de livraison.
+* Rechercher les points relais.
+* Valider une sélection de livraison.
+* Créer une expédition après confirmation de commande.
+* Générer l’étiquette si possible.
+* Récupérer le tracking.
+
+Le `MondialRelayProvider` doit gérer :
+
+* Recherche Point Relais / Locker.
+* Calcul ou mapping des méthodes Mondial Relay.
+* Création d’expédition.
+* Création/téléchargement d’étiquette.
+* Tracking.
+* Gestion des erreurs API.
+* Logs propres sans exposer les secrets.
+
+## 4. Intégration Mondial Relay
+
+Implémenter Mondial Relay de manière sécurisée et maintenable.
+
+Variables `.env` attendues :
+
+```env
+MONDIAL_RELAY_ENABLED=true
+MONDIAL_RELAY_ENV=sandbox
+MONDIAL_RELAY_ENSEIGNE=
+MONDIAL_RELAY_PRIVATE_KEY=
+MONDIAL_RELAY_BRAND_ID=
+MONDIAL_RELAY_COUNTRY=FR
+MONDIAL_RELAY_LABEL_FORMAT=A4
+MONDIAL_RELAY_DEFAULT_LANGUAGE=FR
+MONDIAL_RELAY_WIDGET_ENABLED=true
+MONDIAL_RELAY_USE_OFFICIAL_WIDGET=true
+MONDIAL_RELAY_MAP_PROVIDER=leaflet
+```
+
+Créer `config/shipping.php` avec la configuration livraison globale.
+
+Ne pas exposer la clé privée Mondial Relay côté JavaScript.
+
+Utiliser l’API / WebService côté serveur pour :
+
+* Recherche avancée des Points Relais si on choisit une carte custom.
+* Création d’expédition.
+* Génération d’étiquette.
+* Tracking.
+
+Utiliser le widget officiel Mondial Relay dans le checkout si possible pour accélérer l’intégration carte. Mais garder une abstraction interne afin de pouvoir remplacer le widget par une carte custom Leaflet/OpenStreetMap plus tard.
+
+## 5. Carte et sélection Point Relais
+
+Vérifie d’abord si le widget officiel Mondial Relay répond au besoin. Il doit permettre :
+
+* Afficher une carte.
+* Rechercher par code postal / ville / pays.
+* Filtrer par poids.
+* Filtrer par mode : Point Relais, Locker, XL, XXL.
+* Récupérer le Point Relais choisi via callback.
+* Remonter la sélection à Livewire.
+
+Si le widget officiel fonctionne correctement avec Livewire, l’utiliser dans un composant dédié :
+
+* `resources/views/components/shipping/mondial-relay-widget.blade.php`
+* `resources/js/mondial-relay-widget.js`
+* `app/Livewire/Checkout/ShippingStep.php`
+
+Le callback JavaScript doit transmettre à Livewire :
+
+* ID Point Relais.
+* Nom.
+* Adresse.
+* Code postal.
+* Ville.
+* Pays.
+* Latitude.
+* Longitude.
+* Horaires si disponibles.
+* Données brutes utiles.
+
+Si le widget officiel pose problème avec le design, la responsivité, Livewire ou les besoins métier, créer une carte custom inspirée de l’expérience PrestaShop, mais sans copier le code PrestaShop.
+
+Carte custom attendue :
+
+* Leaflet + OpenStreetMap par défaut.
+* Liste de points relais à gauche ou en bas sur mobile.
+* Carte à droite ou au-dessus sur mobile.
+* Recherche par adresse, ville, code postal.
+* Proposition automatique des points les plus proches.
+* Skeleton loading pendant la recherche.
+* Sélection claire avec badge “Sélectionné”.
+* Bouton “Choisir ce point relais”.
+* Affichage distance approximative si disponible.
+* Fallback liste simple si la carte échoue.
+
+## 6. Proposition automatique selon l’utilisateur
+
+Créer une logique de proposition intelligente :
+
+Priorité de localisation :
+
+1. Adresse de livraison saisie dans le checkout.
+2. Adresse principale du client connecté.
+3. Code postal ou ville détecté via saisie utilisateur.
+4. Géolocalisation navigateur si l’utilisateur accepte.
+5. Approximation IP uniquement comme aide initiale, jamais comme vérité définitive.
+
+Important :
+
+* Ne pas dépendre uniquement de l’IP, car elle peut être imprécise.
+* Si l’utilisateur n’est pas connecté, proposer une recherche basée sur l’adresse saisie ou sur une estimation IP, mais toujours permettre de modifier manuellement.
+* Ne jamais bloquer le checkout si l’IP n’est pas disponible.
+* Respecter RGPD : ne pas enregistrer de localisation précise sans nécessité. Conserver uniquement le Point Relais choisi pour la commande.
+
+Créer un service :
+
+* `app/Services/Geo/CustomerLocationResolver.php`
+
+Il doit retourner :
+
+* country
+* postal_code nullable
+* city nullable
+* latitude nullable
+* longitude nullable
+* source : `shipping_address`, `customer_address`, `browser_geolocation`, `ip`, `manual`
+
+## 7. Checkout Livewire
+
+Modifier le tunnel checkout pour intégrer la livraison comme étape claire.
+
+Étapes recommandées :
+
+1. Adresse.
+2. Livraison.
+3. Paiement.
+4. Confirmation.
+
+Dans l’étape Livraison :
+
+* Afficher les méthodes disponibles selon pays, poids et panier.
+* Afficher prix, délai estimé et description.
+* Si la méthode exige un Point Relais, afficher widget/carte/listing.
+* Empêcher de passer à l’étape paiement si un Point Relais obligatoire n’est pas choisi.
+* Mettre à jour le total panier en direct après sélection de la livraison.
+* Garder la sélection en session/panier.
+* Sur mobile, rendre la sélection très simple et rapide.
+
+Créer ou adapter :
+
+* `app/Livewire/Checkout/ShippingStep.php`
+* `resources/views/livewire/checkout/shipping-step.blade.php`
+* `app/Livewire/Checkout/CheckoutPage.php` si le checkout est centralisé.
+
+Interactions Livewire attendues :
+
+* `selectShippingMethod($methodId)`
+* `searchPickupPoints()`
+* `selectPickupPoint($payload)`
+* `refreshShippingQuotes()`
+* `validateShippingStep()`
+
+## 8. Administration / Back-office
+
+Créer une page admin claire pour gérer les transporteurs.
+
+Page :
+
+* `/admin/shipping`
+* `/admin/shipping/carriers`
+* `/admin/shipping/methods`
+* `/admin/shipping/rates`
+* `/admin/shipping/settings`
+
+Sur la page transporteurs :
+
+* Utiliser une table, pas des cartes.
+* Ajouter un bouton “Ajouter un transporteur”.
+* Le bouton ouvre une modale.
+* Formulaire dans la modale :
+
+  * Nom transporteur.
+  * Code transporteur.
+  * Logo.
+  * Statut actif/inactif.
+  * Description FR.
+  * Description EN.
+  * Type : Point relais, Domicile, Locker, Mixte.
+* Après sauvegarde, mettre à jour la table Livewire sans reload complet.
+* Ajouter actions : modifier, activer/désactiver, supprimer si non utilisé.
+
+Page Mondial Relay :
+
+* Activer/désactiver Mondial Relay.
+* Voir statut configuration.
+* Tester la connexion API.
+* Tester recherche Point Relais avec CP/pays.
+* Voir les méthodes configurées : 24R, 24L, 24X, APM.
+* Configurer format étiquette.
+* Configurer pays autorisés.
+* Configurer poids maximum.
+* Configurer prix par zone/poids.
+
+Respecter le design existant, les espacements, les couleurs, la responsivité et les traductions FR/EN.
+
+## 9. Bilingue FR/EN
+
+Toutes les interfaces doivent être bilingues.
+
+Ajouter les clés dans :
+
+* `lang/fr/shipping.php`
+* `lang/en/shipping.php`
+
+Ne pas mettre de textes en dur dans les vues.
+
+Exemples de clés :
+
+* `shipping.title`
+* `shipping.choose_delivery_method`
+* `shipping.pickup_point_required`
+* `shipping.search_pickup_point`
+* `shipping.use_my_address`
+* `shipping.nearest_pickup_points`
+* `shipping.selected_pickup_point`
+* `shipping.add_carrier`
+* `shipping.carrier_created`
+* `shipping.connection_test_success`
+* `shipping.connection_test_failed`
+
+Respecter la ponctuation française et anglaise.
+
+## 10. Commande, expédition, étiquette et tracking
+
+Lorsqu’une commande est confirmée et payée :
+
+* Créer une ligne `order_shipments`.
+* Si le transporteur est Mondial Relay, appeler le provider Mondial Relay pour créer l’expédition.
+* Sauvegarder :
+
+  * numéro d’expédition,
+  * numéro de tracking,
+  * Point Relais choisi,
+  * méthode utilisée,
+  * réponse API brute,
+  * statut initial.
+* Générer ou récupérer l’étiquette PDF si possible.
+* Stocker l’étiquette dans `storage/app/private/shipping-labels`.
+* Ne jamais exposer le chemin privé directement.
+* Créer une route sécurisée admin pour télécharger/imprimer l’étiquette.
+
+Créer :
+
+* `app/Jobs/Shipping/CreateMondialRelayShipmentJob.php`
+* `app/Jobs/Shipping/RefreshShipmentTrackingJob.php`
+* `app/Notifications/OrderShippingUpdatedNotification.php` si le projet a déjà un système de notifications.
+
+Prévoir une gestion d’erreur :
+
+* Si l’étiquette échoue, la commande reste valide mais l’expédition passe en statut `label_failed`.
+* L’admin peut relancer la génération.
+* Les erreurs doivent être visibles dans l’admin sans exposer les secrets.
+
+## 11. Sécurité et conformité
+
+Obligatoire :
+
+* Ne jamais exposer les credentials Mondial Relay côté frontend.
+* Valider le pays, code postal, téléphone, poids, méthode et Point Relais.
+* Vérifier que le Point Relais sélectionné correspond bien au pays/code postal/méthode.
+* Rate limiting sur les endpoints de recherche Point Relais.
+* Logs sans données sensibles.
+* Respect RGPD : stocker seulement les données nécessaires pour livrer la commande.
+* Ne pas enregistrer inutilement la géolocalisation navigateur.
+
+## 12. API interne éventuelle
+
+Si le projet utilise une API backend séparée, créer ou adapter :
+
+* `GET /api/v1/shipping/methods`
+* `POST /api/v1/shipping/quote`
+* `POST /api/v1/shipping/pickup-points/search`
+* `POST /api/v1/shipping/selection`
+* `POST /api/v1/admin/shipping/mondial-relay/test`
+* `POST /api/v1/admin/orders/{order}/shipment/create`
+* `GET /api/v1/admin/orders/{order}/shipment/label`
+
+Sinon, faire les actions via Livewire côté web, mais garder la logique métier dans des services PHP réutilisables.
+
+## 13. UX attendue
+
+Le module doit être simple, rapide et moderne.
+
+Côté client :
+
+* Interface claire.
+* Boutons visibles.
+* Messages d’aide courts.
+* Loading state propre.
+* Pas de reload complet.
+* Fonctionne bien sur mobile.
+* Liste + carte pour Point Relais.
+* Sélection visible dans le résumé commande.
+* Total mis à jour immédiatement.
+
+Côté admin :
+
+* Table propre.
+* Filtres simples.
+* Modales propres.
+* Badges actif/inactif.
+* Actions rapides.
+* Page de configuration Mondial Relay claire.
+* Test API directement depuis l’interface.
+
+## 14. Tests obligatoires
+
+Ajouter tests feature/unitaires selon structure du projet :
+
+* Le client voit les méthodes de livraison disponibles selon pays/poids.
+* Le client ne peut pas continuer sans Point Relais si la méthode l’exige.
+* Le total panier change après sélection livraison.
+* La sélection Point Relais est sauvegardée.
+* La commande garde la sélection livraison.
+* Mondial Relay Provider peut rechercher des points relais avec mock API.
+* Mondial Relay Provider peut créer une expédition avec mock API.
+* L’admin peut ajouter un transporteur.
+* L’admin peut activer/désactiver une méthode.
+* Les credentials ne sont jamais exposés dans les réponses frontend.
+
+## 15. Résultat final attendu
+
+À la fin, le module doit permettre :
+
+1. Admin :
+
+   * Ajouter un transporteur via bouton + modale.
+   * Voir les transporteurs dans une table.
+   * Configurer Mondial Relay.
+   * Tester la connexion.
+   * Gérer méthodes, zones et tarifs.
+   * Générer/télécharger les étiquettes depuis les commandes.
+
+2. Client :
+
+   * Saisir ou utiliser son adresse.
+   * Voir les modes de livraison disponibles.
+   * Voir les points relais proches.
+   * Choisir un Point Relais / Locker sur carte ou liste.
+   * Voir le prix de livraison en direct.
+   * Continuer au paiement uniquement si la livraison est valide.
+   * Retrouver la livraison choisie dans le récapitulatif commande.
+
+3. Code :
+
+   * Architecture propre.
+   * Services réutilisables.
+   * Compatible plusieurs transporteurs.
+   * Livewire interactif.
+   * Bilingue FR/EN.
+   * Mobile-first.
+   * Sécurisé.
+   * Testé.
+
+Important : ne fais pas une intégration bricolée uniquement pour Mondial Relay. Construis un vrai module livraison flexible, inspiré de l’expérience des modules e-commerce comme PrestaShop, mais adapté proprement à Laravel + Livewire et au design du projet.

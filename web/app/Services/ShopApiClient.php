@@ -136,6 +136,28 @@ class ShopApiClient
         ]);
     }
 
+    public function estimateCart(string $token, string $locale, string $countryCode): array
+    {
+        return $this->send('post', "carts/{$token}/estimate", [
+            'locale' => $this->locale($locale),
+            'country_code' => strtoupper($countryCode),
+        ]);
+    }
+
+    public function createCartRecoveryLink(string $token, string $locale): array
+    {
+        return $this->send('post', "carts/{$token}/recovery-links", [
+            'locale' => $this->locale($locale),
+        ]);
+    }
+
+    public function recoverCart(string $recoveryToken, string $locale): array
+    {
+        return $this->send('get', "cart-recoveries/{$recoveryToken}", [
+            'locale' => $this->locale($locale),
+        ]);
+    }
+
     public function sitemapXml(): ?string
     {
         try {

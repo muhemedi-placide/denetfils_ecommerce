@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UserAddress extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'customer_id',
         'type',
         'label',
         'recipient_name',
@@ -30,8 +31,13 @@ class UserAddress extends Model
         'is_default' => 'boolean',
     ];
 
-    public function user(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function orderAddresses(): HasMany
+    {
+        return $this->hasMany(OrderAddress::class);
     }
 }

@@ -76,6 +76,8 @@
                                 $name = data_get($product, 'preview_name.fr') ?: data_get($product, 'preview_name.en') ?: $product['slug'] ?? 'Produit';
                                 $status = $product['stock_status'] ?? 'in_stock';
                                 $productId = $product['id'] ?? null;
+                                $imageUrl = data_get($product, 'primary_image.url');
+                                $imageAlt = data_get($product, 'primary_image.alt_text.fr') ?: data_get($product, 'primary_image.alt_text.en') ?: $name;
                                 $statusClass = match ($status) {
                                     'out_of_stock' => 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-200',
                                     'low_stock' => 'bg-amber-100 text-amber-700 dark:bg-amber-300/15 dark:text-amber-200',
@@ -85,8 +87,17 @@
                             @endphp
                             <tr class="align-top transition hover:bg-linen dark:hover:bg-white/5">
                                 <td class="px-4 py-4">
-                                    <p class="font-black text-ink dark:text-cream">{{ $name }}</p>
-                                    <p class="mt-1 text-xs font-semibold text-cocoa/55 dark:text-cream/55">{{ $product['sku'] ?? '-' }}</p>
+                                    <div class="flex min-w-[240px] items-center gap-3">
+                                        @if ($imageUrl)
+                                            <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}" class="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-leaf/10 dark:ring-white/10" loading="lazy" decoding="async">
+                                        @else
+                                            <span class="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-mint text-xs font-black text-forest dark:bg-white/10 dark:text-meadow">DF</span>
+                                        @endif
+                                        <div class="min-w-0">
+                                            <p class="truncate font-black text-ink dark:text-cream">{{ $name }}</p>
+                                            <p class="mt-1 truncate text-xs font-semibold text-cocoa/55 dark:text-cream/55">{{ $product['sku'] ?? '-' }}</p>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-4 text-cocoa/65 dark:text-cream/65">{{ data_get($product, 'category.slug', '-') }}</td>
                                 <td class="px-4 py-4"><span class="text-2xl font-black text-ink dark:text-cream">{{ $product['stock_quantity'] ?? 0 }}</span></td>
@@ -126,16 +137,25 @@
             $productId = $product['id'] ?? null;
             $name = data_get($product, 'preview_name.fr') ?: data_get($product, 'preview_name.en') ?: $product['slug'] ?? 'Produit';
             $status = $product['stock_status'] ?? 'in_stock';
+            $imageUrl = data_get($product, 'primary_image.url');
+            $imageAlt = data_get($product, 'primary_image.alt_text.fr') ?: data_get($product, 'primary_image.alt_text.en') ?: $name;
         @endphp
         @continue(! $productId)
 
         <dialog id="inventory-show-{{ $productId }}" class="admin-dialog admin-dialog-wide">
             <div class="admin-modal-card p-5 sm:p-6">
                 <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <p class="admin-kicker">Inventaire</p>
-                        <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">{{ $name }}</h2>
-                        <p class="mt-1 text-sm text-cocoa/55 dark:text-cream/55">{{ $product['sku'] ?? '-' }} - {{ $product['slug'] ?? '-' }}</p>
+                    <div class="flex min-w-0 items-center gap-4">
+                        @if ($imageUrl)
+                            <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}" class="h-20 w-20 shrink-0 rounded-2xl object-cover ring-1 ring-leaf/10 dark:ring-white/10" loading="lazy" decoding="async">
+                        @else
+                            <span class="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-mint text-sm font-black text-forest dark:bg-white/10 dark:text-meadow">DF</span>
+                        @endif
+                        <div class="min-w-0">
+                            <p class="admin-kicker">Inventaire</p>
+                            <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">{{ $name }}</h2>
+                            <p class="mt-1 text-sm text-cocoa/55 dark:text-cream/55">{{ $product['sku'] ?? '-' }} - {{ $product['slug'] ?? '-' }}</p>
+                        </div>
                     </div>
                     <button type="button" data-dialog-close class="admin-icon-btn" aria-label="Fermer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>

@@ -30,4 +30,9 @@ class OrderAddress extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+    public function sourceAddress(): BelongsTo
+    {
+        return $this->belongsTo(UserAddress::class, 'user_address_id');
+    }
 }

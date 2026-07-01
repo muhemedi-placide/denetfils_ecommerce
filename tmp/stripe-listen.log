@@ -1,0 +1,4 @@
+Checking for new versions...
+
+2026-06-26 12:26:13   --> payment_intent.succeeded [evt_3TmWxbRAVWffGPGi1gCYAXN3]
+2026-06-26 12:26:18  <--  [200] POST http://127.0.0.1:8000/api/v1/payments/stripe/webhook [evt_3TmWxbRAVWffGPGi1gCYAXN3]

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use Database\Seeders\EcommerceSeeder;
+use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,6 +14,13 @@ class ProductsApiTest extends TestCase
     public function test_products_list_returns_localized_french_products(): void
     {
         $this->seed(EcommerceSeeder::class);
+        Product::query()->where('slug', 'miel-de-montagne')->update([
+            'brand' => 'Marché Peyi',
+            'barcode' => '3760123456789',
+            'compare_at_price_cents' => 1090,
+            'unit_label' => 'pot',
+            'price_includes_tax' => true,
+        ]);
 
         $response = $this->getJson('/api/v1/products?locale=fr');
 
@@ -39,6 +47,13 @@ class ProductsApiTest extends TestCase
     public function test_product_detail_returns_product_by_slug(): void
     {
         $this->seed(EcommerceSeeder::class);
+        Product::query()->where('slug', 'miel-de-montagne')->update([
+            'brand' => 'Marché Peyi',
+            'barcode' => '3760123456789',
+            'compare_at_price_cents' => 1090,
+            'unit_label' => 'pot',
+            'price_includes_tax' => true,
+        ]);
 
         $response = $this->getJson('/api/v1/products/miel-de-montagne?locale=en');
 
@@ -47,6 +62,11 @@ class ProductsApiTest extends TestCase
             ->assertJsonPath('data.slug', 'miel-de-montagne')
             ->assertJsonPath('data.name', 'Mountain honey')
             ->assertJsonPath('data.currency', 'EUR')
+            ->assertJsonPath('data.brand', 'Marché Peyi')
+            ->assertJsonPath('data.barcode', '3760123456789')
+            ->assertJsonPath('data.formatted_compare_at_price', fn ($value) => filled($value))
+            ->assertJsonPath('data.discount_percent', fn (int $value) => $value > 0)
+            ->assertJsonPath('data.unit_label', 'pot')
             ->assertJsonPath('data.primary_image.alt_text', 'Jar of artisanal honey.')
             ->assertJsonPath('data.primary_image.loading', 'eager')
             ->assertJsonPath('data.primary_image.fetch_priority', 'high')
@@ -54,6 +74,7 @@ class ProductsApiTest extends TestCase
             ->assertJsonPath('data.commerce.availability', 'in_stock')
             ->assertJsonPath('data.seo.open_graph.type', 'product')
             ->assertJsonPath('data.seo.json_ld.product.@type', 'Product')
+            ->assertJsonPath('data.seo.json_ld.product.gtin13', '3760123456789')
             ->assertJsonPath('data.seo.json_ld.breadcrumb.@type', 'BreadcrumbList');
 
         $this->assertStringContainsString(

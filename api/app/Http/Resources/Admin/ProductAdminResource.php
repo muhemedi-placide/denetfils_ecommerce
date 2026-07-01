@@ -4,11 +4,14 @@ namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Services\Catalog\ProductHealthService;
 
 class ProductAdminResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $primaryImage = $this->relationLoaded('images') ? $this->images->first() : null;
+
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
@@ -36,9 +39,17 @@ class ProductAdminResource extends JsonResource
             'return_policy' => $this->return_policy,
             'guarantee' => $this->guarantee,
             'sku' => $this->sku,
+            'barcode' => $this->barcode,
+            'brand' => $this->brand,
+            'supplier_reference' => $this->supplier_reference,
+            'purchase_price_cents' => $this->purchase_price_cents,
             'price_cents' => $this->price_cents,
+            'compare_at_price_cents' => $this->compare_at_price_cents,
             'currency' => $this->currency,
+            'price_includes_tax' => $this->price_includes_tax,
+            'tax_class' => $this->tax_class,
             'weight_grams' => $this->weight_grams,
+            'unit_label' => $this->unit_label,
             'stock_quantity' => $this->stock_quantity,
             'max_order_quantity' => $this->max_order_quantity,
             'rating_average' => $this->rating_average,
@@ -50,6 +61,25 @@ class ProductAdminResource extends JsonResource
             'canonical_path' => $this->canonical_path,
             'published_at' => $this->published_at,
             'is_active' => $this->is_active,
+            'health' => app(ProductHealthService::class)->analyze(
+                $this->resource,
+                in_array($request->query('locale'), ['fr', 'en'], true) ? $request->query('locale') : 'fr',
+            ),
+            'primary_image' => $primaryImage ? [
+                'id' => $primaryImage->id,
+                'url' => $primaryImage->url,
+                'width' => $primaryImage->width,
+                'height' => $primaryImage->height,
+                'dominant_color' => $primaryImage->dominant_color,
+                'alt_text' => $primaryImage->alt_text,
+                'sort_order' => $primaryImage->sort_order,
+                'is_primary' => $primaryImage->is_primary,
+            ] : null,
+            'icon_image' => $this->whenLoaded('iconImage', fn () => $this->iconImage ? [
+                'id' => $this->iconImage->id,
+                'url' => $this->iconImage->url,
+                'alt_text' => $this->iconImage->alt_text,
+            ] : null),
             'images' => $this->whenLoaded('images', fn () => $this->images->map(fn ($image) => [
                 'id' => $image->id,
                 'url' => $image->url,
@@ -58,6 +88,7 @@ class ProductAdminResource extends JsonResource
                 'dominant_color' => $image->dominant_color,
                 'alt_text' => $image->alt_text,
                 'sort_order' => $image->sort_order,
+                'is_primary' => $image->is_primary,
             ])->values()),
             'variants' => $this->whenLoaded('variants', fn () => $this->variants->map(fn ($variant) => [
                 'id' => $variant->id,

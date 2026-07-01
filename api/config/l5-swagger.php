@@ -5,7 +5,7 @@ return [
     'documentations' => [
         'default' => [
             'api' => [
-                'title' => 'Denetfils API',
+                'title' => env('SHOP_NAME', 'Marché Peyi').' API',
             ],
 
             'routes' => [

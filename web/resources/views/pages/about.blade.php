@@ -1,7 +1,7 @@
 @extends('layouts.shop')
 
-@section('title', ($locale === 'fr' ? 'Notre histoire' : 'Our story') . ' | Marche Peyi')
-@section('description', $locale === 'fr' ? 'Découvrez l’histoire et la mission de Marche Peyi : un marché de saveurs authentiques, directement lié aux producteurs.' : 'Discover Marche Peyi story and mission: a market of authentic flavors directly connected to producers.')
+@section('title', ($locale === 'fr' ? 'Notre histoire' : 'Our story') . ' | ' . config('shop.name'))
+@section('description', $locale === 'fr' ? 'Découvrez l’histoire et la mission de '.config('shop.name').' : un marché de saveurs authentiques, directement lié aux producteurs.' : 'Discover '.config('shop.name').' story and mission: a market of authentic flavors directly connected to producers.')
 @section('canonical', route('pages.about', ['locale' => $locale]))
 
 @section('content')
@@ -17,7 +17,7 @@
                 {{ $locale === 'fr' ? 'Un marché. Mille saveurs. Une mission.' : 'One market. A thousand flavors. One mission.' }}
             </h1>
             <p class="mt-8 max-w-3xl text-lg font-semibold leading-9 text-cream/90">
-                {{ $locale === 'fr' ? 'Nous avons grandi entre deux cuisines : celle de la grand-mère qui mijote l’épis, et celle du supermarché aux rayons fades. Marché Peyi est né pour relier les deux.' : 'We grew up between two kitchens: the grandmother’s slow-cooked seasoning and the supermarket aisle without flavor. Marché Peyi was born to reconnect both worlds.' }}
+                {{ $locale === 'fr' ? 'Nous avons grandi entre deux cuisines : celle de la grand-mère qui mijote l’épis, et celle du supermarché aux rayons fades. '.config('shop.name').' est né pour relier les deux.' : 'We grew up between two kitchens: the grandmother’s slow-cooked seasoning and the supermarket aisle without flavor. '.config('shop.name').' was born to reconnect both worlds.' }}
             </p>
         </div>
     </section>
@@ -31,7 +31,7 @@
                 </h2>
             </div>
             <div class="max-w-2xl space-y-7 text-base font-semibold leading-8 text-forest/75 dark:text-cream/75">
-                <p>{{ $locale === 'fr' ? 'Chez Marché Peyi, chaque produit a un visage. Un nom. Une parcelle. Une recette.' : 'At Marché Peyi, every product has a face. A name. A field. A recipe.' }}</p>
+                <p>{{ $locale === 'fr' ? 'Chez '.config('shop.name').', chaque produit a un visage. Un nom. Une parcelle. Une recette.' : 'At '.config('shop.name').', every product has a face. A name. A field. A recipe.' }}</p>
                 <p>{{ $locale === 'fr' ? 'Nous travaillons directement avec des coopératives en Haïti, en Guadeloupe, en Martinique, au Cameroun, en Côte d’Ivoire. Pas d’intermédiaire, pas de marque blanche.' : 'We work directly with cooperatives in Haiti, Guadeloupe, Martinique, Cameroon and Côte d’Ivoire. No unnecessary middlemen, no white-label shortcut.' }}</p>
                 <p>{{ $locale === 'fr' ? 'Notre engagement : un prix juste pour le producteur, un produit authentique pour vous, et un colis qui voyage le moins possible.' : 'Our commitment: a fair price for producers, an authentic product for customers, and a parcel that travels as little as possible.' }}</p>
             </div>
@@ -67,7 +67,7 @@
                 </a>
             </div>
             <div class="h-[300px] overflow-hidden sm:h-[340px] lg:h-[390px]">
-                <img class="h-full w-full object-cover" src="{{ $peppersImage }}" alt="{{ $locale === 'fr' ? 'Piments tropicaux Marché Peyi' : 'Marché Peyi tropical peppers' }}" loading="lazy" decoding="async">
+                <img class="h-full w-full object-cover" src="{{ $peppersImage }}" alt="{{ $locale === 'fr' ? 'Piments tropicaux '.config('shop.name') : config('shop.name').' tropical peppers' }}" loading="lazy" decoding="async">
             </div>
         </div>
     </section>

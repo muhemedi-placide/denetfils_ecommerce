@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\RegisterRequest;
-use App\Http\Resources\UserResource;
-use App\Models\User;
+use App\Http\Resources\CustomerResource;
+use App\Models\Customer;
+use App\Notifications\WelcomeCustomerNotification;
 use App\Services\Core\UserProvisioningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,19 +20,20 @@ class AuthController extends Controller
     {
         $user = $users->registerCustomer($request->validated(), $request);
         $token = $user->createToken('customer-api')->plainTextToken;
+        $user->notify(new WelcomeCustomerNotification($user->preferred_locale ?: 'fr'));
 
         return response()->json([
             'data' => [
                 'token' => $token,
                 'token_type' => 'Bearer',
-                'user' => new UserResource($user),
+                'user' => new CustomerResource($user),
             ],
         ], 201);
     }
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::query()
+        $user = Customer::query()
             ->where('email', $request->validated('email'))
             ->first();
 
@@ -53,7 +55,7 @@ class AuthController extends Controller
             'data' => [
                 'token' => $token,
                 'token_type' => 'Bearer',
-                'user' => new UserResource($user->load(['roles', 'permissions', 'customerProfile', 'staffProfile'])),
+                'user' => new CustomerResource($user->load('customerProfile')),
             ],
         ]);
     }
@@ -67,8 +69,8 @@ class AuthController extends Controller
         ]);
     }
 
-    public function me(Request $request): UserResource
+    public function me(Request $request): CustomerResource
     {
-        return new UserResource($request->user()->load(['roles', 'permissions', 'customerProfile', 'staffProfile']));
+        return new CustomerResource($request->user()->load('customerProfile'));
     }
 }

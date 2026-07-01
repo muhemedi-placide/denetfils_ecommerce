@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -13,7 +14,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_number',
-        'user_id',
+        'customer_id',
         'cart_id',
         'status',
         'payment_status',
@@ -40,9 +41,9 @@ class Order extends Model
         'placed_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function cart(): BelongsTo
@@ -58,5 +59,25 @@ class Order extends Model
     public function addresses(): HasMany
     {
         return $this->hasMany(OrderAddress::class);
+    }
+
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(OrderShipment::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(OrderPayment::class);
+    }
+
+    public function conversation(): HasOne
+    {
+        return $this->hasOne(OrderConversation::class);
+    }
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
     }
 }

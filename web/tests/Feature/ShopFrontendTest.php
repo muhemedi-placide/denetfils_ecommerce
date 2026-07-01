@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Shop\CartManager;
+use App\Livewire\Shop\CartPage;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -20,12 +21,11 @@ class ShopFrontendTest extends TestCase
             ->assertSee('Origine France')
             ->assertSee('Epicerie fine')
             ->assertSee('cart:add', false)
-            ->assertSee('data-theme-toggle', false)
             ->assertSee('id="mobile-menu-state"', false)
             ->assertSee('data-mobile-menu-toggle', false)
             ->assertSee('data-testid="mobile-cart-open-button"', false)
             ->assertSee('pointer-events-none fixed', false)
-            ->assertSee('Paiement sécurisé : carte, Visa, Mastercard, PayPal.')
+            ->assertSee('Paiement sécurisé : Visa, Mastercard, Apple Pay, Google Pay, PayPal.')
             ->assertDontSee(__('home.cart.subtitle'))
             ->assertDontSee('TVA UE')
             ->assertDontSee('Securise')
@@ -44,7 +44,7 @@ class ShopFrontendTest extends TestCase
 
         $this->get('/en')
             ->assertOk()
-            ->assertSee('A family house bringing Haitian flavors across borders.')
+            ->assertSee('Marché Peyi makes Caribbean, Haitian and African flavors easy to find, cook and share every day.')
             ->assertSee('Mountain honey')
             ->assertSee('French origin');
     }
@@ -54,12 +54,12 @@ class ShopFrontendTest extends TestCase
         $this->withoutVite();
         $this->fakeCatalog('Hibiscus infusion', 'Senegalese origin', 'Natural drinks');
 
-        $this->get('/en?category=boissons-naturelles&q=hibiscus&sort=price_desc')
+        $this->get('/en/boutique?category=boissons-naturelles&q=hibiscus&sort=price_desc')
             ->assertOk()
             ->assertSee('Hibiscus infusion')
-            ->assertSee('wire:submit.prevent="applyFilters"', false)
-            ->assertSee('wire:model="category"', false)
-            ->assertSee('value="boissons-naturelles"', false)
+            ->assertSee('filterCategory', false)
+            ->assertSee('Natural drinks')
+            ->assertSee('wire:model="sort"', false)
             ->assertSee('value="price_desc"', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/products')
@@ -80,6 +80,9 @@ class ShopFrontendTest extends TestCase
             ->assertSee('Mountain honey')
             ->assertSee('A dense floral honey')
             ->assertSee('EUR 8.90')
+            ->assertSee('EUR 10.90')
+            ->assertSee('VAT included')
+            ->assertSee('Marché Peyi')
             ->assertSee('https://example.test/honey.jpg')
             ->assertSee('Premium selection')
             ->assertSee('Prepared within 24 to 48 business hours.')
@@ -103,7 +106,7 @@ class ShopFrontendTest extends TestCase
         Livewire::test(CartManager::class, ['locale' => 'en'])
             ->call('addToCart', 10)
             ->assertSet('cartToken', 'cart-token-123')
-            ->assertSet('isOpen', true);
+            ->assertSet('isOpen', false);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/carts')
             && $request->method() === 'POST');
@@ -112,6 +115,48 @@ class ShopFrontendTest extends TestCase
             && $request->method() === 'POST'
             && $request['product_id'] === 10
             && $request['quantity'] === 1);
+    }
+
+    public function test_cart_page_creates_a_secure_recovery_url(): void
+    {
+        Http::fake([
+            '*/carts/cart-token-123/recovery-links' => Http::response([
+                'data' => [
+                    'token' => str_repeat('r', 64),
+                    'expires_at' => now()->addDays(30)->toIso8601String(),
+                ],
+            ], 201),
+        ]);
+
+        Livewire::test(CartPage::class, ['locale' => 'fr'])
+            ->set('cartToken', 'cart-token-123')
+            ->set('cart', $this->cart([$this->cartItem()]))
+            ->call('createRecoveryLink')
+            ->assertSet('recoveryUrl', route('cart.recover', [
+                'locale' => 'fr',
+                'recoveryToken' => str_repeat('r', 64),
+            ]))
+            ->assertSee('Copier');
+    }
+
+    public function test_recovery_route_restores_the_cart_from_api(): void
+    {
+        $recoveryToken = str_repeat('r', 64);
+
+        Http::fake([
+            '*/cart-recoveries/*' => Http::response([
+                'data' => $this->cart([$this->cartItem()]),
+            ]),
+        ]);
+
+        Livewire::test(CartPage::class, [
+            'locale' => 'en',
+            'recoveryToken' => $recoveryToken,
+        ])
+            ->assertSet('recoveredFromLink', true)
+            ->assertSet('cartToken', 'cart-token-123')
+            ->assertSee('Cart restored')
+            ->assertSee('Mountain honey');
     }
 
     private function fakeCatalog(string $name, string $origin, string $categoryName): void
@@ -138,30 +183,37 @@ class ShopFrontendTest extends TestCase
             ]),
             '*/products*' => Http::response([
                 'data' => [
-                    $this->product($name, $origin),
+                    $this->product($name, $origin, $categoryName),
                 ],
             ]),
         ]);
     }
 
-    private function product(string $name, string $origin): array
+    private function product(string $name, string $origin, string $categoryName = 'Fine groceries'): array
     {
         return [
             'id' => 10,
             'category' => [
                 'id' => 1,
                 'slug' => 'epicerie-fine',
-                'name' => 'Fine groceries',
+                'name' => $categoryName,
             ],
             'name' => $name,
             'slug' => 'miel-de-montagne',
             'description' => 'A dense floral honey for breakfasts and desserts.',
             'origin' => $origin,
             'sku' => 'DEN-MIEL-250',
+            'barcode' => '3760123456789',
+            'brand' => 'Marché Peyi',
             'price_cents' => 890,
             'formatted_price' => 'EUR 8.90',
+            'compare_at_price_cents' => 1090,
+            'formatted_compare_at_price' => 'EUR 10.90',
+            'discount_percent' => 18,
+            'price_includes_tax' => true,
             'currency' => 'EUR',
             'weight_grams' => 250,
+            'unit_label' => 'jar',
             'stock_quantity' => 35,
             'is_active' => true,
             'short_description' => 'A dense floral honey selected for breakfast and dessert.',
@@ -276,6 +328,9 @@ class ShopFrontendTest extends TestCase
             'tax_cents' => 0,
             'total_cents' => 890,
             'formatted_total' => 'EUR 8.90',
+            'formatted_subtotal' => 'EUR 8.90',
+            'items_count' => count($items),
+            'reference' => 'CRT-TEST123',
             'items' => $items,
         ];
     }
@@ -286,10 +341,15 @@ class ShopFrontendTest extends TestCase
             'id' => 55,
             'quantity' => 1,
             'line_total_cents' => 890,
+            'unit_price_cents' => 890,
+            'formatted_unit_price' => 'EUR 8.90',
             'formatted_line_total' => 'EUR 8.90',
             'product' => [
                 'id' => 10,
                 'name' => 'Mountain honey',
+                'slug' => 'miel-de-montagne',
+                'sku' => 'DEN-MIEL-250',
+                'stock_quantity' => 35,
                 'origin' => 'French origin',
                 'image' => [
                     'url' => 'https://example.test/honey.jpg',

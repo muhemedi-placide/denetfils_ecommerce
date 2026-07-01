@@ -1,6 +1,6 @@
 @extends('layouts.shop')
 
-@section('title', __('home.blog.title') . ' | Denetfils')
+@section('title', __('home.blog.title') . ' | ' . config('shop.name'))
 @section('description', __('home.blog.body'))
 @section('canonical', route('blog.index', ['locale' => $locale]))
 @section('og_type', 'website')
@@ -83,7 +83,7 @@
         </div>
     </section>
 
-    <section class="bg-white px-4 py-12 dark:bg-[#172414] sm:px-8 lg:py-14">
+    <section class="bg-white px-4 py-12 dark:bg-[#111111] sm:px-8 lg:py-14">
         <div class="mx-auto grid max-w-7xl gap-6 rounded-[1.5rem] border border-leaf/10 bg-linen p-5 dark:border-white/10 dark:bg-white/5 sm:p-8 lg:grid-cols-[0.85fr_1.15fr]">
             <div>
                 <p class="text-xs font-bold uppercase tracking-[0.22em] text-leaf dark:text-meadow">{{ __('home.products.eyebrow') }}</p>

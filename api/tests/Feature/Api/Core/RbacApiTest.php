@@ -3,12 +3,15 @@
 namespace Tests\Feature\Api\Core;
 
 use App\Models\AuditLog;
+use App\Models\Customer;
+use App\Models\Cart;
 use App\Models\User;
 use App\Support\CoreDefaults;
 use Database\Seeders\AccessControlSeeder;
 use Database\Seeders\SupportedCountrySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class RbacApiTest extends TestCase
@@ -24,8 +27,7 @@ class RbacApiTest extends TestCase
 
     public function test_customer_cannot_access_admin_routes(): void
     {
-        $customer = User::factory()->create();
-        $customer->assignRole('customer');
+        $customer = Customer::factory()->create();
         Sanctum::actingAs($customer);
 
         $this->getJson('/api/v1/admin/users')->assertForbidden();
@@ -35,6 +37,7 @@ class RbacApiTest extends TestCase
     {
         $manager = User::factory()->create();
         $manager->assignRole('catalog_manager');
+        $this->assertSame('catalog_manager', $manager->fresh()->role->name);
         $target = User::factory()->create();
         Sanctum::actingAs($manager);
 
@@ -60,6 +63,7 @@ class RbacApiTest extends TestCase
         ])
             ->assertCreated()
             ->assertJsonPath('data.email', 'support@example.com')
+            ->assertJsonPath('data.role', 'support_agent')
             ->assertJsonPath('data.roles.0', 'support_agent')
             ->json('data.id');
 
@@ -83,5 +87,65 @@ class RbacApiTest extends TestCase
         ));
 
         $this->getJson('/api/v1/admin/permissions')->assertOk();
+    }
+
+    public function test_admin_has_every_permission_and_receives_new_permissions_automatically(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $this->assertEmpty(array_diff(
+            CoreDefaults::PERMISSIONS,
+            $admin->getAllPermissions()->pluck('name')->all(),
+        ));
+
+        Permission::findOrCreate('reports.export', 'web');
+        $this->assertTrue($admin->fresh()->hasPermissionTo('reports.export'));
+
+        $cart = Cart::query()->create([
+            'cart_token' => 'admin-visible-cart',
+            'currency' => 'EUR',
+            'expires_at' => now()->addDays(30),
+            'last_activity_at' => now(),
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->getJson('/api/v1/admin/carts')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $cart->id);
+
+        $this->getJson("/api/v1/admin/carts/{$cart->id}")
+            ->assertOk()
+            ->assertJsonPath('data.reference', fn (string $reference) => str_starts_with($reference, 'CRT-'));
+    }
+
+    public function test_admin_can_sync_permissions_for_editable_role_but_not_protected_roles(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $support = \Spatie\Permission\Models\Role::findByName('support_agent', 'web');
+        $protected = \Spatie\Permission\Models\Role::findByName('admin', 'web');
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/v1/admin/roles/{$support->id}/permissions", [
+            'permissions' => ['catalog.view', 'orders.view'],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'support_agent')
+            ->assertJsonPath('data.permissions.0', 'catalog.view')
+            ->assertJsonPath('data.permissions.1', 'orders.view');
+
+        $this->assertTrue($support->fresh()->hasPermissionTo('catalog.view'));
+        $this->assertFalse($support->fresh()->hasPermissionTo('customers.manage'));
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'roles.permissions_updated',
+            'auditable_id' => $support->id,
+        ]);
+
+        $this->patchJson("/api/v1/admin/roles/{$protected->id}/permissions", [
+            'permissions' => ['catalog.view'],
+        ])->assertUnprocessable();
     }
 }

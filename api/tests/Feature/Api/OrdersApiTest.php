@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Customer;
 use App\Models\User;
 use App\Models\UserAddress;
 use Database\Seeders\AccessControlSeeder;
@@ -52,10 +53,13 @@ class OrdersApiTest extends TestCase
             ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
             ->assertJsonPath('data.customer.email', $user->email)
             ->assertJsonPath('data.shipping_cents', 590)
-            ->assertJsonPath('data.tax_cents', 216)
-            ->assertJsonPath('data.total_cents', 2586)
+            ->assertJsonPath('data.tax_cents', 191)
+            ->assertJsonPath('data.total_cents', 2370)
             ->assertJsonPath('data.items.0.product.name', 'Miel de montagne')
             ->assertJsonPath('data.items.0.quantity', 2)
+            ->assertJsonPath('data.items.0.tax_class', 'food')
+            ->assertJsonPath('data.items.0.tax_rate_percent', 5.5)
+            ->assertJsonPath('data.items.0.tax_cents', 93)
             ->assertJsonPath('data.addresses.0.type', 'shipping')
             ->assertJsonPath('data.addresses.1.type', 'billing')
             ->assertJsonPath('data.carrier', 'chronopost_home');
@@ -63,11 +67,14 @@ class OrdersApiTest extends TestCase
         $this->assertMatchesRegularExpression('/^DF-\d{8}-[A-Z0-9]{6}$/', $response->json('data.order_number'));
         $this->assertDatabaseHas('orders', [
             'id' => $response->json('data.id'),
-            'user_id' => $user->id,
+            'customer_id' => $user->id,
             'cart_id' => $this->cartId($cartToken),
+            'status' => 'pending_payment',
+            'payment_status' => 'unpaid',
+            'fulfillment_status' => 'unfulfilled',
             'shipping_cents' => 590,
-            'tax_cents' => 216,
-            'total_cents' => 2586,
+            'tax_cents' => 191,
+            'total_cents' => 2370,
         ]);
         $this->assertDatabaseHas('order_items', [
             'order_id' => $response->json('data.id'),
@@ -75,9 +82,20 @@ class OrdersApiTest extends TestCase
             'quantity' => 2,
             'unit_price_cents' => $product->price_cents,
             'line_total_cents' => $product->price_cents * 2,
+            'tax_class' => 'food',
+            'tax_rate_percent' => 5.50,
+            'tax_cents' => 93,
         ]);
         $this->assertDatabaseCount('order_addresses', 2);
         $this->assertSame($product->stock_quantity, $product->fresh()->stock_quantity);
+
+        $product->update(['tax_class' => 'standard']);
+        \App\Models\SupportedCountry::query()->where('code', 'FR')->update(['food_vat_rate_percent' => 10]);
+        $this->getJson('/api/v1/orders/'.$response->json('data.id'))
+            ->assertOk()
+            ->assertJsonPath('data.items.0.tax_class', 'food')
+            ->assertJsonPath('data.items.0.tax_rate_percent', 5.5)
+            ->assertJsonPath('data.items.0.tax_cents', 93);
     }
 
     public function test_customer_can_list_and_read_only_own_orders(): void
@@ -113,7 +131,7 @@ class OrdersApiTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_order_creation_rejects_empty_cart_invalid_address_and_duplicate_cart(): void
+    public function test_order_creation_rejects_empty_cart_and_invalid_address(): void
     {
         $user = $this->customer();
         $address = $this->address($user);
@@ -145,13 +163,118 @@ class OrdersApiTest extends TestCase
             'cart_token' => $cartToken,
             'shipping_address_id' => $address->id,
         ])->assertCreated();
+    }
+
+    public function test_order_creation_is_idempotent_for_same_customer_cart(): void
+    {
+        $user = $this->customer();
+        $address = $this->address($user);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+        $cartToken = $this->cartWithProduct($product);
+
+        Sanctum::actingAs($user);
+
+        $firstOrderId = $this->postJson('/api/v1/orders', [
+            'cart_token' => $cartToken,
+            'shipping_address_id' => $address->id,
+        ])
+            ->assertCreated()
+            ->json('data.id');
 
         $this->postJson('/api/v1/orders', [
             'cart_token' => $cartToken,
             'shipping_address_id' => $address->id,
         ])
+            ->assertCreated()
+            ->assertJsonPath('data.id', $firstOrderId);
+
+        $this->assertDatabaseCount('orders', 1);
+    }
+
+    public function test_converted_cart_cannot_be_reused_by_another_customer(): void
+    {
+        $owner = $this->customer(['email' => 'owner-cart@example.test']);
+        $other = $this->customer(['email' => 'other-cart@example.test']);
+        $ownerAddress = $this->address($owner);
+        $otherAddress = $this->address($other);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+        $cartToken = $this->cartWithProduct($product);
+
+        Sanctum::actingAs($owner);
+
+        $this->postJson('/api/v1/orders', [
+            'cart_token' => $cartToken,
+            'shipping_address_id' => $ownerAddress->id,
+        ])->assertCreated();
+
+        Sanctum::actingAs($other);
+
+        $this->postJson('/api/v1/orders', [
+            'cart_token' => $cartToken,
+            'shipping_address_id' => $otherAddress->id,
+        ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('cart_token');
+    }
+
+    public function test_customer_can_manage_order_conversation(): void
+    {
+        $user = $this->customer();
+        $address = $this->address($user);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+
+        Sanctum::actingAs($user);
+
+        $orderId = $this->postJson('/api/v1/orders', [
+            'cart_token' => $this->cartWithProduct($product),
+            'shipping_address_id' => $address->id,
+        ])->assertCreated()->json('data.id');
+
+        $this->getJson("/api/v1/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'not_started')
+            ->assertJsonCount(0, 'data.messages');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/open")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'open');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/messages", [
+            'body' => 'Bonjour, pouvez-vous confirmer le suivi ?',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'open')
+            ->assertJsonPath('data.staff_unread_count', 1)
+            ->assertJsonPath('data.messages.0.sender_type', 'customer')
+            ->assertJsonPath('data.messages.0.body', 'Bonjour, pouvez-vous confirmer le suivi ?');
+
+        $conversation = Order::query()->findOrFail($orderId)->conversation()->firstOrFail();
+        $conversation->messages()->create([
+            'user_id' => null,
+            'sender_type' => 'staff',
+            'body' => 'Votre commande est en preparation.',
+        ]);
+        $conversation->update(['customer_unread_count' => 1]);
+
+        $this->getJson("/api/v1/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.customer_unread_count', 1)
+            ->assertJsonPath('data.messages.1.status', 'unread');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/read")
+            ->assertOk()
+            ->assertJsonPath('data.customer_unread_count', 0)
+            ->assertJsonPath('data.messages.1.status', 'read');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/close")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'closed');
+
+        $this->postJson("/api/v1/orders/{$orderId}/conversation/messages", [
+            'body' => 'Merci.',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('body');
     }
 
     public function test_order_creation_revalidates_current_stock(): void
@@ -234,7 +357,7 @@ class OrdersApiTest extends TestCase
         ]);
 
         $adminCreateResponse = $this->postJson('/api/v1/admin/orders', [
-            'user_id' => $customer->id,
+            'customer_id' => $customer->id,
             'cart_token' => $this->cartWithProduct($product),
             'shipping_address_id' => $address->id,
             'delivery_method' => 'standard',
@@ -258,6 +381,64 @@ class OrdersApiTest extends TestCase
             ->assertJsonPath('data.0.is_new_customer', false);
     }
 
+    public function test_operations_manager_can_manage_order_conversation(): void
+    {
+        $customer = $this->customer();
+        $address = $this->address($customer);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+
+        Sanctum::actingAs($customer);
+
+        $orderId = $this->postJson('/api/v1/orders', [
+            'cart_token' => $this->cartWithProduct($product),
+            'shipping_address_id' => $address->id,
+        ])->assertCreated()->json('data.id');
+
+        $manager = User::factory()->create();
+        $manager->assignRole('operations_manager');
+
+        Sanctum::actingAs($manager);
+
+        $this->getJson("/api/v1/admin/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'not_started');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/open")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'open');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/messages", [
+            'body' => 'Bonjour, votre commande est en preparation.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.customer_unread_count', 1)
+            ->assertJsonPath('data.messages.0.sender_type', 'staff')
+            ->assertJsonPath('data.messages.0.status_for_customer', 'unread')
+            ->assertJsonPath('data.messages.0.status_for_staff', 'read');
+
+        $conversation = Order::query()->findOrFail($orderId)->conversation()->firstOrFail();
+        $conversation->messages()->create([
+            'customer_id' => $customer->id,
+            'sender_type' => 'customer',
+            'body' => 'Merci pour le retour.',
+        ]);
+        $conversation->update(['staff_unread_count' => 1]);
+
+        $this->getJson("/api/v1/admin/orders/{$orderId}/conversation")
+            ->assertOk()
+            ->assertJsonPath('data.staff_unread_count', 1)
+            ->assertJsonPath('data.messages.1.status', 'unread');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/read")
+            ->assertOk()
+            ->assertJsonPath('data.staff_unread_count', 0)
+            ->assertJsonPath('data.messages.1.status', 'read');
+
+        $this->postJson("/api/v1/admin/orders/{$orderId}/conversation/close")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'closed');
+    }
+
     public function test_customer_cannot_read_admin_orders(): void
     {
         $customer = $this->customer();
@@ -267,15 +448,12 @@ class OrdersApiTest extends TestCase
         $this->getJson('/api/v1/admin/orders')->assertForbidden();
     }
 
-    private function customer(array $overrides = []): User
+    private function customer(array $overrides = []): Customer
     {
-        $user = User::factory()->create($overrides);
-        $user->assignRole('customer');
-
-        return $user;
+        return Customer::factory()->create($overrides);
     }
 
-    private function address(User $user, array $overrides = []): UserAddress
+    private function address(Customer $user, array $overrides = []): UserAddress
     {
         return $user->addresses()->create(array_merge([
             'type' => 'shipping',

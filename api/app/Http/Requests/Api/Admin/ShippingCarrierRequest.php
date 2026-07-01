@@ -54,8 +54,20 @@ class ShippingCarrierRequest extends FormRequest
             'supports_home_delivery' => ['sometimes', 'boolean'],
             'public_config' => ['nullable', 'array'],
             'public_config.*' => ['nullable'],
-            'credentials' => [$this->isMethod('post') ? 'required' : 'sometimes', 'array'],
+            'credentials' => ['nullable', 'array'],
             'credentials.*' => ['nullable'],
+            'method' => ['nullable', 'array'],
+            'method.code' => ['required_with:method', 'string', 'max:96', 'regex:/^[a-z0-9][a-z0-9_-]*$/', Rule::unique('shipping_methods', 'code')],
+            'method.name' => ['required_with:method', 'array'],
+            'method.name.fr' => ['required_with:method', 'string', 'max:120'],
+            'method.name.en' => ['nullable', 'string', 'max:120'],
+            'method.delivery_type' => ['required_with:method', Rule::in(['pickup_point', 'locker', 'home'])],
+            'method.service_code' => ['required_with:method', 'string', 'max:16'],
+            'method.price_cents' => ['required_with:method', 'integer', 'min:0', 'max:1000000'],
+            'method.currency' => ['nullable', 'string', 'size:3'],
+            'method.min_delivery_days' => ['nullable', 'integer', 'min:0', 'max:60'],
+            'method.max_delivery_days' => ['nullable', 'integer', 'gte:method.min_delivery_days', 'max:90'],
+            'method.requires_pickup_point' => ['nullable', 'boolean'],
         ];
     }
 

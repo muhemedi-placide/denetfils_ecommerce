@@ -31,6 +31,9 @@ class OrderItem extends Model
         'unit_price_cents',
         'line_total_cents',
         'currency',
+        'tax_class',
+        'tax_rate_percent',
+        'tax_cents',
     ];
 
     protected $casts = [
@@ -38,10 +41,26 @@ class OrderItem extends Model
         'variant_name' => 'array',
         'category_name' => 'array',
         'image_alt_text' => 'array',
+        'tax_rate_percent' => 'decimal:2',
     ];
 
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 }

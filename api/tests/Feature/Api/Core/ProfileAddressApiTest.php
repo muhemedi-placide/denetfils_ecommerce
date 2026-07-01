@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Api\Core;
 
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\UserAddress;
 use Database\Seeders\AccessControlSeeder;
 use Database\Seeders\SupportedCountrySeeder;
@@ -23,7 +23,7 @@ class ProfileAddressApiTest extends TestCase
 
     public function test_user_can_update_profile_with_european_defaults(): void
     {
-        $user = User::factory()->create();
+        $user = Customer::factory()->create();
         Sanctum::actingAs($user);
 
         $this->patchJson('/api/v1/me', [
@@ -39,7 +39,7 @@ class ProfileAddressApiTest extends TestCase
 
     public function test_address_requires_supported_country_and_keeps_single_default_per_type(): void
     {
-        $user = User::factory()->create();
+        $user = Customer::factory()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/me/addresses', $this->addressPayload(['country_code' => 'XX']))
@@ -66,8 +66,8 @@ class ProfileAddressApiTest extends TestCase
 
     public function test_user_cannot_update_another_users_address(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
+        $owner = Customer::factory()->create();
+        $other = Customer::factory()->create();
         $address = $owner->addresses()->create($this->addressPayload());
 
         Sanctum::actingAs($other);

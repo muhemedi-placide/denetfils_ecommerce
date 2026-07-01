@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\ShopApiClient;
 use App\Services\AccountApiClient;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
@@ -93,7 +94,28 @@ class ShopController extends Controller
         return $this->utilityPage($locale, 'payment');
     }
 
-    public function cart(ShopApiClient $api, string $locale): View
+    public function tracking(Request $request, AccountApiClient $accountApi, string $locale): View
+    {
+        $locale = $this->setLocale($locale);
+        $trackingNumber = trim((string) $request->query('tracking_number', ''));
+        $tracking = null;
+
+        if ($trackingNumber !== '') {
+            $tracking = $accountApi->shipmentTracking([
+                'tracking_number' => $trackingNumber,
+                'locale' => $locale,
+            ]);
+        }
+
+        return view('pages.tracking', [
+            'locale' => $locale,
+            'activeMenu' => 'tracking',
+            'trackingNumber' => $trackingNumber,
+            'tracking' => $tracking,
+        ]);
+    }
+
+    public function cart(ShopApiClient $api, string $locale, ?string $recoveryToken = null): View
     {
         $locale = $this->setLocale($locale);
         $products = $api->products($locale, ['sort' => 'latest']);
@@ -102,6 +124,7 @@ class ShopController extends Controller
             'locale' => $locale,
             'recommendedProducts' => array_slice($products['data'], 0, 3),
             'activeMenu' => 'products',
+            'recoveryToken' => $recoveryToken,
         ]);
     }
 
@@ -119,8 +142,9 @@ class ShopController extends Controller
                 $user = $profile['data'];
                 $request->session()->put('customer_user', $user);
                 $addresses = $accountApi->addresses($token)['data'];
+                $this->rememberShippingCountry($request, $addresses);
             } else {
-                $request->session()->forget(['customer_api_token', 'customer_user']);
+                $request->session()->forget(['customer_api_token', 'customer_user', 'customer_shipping_country']);
             }
         }
 
@@ -129,8 +153,50 @@ class ShopController extends Controller
             'user' => $user,
             'addresses' => $addresses,
             'countries' => $accountApi->supportedCountries($locale)['data'],
+            'completedOrder' => $request->session()->get('paypal_checkout_completed'),
             'activeMenu' => 'products',
         ]);
+    }
+
+    public function paypalReturn(Request $request, AccountApiClient $accountApi): RedirectResponse
+    {
+        $context = $request->session()->pull('paypal_express_checkout', []);
+        $locale = in_array($context['locale'] ?? null, ['fr', 'en'], true) ? $context['locale'] : 'fr';
+        $checkoutToken = (string) ($context['checkout_token'] ?? '');
+        $paypalOrderId = (string) ($context['paypal_order_id'] ?? '');
+        $returnedOrderId = (string) $request->query('token', '');
+
+        if ($checkoutToken === '' || $paypalOrderId === '' || ! hash_equals($paypalOrderId, $returnedOrderId)) {
+            return redirect()->route('checkout.show', ['locale' => $locale])
+                ->withErrors(['payment' => $locale === 'fr' ? 'Le retour PayPal est invalide ou a expiré.' : 'The PayPal return is invalid or expired.']);
+        }
+
+        $finalized = $accountApi->finalizePaypalExpressOrder([
+            'checkout_token' => $checkoutToken,
+            'paypal_order_id' => $paypalOrderId,
+        ]);
+
+        if (! $finalized['ok']) {
+            return redirect()->route('checkout.show', ['locale' => $locale])
+                ->withErrors(['payment' => $finalized['message'] ?: ($locale === 'fr' ? 'PayPal n’a pas confirmé le paiement.' : 'PayPal did not confirm the payment.')]);
+        }
+
+        $request->session()->regenerate();
+        $request->session()->put('customer_api_token', data_get($finalized, 'data.token'));
+        $request->session()->put('customer_user', data_get($finalized, 'data.user', []));
+        $order = data_get($finalized, 'data.order', []);
+
+        return redirect()->route('checkout.show', ['locale' => $locale])
+            ->with('paypal_checkout_completed', $order);
+    }
+
+    public function paypalCancel(Request $request): RedirectResponse
+    {
+        $context = $request->session()->pull('paypal_express_checkout', []);
+        $locale = in_array($context['locale'] ?? null, ['fr', 'en'], true) ? $context['locale'] : 'fr';
+
+        return redirect()->route('checkout.show', ['locale' => $locale])
+            ->with('payment_notice', $locale === 'fr' ? 'Paiement PayPal annulé.' : 'PayPal payment cancelled.');
     }
 
     public function show(ShopApiClient $api, string $locale, string $slug): View
@@ -200,6 +266,16 @@ class ShopController extends Controller
         return $locale;
     }
 
+    private function rememberShippingCountry(Request $request, array $addresses): void
+    {
+        $shipping = collect($addresses)->where('type', 'shipping');
+        $country = data_get($shipping->firstWhere('is_default', true) ?? $shipping->first(), 'country_code');
+
+        if ($country) {
+            $request->session()->put('customer_shipping_country', strtoupper((string) $country));
+        }
+    }
+
     private function filters(Request $request): array
     {
         $sort = $request->query('sort', 'default');
@@ -266,7 +342,7 @@ class ShopController extends Controller
 
     private function siteUrl(): string
     {
-        return rtrim((string) config('app.url', 'https://www.denetfils.fr'), '/');
+        return rtrim((string) config('app.url', 'http://localhost'), '/');
     }
 
     private function blogPosts(string $locale): array
@@ -283,7 +359,7 @@ class ShopController extends Controller
                     'image' => 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1400&q=85',
                     'content' => [
                         'Dans une cuisine familiale, l’assaisonnement n’est jamais un détail. Il donne le ton du plat, réveille les parfums et rappelle souvent une mémoire précise : celle d’un repas partagé, d’une recette transmise et d’un geste répété avec soin.',
-                        'Avec son épice complète, DEN & FILS met en avant une aide culinaire pratique pour gagner du temps tout en gardant une base aromatique généreuse. Le produit s’adresse aux clients qui veulent cuisiner vite, mais avec un goût qui reste profond et identifiable.',
+                        'Avec son épice complète, '.config('shop.name').' met en avant une aide culinaire pratique pour gagner du temps tout en gardant une base aromatique généreuse. Le produit s’adresse aux clients qui veulent cuisiner vite, mais avec un goût qui reste profond et identifiable.',
                         'Cette logique respecte l’ADN de la maison : rendre les saveurs haïtiennes accessibles, mieux présentées et faciles à intégrer dans la cuisine du quotidien, en France comme en Europe.',
                     ],
                 ],
@@ -298,20 +374,20 @@ class ShopController extends Controller
                     'content' => [
                         'Le djon djon occupe une place particulière dans la cuisine haïtienne. Il ne se limite pas à sa couleur sombre ni à son parfum : il évoque les repas de fête, les préparations patientes et le respect d’une tradition culinaire forte.',
                         'La pâte de djondjon SELAKAY répond à une demande simple : préserver ce goût tout en facilitant la préparation. Elle permet au client de retrouver l’esprit du riz djon djon sans passer par toutes les contraintes d’une préparation longue.',
-                        'Derrière cette évolution, il y a une histoire familiale. DEN & FILS transforme une mémoire culinaire en produit moderne, tout en gardant un lien clair avec les recettes transmises par les générations précédentes.',
+                        'Derrière cette évolution, il y a une histoire familiale. '.config('shop.name').' transforme une mémoire culinaire en produit moderne, tout en gardant un lien clair avec les recettes transmises par les générations précédentes.',
                     ],
                 ],
                 [
-                    'slug' => 'pourquoi-choisir-denetfils',
+                    'slug' => 'pourquoi-nous-choisir',
                     'date' => '19/11/2025',
                     'category' => 'Marque',
                     'read_time' => '3 min',
-                    'title' => 'Pourquoi tant de personnes choisissent Denetfils ?',
-                    'description' => 'Authenticité, histoire, goût et confiance : les raisons qui donnent à DEN & FILS une place différente dans l’épicerie haïtienne.',
+                    'title' => 'Pourquoi tant de personnes choisissent '.config('shop.name').' ?',
+                    'description' => 'Authenticité, histoire, goût et confiance : les raisons qui donnent à '.config('shop.name').' une place différente dans l’épicerie haïtienne.',
                     'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=85',
                     'content' => [
                         'Choisir une marque alimentaire, c’est choisir plus qu’un produit. Le client cherche un goût, mais aussi une origine claire, une histoire crédible et une régularité dans la qualité.',
-                        'DEN & FILS met en avant des produits liés à la cuisine haïtienne et caribéenne, avec une présentation pensée pour inspirer confiance. L’objectif est de permettre aux clients de retrouver des saveurs familières dans une boutique moderne et lisible.',
+                        config('shop.name').' met en avant des produits liés à la cuisine haïtienne et caribéenne, avec une présentation pensée pour inspirer confiance. L’objectif est de permettre aux clients de retrouver des saveurs familières dans une boutique moderne et lisible.',
                         'La différence se trouve dans l’équilibre entre tradition et exigence actuelle : des recettes inspirées d’un héritage familial, une distribution structurée et une communication claire autour des produits.',
                     ],
                 ],
@@ -355,7 +431,7 @@ class ShopController extends Controller
                     'image' => 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1400&q=85',
                     'content' => [
                         'In a family kitchen, seasoning is never a detail. It gives direction to the dish, wakes up aromas and often brings back the memory of a shared meal or a recipe passed down with care.',
-                        'With its complete spice, DEN & FILS offers a practical cooking aid for customers who want to save time while keeping a generous aromatic base.',
+                        'With its complete spice, '.config('shop.name').' offers a practical cooking aid for customers who want to save time while keeping a generous aromatic base.',
                         'This approach follows the brand’s DNA: making Haitian flavors accessible, better presented and easier to use in everyday cooking across France and Europe.',
                     ],
                 ],
@@ -370,20 +446,20 @@ class ShopController extends Controller
                     'content' => [
                         'Djon djon has a special place in Haitian cuisine. It is not only about its dark color or perfume; it evokes festive meals, patient preparation and respect for a strong culinary tradition.',
                         'SELAKAY djon djon paste answers a simple need: preserving the taste while making preparation easier for customers.',
-                        'Behind this evolution is a family story. DEN & FILS turns culinary memory into a modern product while keeping a clear link with recipes passed down through generations.',
+                        'Behind this evolution is a family story. '.config('shop.name').' turns culinary memory into a modern product while keeping a clear link with recipes passed down through generations.',
                     ],
                 ],
                 [
-                    'slug' => 'why-choose-denetfils',
+                    'slug' => 'why-choose-us',
                     'date' => '19/11/2025',
                     'category' => 'Brand',
                     'read_time' => '3 min',
-                    'title' => 'Why do so many people choose Denetfils?',
-                    'description' => 'Authenticity, history, taste and trust: why DEN & FILS stands apart in Haitian grocery products.',
+                    'title' => 'Why do so many people choose '.config('shop.name').'?',
+                    'description' => 'Authenticity, history, taste and trust: why '.config('shop.name').' stands apart in Haitian grocery products.',
                     'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=85',
                     'content' => [
                         'Choosing a food brand means choosing more than a product. Customers look for taste, but also a clear origin, a credible story and consistent quality.',
-                        'DEN & FILS highlights products connected to Haitian and Caribbean cooking, with a presentation designed to inspire trust.',
+                        config('shop.name').' highlights products connected to Haitian and Caribbean cooking, with a presentation designed to inspire trust.',
                         'The difference lies in the balance between tradition and modern standards: family-inspired recipes, structured distribution and clear product communication.',
                     ],
                 ],

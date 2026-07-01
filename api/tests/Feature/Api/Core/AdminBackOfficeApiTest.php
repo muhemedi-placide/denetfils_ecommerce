@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\Core;
 
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\AccessControlSeeder;
@@ -52,8 +53,7 @@ class AdminBackOfficeApiTest extends TestCase
 
     public function test_customer_cannot_read_admin_dashboard(): void
     {
-        $customer = User::factory()->create();
-        $customer->assignRole('customer');
+        $customer = Customer::factory()->create();
 
         Sanctum::actingAs($customer);
 
@@ -157,7 +157,7 @@ class AdminBackOfficeApiTest extends TestCase
             'email' => 'bob@example.test',
             'status' => 'suspended',
             'country_code' => 'BE',
-        ])->assignRole('customer');
+        ])->assignRole('support_agent');
 
         Sanctum::actingAs($admin);
 

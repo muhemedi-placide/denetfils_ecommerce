@@ -3,10 +3,12 @@
 namespace App\Services\Core;
 
 use App\Models\PrivacyConsent;
+use App\Models\Customer;
 use App\Models\User;
 use App\Support\CoreDefaults;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class UserProvisioningService
 {
@@ -14,10 +16,11 @@ class UserProvisioningService
     {
     }
 
-    public function registerCustomer(array $data, Request $request): User
+    public function registerCustomer(array $data, Request $request): Customer
     {
         return DB::transaction(function () use ($data, $request) {
-            $user = User::create($this->userPayload($data) + [
+            $user = Customer::create($this->userPayload($data) + [
+                'role_id' => Role::findByName('customer', 'web')->id,
                 'password' => $data['password'],
                 'status' => 'active',
             ]);
@@ -31,13 +34,11 @@ class UserProvisioningService
                 ],
             ]);
 
-            $user->assignRole('customer');
-
             $this->recordConsent($user, 'privacy_policy', true, $request);
             $this->recordConsent($user, 'terms', true, $request);
             $this->recordConsent($user, 'marketing_email', (bool) ($data['marketing_consent'] ?? false), $request);
 
-            return $user->load(['roles', 'customerProfile']);
+            return $user->load('customerProfile');
         });
     }
 
@@ -51,18 +52,11 @@ class UserProvisioningService
 
             $roles = $data['roles'] ?? [];
 
-            if (in_array('customer', $roles, true)) {
-                $user->customerProfile()->create([
-                    'accepts_marketing' => false,
-                    'preferences' => null,
-                ]);
-            } else {
-                $user->staffProfile()->create([
-                    'position' => $data['position'] ?? null,
-                    'operational_status' => 'active',
-                    'admin_notes' => $data['admin_notes'] ?? null,
-                ]);
-            }
+            $user->staffProfile()->create([
+                'position' => $data['position'] ?? null,
+                'operational_status' => 'active',
+                'admin_notes' => $data['admin_notes'] ?? null,
+            ]);
 
             $user->syncRoles($roles ?: ['support_agent']);
 
@@ -70,16 +64,16 @@ class UserProvisioningService
                 'roles' => $user->roles()->pluck('name')->values()->all(),
             ]);
 
-            return $user->load(['roles', 'permissions', 'customerProfile', 'staffProfile']);
+            return $user->load(['roles', 'permissions', 'staffProfile']);
         });
     }
 
-    public function updateProfile(User $user, array $data): User
+    public function updateProfile(Customer $user, array $data): Customer
     {
         $user->fill($this->userUpdatePayload($user, $data, includeEmail: false));
         $user->save();
 
-        return $user->refresh()->load(['roles', 'permissions', 'customerProfile', 'staffProfile']);
+        return $user->refresh()->load('customerProfile');
     }
 
     public function updateUser(User $user, array $data, User $actor, Request $request): User
@@ -108,7 +102,7 @@ class UserProvisioningService
                 'fields' => array_keys($data),
             ]);
 
-            return $user->refresh()->load(['roles', 'permissions', 'customerProfile', 'staffProfile']);
+            return $user->refresh()->load(['roles', 'permissions', 'staffProfile']);
         });
     }
 
@@ -120,7 +114,7 @@ class UserProvisioningService
             'roles' => $roles,
         ]);
 
-        return $user->refresh()->load(['roles', 'permissions', 'customerProfile', 'staffProfile']);
+        return $user->refresh()->load(['roles', 'permissions', 'staffProfile']);
     }
 
     public function suspend(User $user, User $actor, Request $request): User
@@ -130,13 +124,13 @@ class UserProvisioningService
 
         $this->auditLogger->record($actor, 'users.suspended', $user, $request);
 
-        return $user->refresh()->load(['roles', 'permissions', 'customerProfile', 'staffProfile']);
+        return $user->refresh()->load(['roles', 'permissions', 'staffProfile']);
     }
 
-    private function recordConsent(User $user, string $type, bool $accepted, Request $request): void
+    private function recordConsent(Customer $user, string $type, bool $accepted, Request $request): void
     {
         PrivacyConsent::create([
-            'user_id' => $user->id,
+            'customer_id' => $user->id,
             'type' => $type,
             'version' => CoreDefaults::CONSENT_VERSIONS[$type],
             'accepted' => $accepted,
@@ -170,7 +164,7 @@ class UserProvisioningService
         return $payload;
     }
 
-    private function userUpdatePayload(User $user, array $data, bool $includeEmail = true): array
+    private function userUpdatePayload(User|Customer $user, array $data, bool $includeEmail = true): array
     {
         $firstName = $data['first_name'] ?? $user->first_name;
         $lastName = $data['last_name'] ?? $user->last_name;

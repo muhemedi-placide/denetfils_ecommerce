@@ -1,12 +1,12 @@
 @extends('layouts.shop')
 
-@section('title', ($locale === 'fr' ? 'Contact' : 'Contact') . ' | Marche Peyi')
-@section('description', $locale === 'fr' ? 'Contactez Marche Peyi pour une commande speciale, une question produit ou une collaboration.' : 'Contact Marche Peyi for a special order, product question or collaboration.')
+@section('title', ($locale === 'fr' ? 'Contact' : 'Contact') . ' | ' . config('shop.name'))
+@section('description', $locale === 'fr' ? 'Contactez '.config('shop.name').' pour une commande speciale, une question produit ou une collaboration.' : 'Contact '.config('shop.name').' for a special order, product question or collaboration.')
 @section('canonical', route('pages.contact', ['locale' => $locale]))
 
 @section('content')
     <section class="relative overflow-hidden bg-cream px-4 py-20 dark:bg-ink sm:px-8 lg:py-28">
-        <div class="absolute inset-0 opacity-35" style="background-image: radial-gradient(#124c20 1px, transparent 1px); background-size: 24px 24px;"></div>
+        <div class="absolute inset-0 opacity-35" style="background-image: radial-gradient(#ff5a00 1px, transparent 1px); background-size: 24px 24px;"></div>
         <div class="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
                 <p class="text-xs font-black uppercase tracking-[0.35em] text-coral">{{ $locale === 'fr' ? 'Contact' : 'Contact' }}</p>
@@ -48,7 +48,7 @@
                 </div>
             </div>
 
-            <div class="rounded-[2rem] border-[3px] border-forest bg-white p-7 shadow-[12px_12px_0_#124c20] dark:bg-white/5 sm:p-10 lg:ml-auto lg:w-[min(100%,620px)]">
+            <div class="rounded-[2rem] border-[3px] border-forest bg-white p-7 shadow-[12px_12px_0_#ff5a00] dark:bg-white/5 sm:p-10 lg:ml-auto lg:w-[min(100%,620px)]">
                 <h2 class="text-4xl font-black tracking-tight text-forest dark:text-meadow">{{ $locale === 'fr' ? 'Ecrivez-nous' : 'Write to us' }}</h2>
                 <form class="mt-8 space-y-5" method="POST" action="#">
                     <div>

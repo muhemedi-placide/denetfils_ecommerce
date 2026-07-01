@@ -26,6 +26,8 @@ class AccessControlSeeder extends Seeder
                 'catalog.view',
                 'orders.view',
                 'orders.manage',
+                'carts.view',
+                'carts.manage',
                 'payments.view',
                 'customers.view',
             ],
@@ -38,6 +40,8 @@ class AccessControlSeeder extends Seeder
                 'customers.view',
                 'customers.manage',
                 'orders.view',
+                'carts.view',
+                'carts.manage',
             ],
             'finance_manager' => [
                 'orders.view',

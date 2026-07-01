@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\AuditLog;
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\MoneyFormatter;
@@ -53,10 +54,10 @@ class BackOfficeMetricsService
                     'formatted_active_value' => MoneyFormatter::format($activeCartValue, 'EUR', $locale),
                 ],
                 'identity' => [
-                    'users_total' => User::query()->count(),
-                    'customers_total' => User::role('customer')->count(),
-                    'staff_total' => User::query()->whereDoesntHave('roles', fn ($query) => $query->where('name', 'customer'))->count(),
-                    'suspended_users' => User::query()->where('status', 'suspended')->count(),
+                    'users_total' => Customer::query()->count() + User::query()->count(),
+                    'customers_total' => Customer::query()->count(),
+                    'staff_total' => User::query()->count(),
+                    'suspended_users' => Customer::query()->where('status', 'suspended')->count() + User::query()->where('status', 'suspended')->count(),
                 ],
             ],
             'catalog_health' => [
@@ -115,11 +116,11 @@ class BackOfficeMetricsService
 
     private function visitorAcquisition(string $locale): array
     {
-        $total = max(1, User::query()->count());
-        $customers = User::role('customer')->count();
-        $staff = User::query()->whereDoesntHave('roles', fn ($query) => $query->where('name', 'customer'))->count();
-        $suspended = User::query()->where('status', 'suspended')->count();
-        $active = User::query()->where('status', 'active')->count();
+        $total = max(1, Customer::query()->count() + User::query()->count());
+        $customers = Customer::query()->count();
+        $staff = User::query()->count();
+        $suspended = Customer::query()->where('status', 'suspended')->count() + User::query()->where('status', 'suspended')->count();
+        $active = Customer::query()->where('status', 'active')->count() + User::query()->where('status', 'active')->count();
 
         $segments = [
             ['key' => 'customers', 'label' => 'Clients', 'value' => $customers, 'percentage' => $this->percentage($customers, $total), 'color' => '#1f8a5b'],
@@ -128,7 +129,7 @@ class BackOfficeMetricsService
             ['key' => 'active', 'label' => 'Actifs', 'value' => $active, 'percentage' => $this->percentage($active, $total), 'color' => '#6554c0'],
         ];
 
-        $countries = User::query()
+        $countries = Customer::query()
             ->selectRaw("COALESCE(NULLIF(country_code, ''), 'N/A') as label, COUNT(*) as total")
             ->groupBy('label')
             ->orderByDesc('total')
@@ -148,12 +149,11 @@ class BackOfficeMetricsService
             ['label' => 'Import manuel', 'value' => max(0, $total - $customers - $staff), 'percentage' => $this->percentage(max(0, $total - $customers - $staff), $total), 'color' => '#6554c0'],
         ])->filter(fn ($item) => $item['value'] > 0)->values()->all();
 
-        $recent = User::query()
-            ->with('roles')
+        $recent = Customer::query()
             ->latest('id')
             ->limit(4)
             ->get()
-            ->map(fn (User $user) => [
+            ->map(fn (Customer $user) => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
@@ -161,10 +161,10 @@ class BackOfficeMetricsService
                 'status' => $user->status,
                 'country_code' => $user->country_code,
                 'preferred_locale' => $user->preferred_locale,
-                'roles' => $user->roles->pluck('name')->values()->all(),
-                'source' => $user->hasRole('customer') ? 'Inscription client' : 'Creation administrative',
-                'platform' => $user->hasRole('customer') ? 'Site web' : 'Back-office',
-                'channel' => $user->hasRole('customer') ? 'Compte client' : 'Equipe interne',
+                'roles' => ['customer'],
+                'source' => 'Inscription client',
+                'platform' => 'Site web',
+                'channel' => 'Compte client',
                 'campaign' => 'Non rattachee',
                 'first_touch_at' => optional($user->created_at)->toIso8601String(),
                 'last_touch_at' => optional($user->updated_at)->toIso8601String(),
@@ -173,8 +173,8 @@ class BackOfficeMetricsService
             ->all();
 
         return [
-            'total' => User::query()->count(),
-            'source' => 'computed_from_users',
+            'total' => $total,
+            'source' => 'computed_from_customers_and_users',
             'segments' => $segments,
             'platforms' => $platforms,
             'countries' => $countries,
@@ -193,26 +193,39 @@ class BackOfficeMetricsService
     private function stockAlerts(int $lowStockThreshold, string $locale): array
     {
         return Product::query()
-            ->with('category')
+            ->with(['category', 'images'])
             ->where('stock_quantity', '<=', $this->threshold($lowStockThreshold))
             ->orderBy('stock_quantity')
             ->orderBy('id')
             ->limit(10)
             ->get()
-            ->map(fn (Product $product) => [
-                'id' => $product->id,
-                'sku' => $product->sku,
-                'slug' => $product->slug,
-                'name' => $product->localized('name', $locale),
-                'category' => $product->category ? [
-                    'id' => $product->category->id,
-                    'name' => $product->category->localized('name', $locale),
-                    'slug' => $product->category->slug,
-                ] : null,
-                'stock_quantity' => $product->stock_quantity,
-                'status' => $this->stockStatus($product, $lowStockThreshold),
-                'is_active' => $product->is_active,
-            ])
+            ->map(function (Product $product) use ($lowStockThreshold, $locale) {
+                $primaryImage = $product->images->first();
+
+                return [
+                    'id' => $product->id,
+                    'sku' => $product->sku,
+                    'slug' => $product->slug,
+                    'name' => $product->localized('name', $locale),
+                    'category' => $product->category ? [
+                        'id' => $product->category->id,
+                        'name' => $product->category->localized('name', $locale),
+                        'slug' => $product->category->slug,
+                    ] : null,
+                    'primary_image' => $primaryImage ? [
+                        'id' => $primaryImage->id,
+                        'url' => $primaryImage->url,
+                        'width' => $primaryImage->width,
+                        'height' => $primaryImage->height,
+                        'dominant_color' => $primaryImage->dominant_color,
+                        'alt_text' => $primaryImage->localized('alt_text', $locale),
+                        'sort_order' => $primaryImage->sort_order,
+                    ] : null,
+                    'stock_quantity' => $product->stock_quantity,
+                    'status' => $this->stockStatus($product, $lowStockThreshold),
+                    'is_active' => $product->is_active,
+                ];
+            })
             ->values()
             ->all();
     }

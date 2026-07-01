@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaymentMethod extends Model
 {
@@ -41,4 +42,9 @@ class PaymentMethod extends Model
         'webhook_config' => 'encrypted:array',
         'last_tested_at' => 'datetime',
     ];
+
+    public function orderPayments(): HasMany
+    {
+        return $this->hasMany(OrderPayment::class);
+    }
 }

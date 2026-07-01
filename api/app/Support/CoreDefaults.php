@@ -32,6 +32,8 @@ class CoreDefaults
         'catalog.manage',
         'orders.view',
         'orders.manage',
+        'carts.view',
+        'carts.manage',
         'payments.view',
         'payments.manage',
         'customers.view',

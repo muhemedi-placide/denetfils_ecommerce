@@ -7,8 +7,8 @@ use OpenApi\Attributes as OA;
 #[OA\OpenApi(
     info: new OA\Info(
         version: '1.0.0',
-        title: 'Denetfils API',
-        description: 'Backend REST API for the Denetfils ecommerce platform: catalog, carts, identity, RBAC, GDPR consent and admin core.',
+        title: 'Ecommerce API',
+        description: 'Backend REST API for the ecommerce platform: catalog, carts, identity, RBAC, GDPR consent and admin core.',
     ),
     servers: [
         new OA\Server(url: 'http://127.0.0.1:8000', description: 'Local API server'),
@@ -82,7 +82,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'type', type: 'string', enum: ['billing', 'shipping'], example: 'billing'),
         new OA\Property(property: 'label', type: 'string', nullable: true, example: 'Home'),
         new OA\Property(property: 'recipient_name', type: 'string', example: 'Jean Martin'),
-        new OA\Property(property: 'company', type: 'string', nullable: true, example: 'Denetfils'),
+        new OA\Property(property: 'company', type: 'string', nullable: true, example: 'Boutique'),
         new OA\Property(property: 'street_line_1', type: 'string', example: '10 Rue de Rivoli'),
         new OA\Property(property: 'street_line_2', type: 'string', nullable: true),
         new OA\Property(property: 'postal_code', type: 'string', example: '75001'),
@@ -142,6 +142,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'price_cents', type: 'integer', example: 890),
         new OA\Property(property: 'formatted_price', type: 'string', example: '8,90 EUR'),
         new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'tax_class', type: 'string', enum: ['food', 'standard'], example: 'food'),
         new OA\Property(property: 'stock_quantity', type: 'integer', example: 35),
         new OA\Property(property: 'primary_image', ref: '#/components/schemas/OptimizedImage', nullable: true),
         new OA\Property(property: 'images', type: 'array', items: new OA\Items(ref: '#/components/schemas/OptimizedImage')),
@@ -185,7 +186,7 @@ use OpenApi\Attributes as OA;
     schema: 'ProductCommerce',
     type: 'object',
     properties: [
-        new OA\Property(property: 'brand', type: 'string', example: 'Denetfils'),
+        new OA\Property(property: 'brand', type: 'string', example: 'Boutique'),
         new OA\Property(property: 'availability', type: 'string', example: 'in_stock'),
         new OA\Property(property: 'is_available', type: 'boolean', example: true),
         new OA\Property(property: 'max_order_quantity', type: 'integer', example: 12),
@@ -233,6 +234,8 @@ use OpenApi\Attributes as OA;
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'role', type: 'string', enum: ['gallery', 'icon'], example: 'gallery'),
+        new OA\Property(property: 'is_primary', type: 'boolean', example: true),
         new OA\Property(property: 'url', type: 'string', format: 'uri', example: 'https://example.com/product.jpg'),
         new OA\Property(property: 'width', type: 'integer', nullable: true, example: 1200),
         new OA\Property(property: 'height', type: 'integer', nullable: true, example: 900),
@@ -278,9 +281,17 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'return_policy', type: 'object', nullable: true),
         new OA\Property(property: 'guarantee', type: 'object', nullable: true),
         new OA\Property(property: 'sku', type: 'string', example: 'DEN-MIEL-250'),
+        new OA\Property(property: 'barcode', type: 'string', nullable: true, example: '3760123456789'),
+        new OA\Property(property: 'brand', type: 'string', nullable: true, example: 'Marché Peyi'),
+        new OA\Property(property: 'supplier_reference', type: 'string', nullable: true, example: 'SUP-MIEL-250'),
+        new OA\Property(property: 'purchase_price_cents', type: 'integer', nullable: true, example: 520),
         new OA\Property(property: 'price_cents', type: 'integer', example: 890),
+        new OA\Property(property: 'compare_at_price_cents', type: 'integer', nullable: true, example: 1090),
+        new OA\Property(property: 'price_includes_tax', type: 'boolean', example: true),
         new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'tax_class', type: 'string', enum: ['food', 'standard'], example: 'food'),
         new OA\Property(property: 'weight_grams', type: 'integer', nullable: true, example: 250),
+        new OA\Property(property: 'unit_label', type: 'string', nullable: true, example: 'pot'),
         new OA\Property(property: 'stock_quantity', type: 'integer', example: 35),
         new OA\Property(property: 'max_order_quantity', type: 'integer', nullable: true, example: 12),
         new OA\Property(property: 'rating_average', type: 'number', example: 4.7),
@@ -308,7 +319,7 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'AdminProductRequest',
-    required: ['category_id', 'name', 'slug', 'description', 'sku', 'price_cents', 'stock_quantity'],
+    required: ['name', 'price_cents', 'stock_quantity', 'images'],
     properties: [
         new OA\Property(property: 'category_id', type: 'integer', example: 1),
         new OA\Property(property: 'name', ref: '#/components/schemas/LocalizedText'),
@@ -322,9 +333,17 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'shipping_profile', type: 'object', nullable: true),
         new OA\Property(property: 'return_policy', type: 'object', nullable: true),
         new OA\Property(property: 'sku', type: 'string', example: 'DEN-BOX-EU-001'),
+        new OA\Property(property: 'barcode', type: 'string', nullable: true, example: '3760123456789'),
+        new OA\Property(property: 'brand', type: 'string', nullable: true, example: 'Marché Peyi'),
+        new OA\Property(property: 'supplier_reference', type: 'string', nullable: true, example: 'SUP-BOX-001'),
+        new OA\Property(property: 'purchase_price_cents', type: 'integer', nullable: true, example: 1400),
         new OA\Property(property: 'price_cents', type: 'integer', example: 2590),
+        new OA\Property(property: 'compare_at_price_cents', type: 'integer', nullable: true, example: 2990),
+        new OA\Property(property: 'price_includes_tax', type: 'boolean', example: true),
         new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'tax_class', type: 'string', enum: ['food', 'standard'], example: 'standard'),
         new OA\Property(property: 'weight_grams', type: 'integer', nullable: true, example: 1200),
+        new OA\Property(property: 'unit_label', type: 'string', nullable: true, example: 'coffret'),
         new OA\Property(property: 'stock_quantity', type: 'integer', example: 25),
         new OA\Property(property: 'max_order_quantity', type: 'integer', nullable: true, example: 6),
         new OA\Property(property: 'rating_average', type: 'number', nullable: true, example: 4.8),
@@ -363,6 +382,24 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'quantity', type: 'integer', example: 2),
         new OA\Property(property: 'unit_price_cents', type: 'integer', example: 890),
         new OA\Property(property: 'line_total_cents', type: 'integer', example: 1780),
+    ],
+)]
+#[OA\Schema(
+    schema: 'CartEstimate',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'cart_token', type: 'string'),
+        new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+        new OA\Property(property: 'country_source', type: 'string', example: 'visitor_context'),
+        new OA\Property(property: 'is_estimate', type: 'boolean', example: true),
+        new OA\Property(property: 'is_supported', type: 'boolean', example: true),
+        new OA\Property(property: 'prices_include_tax', type: 'boolean', example: true),
+        new OA\Property(property: 'subtotal_cents', type: 'integer', example: 1780),
+        new OA\Property(property: 'shipping_from_cents', type: 'integer', nullable: true, example: 390),
+        new OA\Property(property: 'tax_cents', type: 'integer', nullable: true, example: 191),
+        new OA\Property(property: 'total_cents', type: 'integer', nullable: true, example: 2170),
+        new OA\Property(property: 'shipping_options', type: 'array', items: new OA\Items(type: 'object')),
+        new OA\Property(property: 'tax_breakdown', type: 'array', items: new OA\Items(type: 'object')),
     ],
 )]
 #[OA\Schema(
@@ -416,7 +453,7 @@ use OpenApi\Attributes as OA;
     schema: 'LoginRequest',
     required: ['email', 'password'],
     properties: [
-        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@denetfils.fr'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@example.com'),
         new OA\Property(property: 'password', type: 'string', format: 'password', example: 'password'),
         new OA\Property(property: 'device_name', type: 'string', example: 'Swagger UI'),
     ],
@@ -712,6 +749,31 @@ class OpenApiDocumentation
         ],
     )]
     public function cartsShow(): void
+    {
+    }
+
+    #[OA\Post(
+        path: '/api/v1/carts/{cartToken}/estimate',
+        operationId: 'cartEstimateStore',
+        tags: ['Cart'],
+        parameters: [
+            new OA\Parameter(name: 'cartToken', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(
+            required: ['country_code'],
+            properties: [
+                new OA\Property(property: 'country_code', type: 'string', minLength: 2, maxLength: 2, example: 'FR'),
+                new OA\Property(property: 'locale', type: 'string', enum: ['fr', 'en'], example: 'fr'),
+            ],
+        )),
+        responses: [
+            new OA\Response(response: 200, description: 'Tax-inclusive guest estimate', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: '#/components/schemas/CartEstimate'),
+            ])),
+            new OA\Response(response: 422, description: 'Invalid or empty cart'),
+        ],
+    )]
+    public function cartEstimateStore(): void
     {
     }
 

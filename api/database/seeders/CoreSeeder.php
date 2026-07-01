@@ -17,10 +17,10 @@ class CoreSeeder extends Seeder
         ]);
 
         $admin = User::updateOrCreate(
-            ['email' => 'admin@denetfils.fr'],
+            ['email' => env('SHOP_ADMIN_EMAIL', 'admin@gmail.com')],
             [
-                'name' => 'Denetfils Admin',
-                'first_name' => 'Denetfils',
+                'name' => config('shop.name').' Admin',
+                'first_name' => config('shop.name'),
                 'last_name' => 'Admin',
                 'preferred_locale' => 'fr',
                 'country_code' => 'FR',

@@ -38,6 +38,10 @@ class RegisterForm extends Component
         $this->locale = in_array($locale, ['fr', 'en'], true) ? $locale : 'fr';
         $this->countries = $api->supportedCountries($this->locale)['data'];
         $this->consents = $api->currentConsents()['data'];
+        $detectedCountry = strtoupper((string) data_get(request()->attributes->get('visitor_context'), 'country_code', 'FR'));
+        if (collect($this->countries)->contains('code', $detectedCountry)) {
+            $this->country_code = $detectedCountry;
+        }
     }
 
     public function register(AccountApiClient $api)

@@ -1,4 +1,4 @@
-<div class="form-card">
+<div class="form-card p-5 sm:p-6">
     @if (session('status'))
         <div class="mb-5 rounded-xl border border-leaf/20 bg-mint px-4 py-3 text-sm font-semibold text-leaf dark:border-white/10 dark:bg-white/10 dark:text-meadow">
             {{ session('status') }}
@@ -27,9 +27,4 @@
             <span wire:loading wire:target="login">{{ __('home.cart.loading') }}</span>
         </button>
     </form>
-
-    <div class="mt-6 flex flex-col gap-2 border-t border-leaf/10 pt-5 text-sm text-cocoa/70 dark:border-white/10 dark:text-cream/70 sm:flex-row sm:items-center sm:justify-between">
-        <span>{{ __('home.account.auth.no_account') }}</span>
-        <a wire:navigate class="font-bold text-leaf transition hover:text-forest dark:text-meadow" href="{{ route('account.register', ['locale' => $locale]) }}">{{ __('home.account.auth.go_register') }}</a>
-    </div>
 </div>
