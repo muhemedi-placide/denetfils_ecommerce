@@ -23,7 +23,7 @@ class ApiPresenter
 
     public static function product(Product $product, string $locale): array
     {
-        $product->loadMissing(['category', 'images', 'variants']);
+        $product->loadMissing(['category', 'images', 'iconImage', 'variants']);
 
         $primaryImage = $product->images->first();
         $seo = app(SeoPayloadBuilder::class);
@@ -41,15 +41,27 @@ class ApiPresenter
             'short_description' => $product->localized('short_description', $locale),
             'origin' => $product->localized('origin', $locale),
             'sku' => $product->sku,
+            'barcode' => $product->barcode,
+            'brand' => $product->brand,
             'price_cents' => $product->price_cents,
             'formatted_price' => MoneyFormatter::format($product->price_cents, $product->currency, $locale),
+            'compare_at_price_cents' => $product->compare_at_price_cents,
+            'formatted_compare_at_price' => $product->compare_at_price_cents
+                ? MoneyFormatter::format($product->compare_at_price_cents, $product->currency, $locale)
+                : null,
+            'discount_percent' => $product->compare_at_price_cents && $product->compare_at_price_cents > $product->price_cents
+                ? (int) round((1 - ($product->price_cents / $product->compare_at_price_cents)) * 100)
+                : 0,
+            'price_includes_tax' => $product->price_includes_tax,
             'tax_class' => $product->tax_class,
             'currency' => $product->currency,
             'weight_grams' => $product->weight_grams,
+            'unit_label' => $product->unit_label,
             'stock_quantity' => $product->stock_quantity,
             'max_order_quantity' => $product->max_order_quantity,
             'is_active' => $product->is_active,
             'primary_image' => $primaryImage ? self::productImage($primaryImage, $locale, true) : null,
+            'icon_image' => $product->iconImage ? self::productImage($product->iconImage, $locale) : null,
             'images' => $product->images
                 ->map(fn (ProductImage $image) => self::productImage($image, $locale, $primaryImage?->id === $image->id))
                 ->values()
@@ -194,7 +206,7 @@ class ApiPresenter
         };
 
         return [
-            'brand' => config('seo.brand_name', config('shop.name')),
+            'brand' => $product->brand ?: config('seo.brand_name', config('shop.name')),
             'availability' => $stockState,
             'is_available' => $product->is_active && $product->stock_quantity > 0,
             'max_order_quantity' => $product->max_order_quantity

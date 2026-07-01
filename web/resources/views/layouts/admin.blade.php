@@ -39,7 +39,7 @@
                     'items' => [
                         ['key' => 'catalog.products', 'label' => 'Produits', 'route' => 'admin.catalog.products', 'hint' => 'Articles'],
                         ['key' => 'catalog.categories', 'label' => 'Categories', 'route' => 'admin.catalog.categories', 'hint' => 'Rayons'],
-                        ['key' => 'catalog.monitoring', 'label' => 'Suivi', 'route' => 'admin.modules.show', 'params' => ['module' => 'suivi-catalogue'], 'hint' => 'Qualite'],
+                        ['key' => 'catalog.monitoring', 'label' => $currentLocale === 'en' ? 'Health monitoring' : 'Suivi', 'route' => 'admin.catalog.health', 'hint' => $currentLocale === 'en' ? 'Quality' : 'Qualité'],
                         ['key' => 'catalog.attributes', 'label' => 'Attributs & caracteristiques', 'route' => 'admin.modules.show', 'params' => ['module' => 'attributs-caracteristiques'], 'hint' => 'Variantes'],
                         ['key' => 'catalog.brands', 'label' => 'Marques et fournisseurs', 'route' => 'admin.modules.show', 'params' => ['module' => 'marques-fournisseurs'], 'hint' => 'Sourcing'],
                         ['key' => 'catalog.files', 'label' => 'Fichiers', 'route' => 'admin.modules.show', 'params' => ['module' => 'fichiers'], 'hint' => 'Medias'],

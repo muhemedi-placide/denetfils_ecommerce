@@ -16,7 +16,7 @@ class CatalogProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query()
-            ->with(['category', 'images', 'variants'])
+            ->with(['category', 'images', 'iconImage', 'variants'])
             ->latest('id');
 
         if ($request->filled('is_active')) {
@@ -82,7 +82,7 @@ class CatalogProductController extends Controller
 
     public function show(Product $product): ProductAdminResource
     {
-        return new ProductAdminResource($product->load(['category', 'images', 'variants']));
+        return new ProductAdminResource($product->load(['category', 'images', 'iconImage', 'variants']));
     }
 
     public function update(UpdateProductRequest $request, Product $product, CatalogManagementService $catalog): ProductAdminResource

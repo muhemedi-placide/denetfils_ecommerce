@@ -14,7 +14,12 @@ class ProductImage extends Model
 
     protected $fillable = [
         'product_id',
+        'role',
+        'is_primary',
         'url',
+        'original_name',
+        'mime_type',
+        'size_bytes',
         'width',
         'height',
         'dominant_color',
@@ -24,6 +29,7 @@ class ProductImage extends Model
 
     protected $casts = [
         'alt_text' => 'array',
+        'is_primary' => 'boolean',
     ];
 
     public function product(): BelongsTo

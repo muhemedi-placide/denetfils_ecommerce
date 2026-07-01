@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -115,6 +116,7 @@ class BackOfficeController extends Controller
 
         $filters = $request->only(['q', 'category_id', 'publication_status', 'stock_status', 'is_active']);
         $filters['threshold'] = $request->integer('threshold', 5);
+        $filters['locale'] = $locale;
 
         $products = $admin->products($context['token'], $filters);
         $categories = $admin->categories($context['token'], $request->only(['q', 'is_active']));
@@ -124,6 +126,28 @@ class BackOfficeController extends Controller
             'products' => $products,
             'categories' => $categories,
             'filters' => $filters,
+        ]));
+    }
+
+    public function catalogHealth(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $filters = $request->only(['q', 'status', 'page']);
+        $scanRequested = $request->boolean('scan') || filled($filters['q'] ?? null) || filled($filters['status'] ?? null);
+
+        return view('admin.catalog-health', $this->payload($context, [
+            'activeAdmin' => 'catalog.monitoring',
+            'diagnostics' => $scanRequested
+                ? $admin->catalogHealth($context['token'], $locale, $filters)
+                : ['ok' => true, 'data' => [], 'meta' => [], 'summary' => []],
+            'filters' => $filters,
+            'scanRequested' => $scanRequested,
         ]));
     }
 
@@ -613,6 +637,205 @@ class BackOfficeController extends Controller
         ]));
     }
 
+    public function showProduct(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $product,
+    ): View|RedirectResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->product($context['token'], $product, $locale);
+
+        if (! ($response['ok'] ?? false)) {
+            return redirect()->route('admin.catalog.products', ['locale' => $locale])
+                ->withErrors($this->responseErrors($response, 'product'));
+        }
+
+        return view('admin.product-show', $this->payload($context, [
+            'activeAdmin' => 'catalog.products',
+            'product' => $response['data'],
+            'categories' => $admin->categories($context['token'], ['per_page' => 100]),
+        ]));
+    }
+
+    public function updateProduct(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $product,
+    ): RedirectResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $this->validateAdminAction($request, [
+            'category_id' => ['nullable', 'integer'],
+            'name_fr' => ['required', 'string', 'max:180'],
+            'name_en' => ['required', 'string', 'max:180'],
+            'slug' => ['required', 'string', 'max:220', 'alpha_dash:ascii'],
+            'sku' => ['required', 'string', 'max:80'],
+            'barcode' => ['nullable', 'string', 'max:64'],
+            'brand' => ['nullable', 'string', 'max:120'],
+            'supplier_reference' => ['nullable', 'string', 'max:120'],
+            'origin_fr' => ['nullable', 'string', 'max:180'],
+            'origin_en' => ['nullable', 'string', 'max:180'],
+            'purchase_price_eur' => ['nullable', 'numeric', 'min:0'],
+            'sale_price_ttc_eur' => ['required', 'numeric', 'min:0.01'],
+            'compare_at_price_eur' => ['nullable', 'numeric', 'gte:sale_price_ttc_eur'],
+            'tax_class' => ['required', Rule::in(['food', 'standard'])],
+            'stock_quantity' => ['required', 'integer', 'min:0'],
+            'max_order_quantity' => ['nullable', 'integer', 'min:1'],
+            'weight_grams' => ['nullable', 'integer', 'min:1'],
+            'unit_label' => ['nullable', 'string', 'max:40'],
+            'short_description_fr' => ['nullable', 'string', 'max:500'],
+            'short_description_en' => ['nullable', 'string', 'max:500'],
+            'description_fr' => ['nullable', 'string', 'max:5000'],
+            'description_en' => ['nullable', 'string', 'max:5000'],
+            'seo_title_fr' => ['nullable', 'string', 'max:180'],
+            'seo_title_en' => ['nullable', 'string', 'max:180'],
+            'seo_description_fr' => ['nullable', 'string', 'max:320'],
+            'seo_description_en' => ['nullable', 'string', 'max:320'],
+            'seo_keywords_fr' => ['nullable', 'string', 'max:1000'],
+            'seo_keywords_en' => ['nullable', 'string', 'max:1000'],
+            'canonical_path' => ['nullable', 'string', 'max:255', 'starts_with:/'],
+            'remove_image_ids' => ['nullable', 'array'],
+            'remove_image_ids.*' => ['integer'],
+            'primary_existing_id' => ['nullable', 'integer'],
+            'primary_new_index' => ['nullable', 'integer', 'min:0', 'max:11'],
+            'new_images' => ['nullable', 'array', 'max:12'],
+            'new_images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'new_icon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], "product-edit-{$product}");
+
+        $current = $admin->product($context['token'], $product, $locale);
+
+        if (! ($current['ok'] ?? false)) {
+            return back()->withErrors($this->responseErrors($current, 'product'));
+        }
+
+        $currentProduct = $current['data'];
+        $removedIds = array_map('intval', $validated['remove_image_ids'] ?? []);
+        $selectedExistingId = isset($validated['primary_existing_id']) ? (int) $validated['primary_existing_id'] : null;
+        $selectedNewIndex = $validated['primary_new_index'] ?? null;
+        $storedPaths = [];
+        $images = [];
+
+        foreach ($currentProduct['images'] ?? [] as $index => $image) {
+            if (in_array((int) ($image['id'] ?? 0), $removedIds, true)) {
+                continue;
+            }
+
+            $images[] = [
+                'url' => $image['url'],
+                'role' => 'gallery',
+                'is_primary' => $selectedNewIndex === null
+                    && ($selectedExistingId
+                        ? (int) $image['id'] === $selectedExistingId
+                        : (bool) ($image['is_primary'] ?? $index === 0)),
+                'sort_order' => count($images) + 1,
+                'alt_text' => $image['alt_text'] ?? null,
+                'width' => $image['width'] ?? null,
+                'height' => $image['height'] ?? null,
+                'dominant_color' => $image['dominant_color'] ?? null,
+            ];
+        }
+
+        foreach ($request->file('new_images', []) as $index => $image) {
+            $path = $image->store('products/gallery', 'public');
+            $storedPaths[] = $path;
+            $images[] = [
+                'url' => Storage::disk('public')->url($path),
+                'role' => 'gallery',
+                'is_primary' => $selectedNewIndex !== null && (int) $selectedNewIndex === $index,
+                'sort_order' => count($images) + 1,
+                'original_name' => $image->getClientOriginalName(),
+                'mime_type' => $image->getMimeType(),
+                'size_bytes' => $image->getSize(),
+                'alt_text' => ['fr' => $validated['name_fr'], 'en' => $validated['name_en']],
+            ];
+        }
+
+        if ($images === []) {
+            foreach ($storedPaths as $path) Storage::disk('public')->delete($path);
+
+            return back()->withErrors(['new_images' => $locale === 'en'
+                ? 'At least one product image is required.'
+                : 'Au moins une image produit est obligatoire.'])->withInput();
+        }
+
+        if (! collect($images)->contains('is_primary', true)) {
+            $images[0]['is_primary'] = true;
+        }
+
+        if ($icon = $request->file('new_icon')) {
+            $path = $icon->store('products/icons', 'public');
+            $storedPaths[] = $path;
+            $images[] = [
+                'url' => Storage::disk('public')->url($path),
+                'role' => 'icon',
+                'is_primary' => false,
+                'original_name' => $icon->getClientOriginalName(),
+                'mime_type' => $icon->getMimeType(),
+                'size_bytes' => $icon->getSize(),
+                'alt_text' => ['fr' => 'Icône '.$validated['name_fr'], 'en' => $validated['name_en'].' icon'],
+            ];
+        } elseif (data_get($currentProduct, 'icon_image.url')) {
+            $images[] = [
+                'url' => data_get($currentProduct, 'icon_image.url'),
+                'role' => 'icon',
+                'is_primary' => false,
+                'alt_text' => data_get($currentProduct, 'icon_image.alt_text'),
+            ];
+        }
+
+        $keywords = fn (?string $value): array => array_values(array_filter(array_map('trim', explode(',', (string) $value))));
+        $response = $admin->updateProduct($context['token'], $product, [
+            'category_id' => $validated['category_id'] ?? $currentProduct['category_id'],
+            'name' => ['fr' => $validated['name_fr'], 'en' => $validated['name_en']],
+            'slug' => $validated['slug'],
+            'sku' => $validated['sku'],
+            'barcode' => $validated['barcode'] ?? null,
+            'brand' => $validated['brand'] ?? null,
+            'supplier_reference' => $validated['supplier_reference'] ?? null,
+            'origin' => ['fr' => $validated['origin_fr'] ?? null, 'en' => $validated['origin_en'] ?? null],
+            'purchase_price_cents' => isset($validated['purchase_price_eur']) ? $this->priceCents($validated['purchase_price_eur']) : null,
+            'price_cents' => $this->priceCents($validated['sale_price_ttc_eur']),
+            'compare_at_price_cents' => isset($validated['compare_at_price_eur']) ? $this->priceCents($validated['compare_at_price_eur']) : null,
+            'price_includes_tax' => true,
+            'currency' => 'EUR',
+            'tax_class' => $validated['tax_class'],
+            'stock_quantity' => (int) $validated['stock_quantity'],
+            'max_order_quantity' => $validated['max_order_quantity'] ?? null,
+            'weight_grams' => $validated['weight_grams'] ?? null,
+            'unit_label' => $validated['unit_label'] ?? null,
+            'short_description' => ['fr' => $validated['short_description_fr'] ?? null, 'en' => $validated['short_description_en'] ?? null],
+            'description' => ['fr' => $validated['description_fr'] ?? '', 'en' => $validated['description_en'] ?? ''],
+            'seo_title' => ['fr' => $validated['seo_title_fr'] ?? null, 'en' => $validated['seo_title_en'] ?? null],
+            'seo_description' => ['fr' => $validated['seo_description_fr'] ?? null, 'en' => $validated['seo_description_en'] ?? null],
+            'seo_keywords' => ['fr' => $keywords($validated['seo_keywords_fr'] ?? null), 'en' => $keywords($validated['seo_keywords_en'] ?? null)],
+            'canonical_path' => $validated['canonical_path'] ?? null,
+            'images' => $images,
+        ]);
+
+        if (! ($response['ok'] ?? false)) {
+            foreach ($storedPaths as $path) Storage::disk('public')->delete($path);
+
+            return back()->withErrors($this->responseErrors($response, 'product'))->withInput();
+        }
+
+        return redirect()->route('admin.catalog.products.show', compact('locale', 'product'))
+            ->with('status', $locale === 'en' ? 'Product updated.' : 'Produit mis à jour.');
+    }
+
     public function storeProduct(Request $request, AdminApiClient $admin, string $locale): RedirectResponse
     {
         $locale = $this->setLocale($locale);
@@ -623,45 +846,126 @@ class BackOfficeController extends Controller
         }
 
         $validated = $this->validateAdminAction($request, [
-            'category_id' => ['required', 'integer'],
-            'name_fr' => ['required', 'string', 'max:180'],
-            'name_en' => ['required', 'string', 'max:180'],
-            'slug' => ['required', 'string', 'max:220', 'alpha_dash:ascii'],
-            'description_fr' => ['required', 'string', 'max:5000'],
-            'description_en' => ['required', 'string', 'max:5000'],
-            'sku' => ['required', 'string', 'max:80'],
-            'price_eur' => ['required', 'numeric', 'min:0.01'],
+            'category_id' => ['nullable', 'integer'],
+            'name_fr' => ['nullable', 'required_without:name_en', 'string', 'max:180'],
+            'name_en' => ['nullable', 'required_without:name_fr', 'string', 'max:180'],
+            'slug' => ['nullable', 'string', 'max:220', 'alpha_dash:ascii'],
+            'description_fr' => ['nullable', 'string', 'max:5000'],
+            'description_en' => ['nullable', 'string', 'max:5000'],
+            'short_description_fr' => ['nullable', 'string', 'max:500'],
+            'short_description_en' => ['nullable', 'string', 'max:500'],
+            'origin_fr' => ['nullable', 'string', 'max:180'],
+            'origin_en' => ['nullable', 'string', 'max:180'],
+            'sku' => ['nullable', 'string', 'max:80'],
+            'barcode' => ['nullable', 'string', 'max:64'],
+            'brand' => ['nullable', 'string', 'max:120'],
+            'supplier_reference' => ['nullable', 'string', 'max:120'],
+            'purchase_price_eur' => ['nullable', 'numeric', 'min:0'],
+            'sale_price_ttc_eur' => ['required', 'numeric', 'min:0.01'],
+            'compare_at_price_eur' => ['nullable', 'numeric', 'gte:sale_price_ttc_eur'],
             'tax_class' => ['required', Rule::in(['food', 'standard'])],
             'stock_quantity' => ['required', 'integer', 'min:0'],
             'weight_grams' => ['nullable', 'integer', 'min:1'],
+            'unit_label' => ['nullable', 'string', 'max:40'],
+            'max_order_quantity' => ['nullable', 'integer', 'min:1'],
+            'product_images' => ['required', 'array', 'min:1', 'max:12'],
+            'product_images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'primary_image_index' => ['nullable', 'integer', 'min:0', 'max:11'],
+            'product_icon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image_alt_fr' => ['nullable', 'string', 'max:180'],
+            'image_alt_en' => ['nullable', 'string', 'max:180'],
         ], 'product-create');
 
+        $storedPaths = [];
+        $images = [];
+        $primaryIndex = (int) ($validated['primary_image_index'] ?? 0);
+
+        foreach ($request->file('product_images', []) as $index => $image) {
+            $path = $image->store('products/gallery', 'public');
+            $storedPaths[] = $path;
+            $images[] = [
+                'url' => Storage::disk('public')->url($path),
+                'role' => 'gallery',
+                'is_primary' => $index === $primaryIndex,
+                'sort_order' => $index + 1,
+                'original_name' => $image->getClientOriginalName(),
+                'mime_type' => $image->getMimeType(),
+                'size_bytes' => $image->getSize(),
+                'alt_text' => [
+                    'fr' => $validated['image_alt_fr'] ?? $validated['name_fr'] ?? $validated['name_en'],
+                    'en' => $validated['image_alt_en'] ?? $validated['name_en'] ?? $validated['name_fr'],
+                ],
+            ];
+        }
+
+        if ($icon = $request->file('product_icon')) {
+            $path = $icon->store('products/icons', 'public');
+            $storedPaths[] = $path;
+            $images[] = [
+                'url' => Storage::disk('public')->url($path),
+                'role' => 'icon',
+                'is_primary' => false,
+                'original_name' => $icon->getClientOriginalName(),
+                'mime_type' => $icon->getMimeType(),
+                'size_bytes' => $icon->getSize(),
+                'alt_text' => [
+                    'fr' => 'Icône '.($validated['name_fr'] ?? $validated['name_en']),
+                    'en' => ($validated['name_en'] ?? $validated['name_fr']).' icon',
+                ],
+            ];
+        }
+
         $response = $admin->createProduct($context['token'], [
-            'category_id' => (int) $validated['category_id'],
+            'category_id' => isset($validated['category_id']) ? (int) $validated['category_id'] : null,
             'name' => [
-                'fr' => $validated['name_fr'],
-                'en' => $validated['name_en'],
+                'fr' => $validated['name_fr'] ?? null,
+                'en' => $validated['name_en'] ?? null,
             ],
-            'slug' => $validated['slug'],
+            'slug' => $validated['slug'] ?? null,
             'description' => [
-                'fr' => $validated['description_fr'],
-                'en' => $validated['description_en'],
+                'fr' => $validated['description_fr'] ?? null,
+                'en' => $validated['description_en'] ?? null,
             ],
-            'sku' => $validated['sku'],
-            'price_cents' => $this->priceCents($validated['price_eur']),
+            'short_description' => [
+                'fr' => $validated['short_description_fr'] ?? null,
+                'en' => $validated['short_description_en'] ?? null,
+            ],
+            'origin' => [
+                'fr' => $validated['origin_fr'] ?? null,
+                'en' => $validated['origin_en'] ?? null,
+            ],
+            'sku' => $validated['sku'] ?? null,
+            'barcode' => $validated['barcode'] ?? null,
+            'brand' => $validated['brand'] ?? null,
+            'supplier_reference' => $validated['supplier_reference'] ?? null,
+            'purchase_price_cents' => isset($validated['purchase_price_eur']) ? $this->priceCents($validated['purchase_price_eur']) : null,
+            'price_cents' => $this->priceCents($validated['sale_price_ttc_eur']),
+            'compare_at_price_cents' => isset($validated['compare_at_price_eur']) ? $this->priceCents($validated['compare_at_price_eur']) : null,
             'currency' => 'EUR',
+            'price_includes_tax' => true,
             'tax_class' => $validated['tax_class'],
             'stock_quantity' => (int) $validated['stock_quantity'],
             'weight_grams' => $validated['weight_grams'] ?? null,
+            'unit_label' => $validated['unit_label'] ?? null,
+            'max_order_quantity' => $validated['max_order_quantity'] ?? null,
+            'images' => $images,
             'is_active' => $request->boolean('is_active'),
         ]);
 
-        return $this->redirectAfterAdminAction(
-            $request,
-            $response,
-            'Produit cree dans le catalogue.',
-            'product-create',
-        );
+        if (! ($response['ok'] ?? false)) {
+            foreach ($storedPaths as $path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            return back()
+                ->withErrors($this->responseErrors($response, 'admin_action'))
+                ->withInput()
+                ->with('admin_modal', 'product-create');
+        }
+
+        return back()->with('status', $locale === 'en'
+            ? 'Product created with its commercial and media file.'
+            : 'Produit créé avec sa fiche commerciale et ses médias.');
     }
 
     public function updateProductStock(Request $request, AdminApiClient $admin, string $locale, int $product): RedirectResponse
@@ -684,7 +988,7 @@ class BackOfficeController extends Controller
         return $this->redirectAfterAdminAction(
             $request,
             $response,
-            'Stock produit mis a jour.',
+            $locale === 'en' ? 'Product stock updated.' : 'Stock du produit mis à jour.',
             "product-stock-{$product}",
         );
     }
@@ -732,7 +1036,9 @@ class BackOfficeController extends Controller
         return $this->redirectAfterAdminAction(
             $request,
             $response,
-            $validated['action'] === 'publish' ? 'Produit publie.' : 'Produit repasse en brouillon.',
+            $validated['action'] === 'publish'
+                ? ($locale === 'en' ? 'Product published.' : 'Produit publié.')
+                : ($locale === 'en' ? 'Product moved to draft.' : 'Produit repassé en brouillon.'),
             "product-publication-{$product}",
         );
     }

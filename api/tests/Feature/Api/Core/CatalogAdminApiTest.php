@@ -94,10 +94,17 @@ class CatalogAdminApiTest extends TestCase
                 'en' => ['box', 'food'],
             ],
             'sku' => 'DEN-BOX-EU-001',
+            'barcode' => '3760123456789',
+            'brand' => 'Marché Peyi',
+            'supplier_reference' => 'SUP-BOX-001',
+            'purchase_price_cents' => 1400,
             'price_cents' => 2590,
+            'compare_at_price_cents' => 2990,
+            'price_includes_tax' => true,
             'currency' => 'EUR',
             'tax_class' => 'standard',
             'weight_grams' => 1200,
+            'unit_label' => 'coffret',
             'stock_quantity' => 25,
             'max_order_quantity' => 6,
             'rating_average' => 4.8,
@@ -109,6 +116,11 @@ class CatalogAdminApiTest extends TestCase
                 'height' => 900,
                 'dominant_color' => '#f4efe7',
                 'alt_text' => ['fr' => 'Coffret alimentaire.', 'en' => 'Food box.'],
+                'is_primary' => true,
+            ], [
+                'url' => 'https://example.com/products/coffret-icon.png',
+                'role' => 'icon',
+                'alt_text' => ['fr' => 'Icône coffret.', 'en' => 'Box icon.'],
             ]],
             'variants' => [[
                 'name' => ['fr' => 'Standard', 'en' => 'Standard'],
@@ -121,15 +133,56 @@ class CatalogAdminApiTest extends TestCase
             ->assertJsonPath('data.sku', 'DEN-BOX-EU-001')
             ->assertJsonPath('data.currency', 'EUR')
             ->assertJsonPath('data.tax_class', 'standard')
+            ->assertJsonPath('data.purchase_price_cents', 1400)
+            ->assertJsonPath('data.price_cents', 2590)
+            ->assertJsonPath('data.compare_at_price_cents', 2990)
+            ->assertJsonPath('data.barcode', '3760123456789')
             ->assertJsonPath('data.short_description.en', 'Premium food box for Europe.')
             ->assertJsonPath('data.highlights.en.0', 'EUR pricing')
             ->assertJsonPath('data.max_order_quantity', 6)
             ->assertJsonPath('data.images.0.width', 1200)
+            ->assertJsonPath('data.images.0.is_primary', true)
+            ->assertJsonPath('data.icon_image.url', 'https://example.com/products/coffret-icon.png')
             ->assertJsonCount(1, 'data.images')
             ->assertJsonCount(1, 'data.variants');
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'catalog.categories.created']);
         $this->assertDatabaseHas('audit_logs', ['action' => 'catalog.products.created']);
+    }
+
+    public function test_product_can_be_created_with_only_name_sale_price_quantity_and_image(): void
+    {
+        $manager = User::factory()->create();
+        $manager->assignRole('catalog_manager');
+        Sanctum::actingAs($manager);
+
+        $response = $this->postJson('/api/v1/admin/products', [
+            'name' => ['fr' => 'Confiture mangue'],
+            'price_cents' => 790,
+            'stock_quantity' => 18,
+            'images' => [[
+                'url' => 'https://example.com/products/confiture-mangue.jpg',
+                'role' => 'gallery',
+            ]],
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.name.fr', 'Confiture mangue')
+            ->assertJsonPath('data.name.en', 'Confiture mangue')
+            ->assertJsonPath('data.price_cents', 790)
+            ->assertJsonPath('data.stock_quantity', 18)
+            ->assertJsonPath('data.category.slug', 'non-classe')
+            ->assertJsonPath('data.images.0.is_primary', true);
+
+        $this->assertMatchesRegularExpression('/^MP-[A-Z0-9]+-[A-Z0-9]{6}$/', $response->json('data.sku'));
+        $this->assertSame('confiture-mangue', $response->json('data.slug'));
+
+        $this->getJson('/api/v1/admin/catalog-health?locale=fr&q=Confiture')
+            ->assertOk()
+            ->assertJsonPath('data.0.health.status', 'critical')
+            ->assertJsonPath('data.0.health.visibility', 'minimal')
+            ->assertJsonPath('data.0.health.missing_count', 22)
+            ->assertJsonPath('summary.products_count', 1)
+            ->assertJsonPath('summary.critical_count', 1);
     }
 
     public function test_catalog_manager_can_update_product_and_deactivate_omitted_variants(): void

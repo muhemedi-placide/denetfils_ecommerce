@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\CatalogCategoryController;
 use App\Http\Controllers\Api\Admin\CatalogProductController;
 use App\Http\Controllers\Api\Admin\CustomerController;
+use App\Http\Controllers\Api\Admin\CatalogHealthController;
 use App\Http\Controllers\Api\Admin\CartController as AdminCartController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\InventoryController;
@@ -108,6 +109,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AdminAuthController::class, 'logout']);
             Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:catalog.view');
             Route::get('/inventory', [InventoryController::class, 'index'])->middleware('permission:catalog.view');
+            Route::get('/catalog-health', [CatalogHealthController::class, 'index'])->middleware('permission:catalog.view');
 
             Route::get('/orders', [AdminOrderController::class, 'index'])->middleware('permission:orders.view');
             Route::post('/orders', [AdminOrderController::class, 'store'])->middleware('permission:orders.manage');
@@ -122,9 +124,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders/{order}/shipments/{shipment}/label', [ShipmentController::class, 'label'])->middleware('permission:orders.view');
             Route::get('/invoices', [InvoiceController::class, 'index'])->middleware('permission:orders.view');
             Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->middleware('permission:orders.view');
-            Route::get('/carts', [AdminCartController::class, 'index'])->middleware('permission:orders.view');
-            Route::get('/carts/{cart}', [AdminCartController::class, 'show'])->middleware('permission:orders.view');
-            Route::post('/carts/{cart}/recovery-links', [AdminCartController::class, 'createRecoveryLink'])->middleware('permission:orders.manage');
+            Route::get('/carts', [AdminCartController::class, 'index'])->middleware('permission:carts.view');
+            Route::get('/carts/{cart}', [AdminCartController::class, 'show'])->middleware('permission:carts.view');
+            Route::post('/carts/{cart}/recovery-links', [AdminCartController::class, 'createRecoveryLink'])->middleware('permission:carts.manage');
 
             Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
             Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');

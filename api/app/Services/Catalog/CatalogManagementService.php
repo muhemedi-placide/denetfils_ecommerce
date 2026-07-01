@@ -9,6 +9,7 @@ use App\Services\Core\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CatalogManagementService
 {
@@ -73,8 +74,32 @@ class CatalogManagementService
     public function createProduct(array $data, User $actor, Request $request): Product
     {
         return DB::transaction(function () use ($data, $actor, $request) {
+            $name = $this->localizedPair($data['name'] ?? []);
+            $description = $this->localizedPair($data['description'] ?? [], '');
+            $categoryId = $data['category_id'] ?? Category::query()->firstOrCreate(
+                ['slug' => 'non-classe'],
+                [
+                    'name' => ['fr' => 'Non classé', 'en' => 'Uncategorized'],
+                    'sort_order' => 9999,
+                    'is_active' => true,
+                ],
+            )->id;
+            $slug = $data['slug'] ?? $this->uniqueProductValue(
+                'slug',
+                Str::slug($name['fr'] ?: $name['en']) ?: 'produit',
+            );
+            $sku = $data['sku'] ?? $this->uniqueProductValue(
+                'sku',
+                'MP-'.Str::upper(Str::limit(str_replace('-', '', $slug), 18, '')).'-'.Str::upper(Str::random(6)),
+            );
+
             $product = Product::create([
                 ...Arr::except($data, ['images', 'variants']),
+                'category_id' => $categoryId,
+                'name' => $name,
+                'description' => $description,
+                'slug' => $slug,
+                'sku' => $sku,
                 'currency' => $data['currency'] ?? 'EUR',
                 'tax_class' => $data['tax_class'] ?? 'food',
                 'is_active' => $data['is_active'] ?? true,
@@ -88,7 +113,7 @@ class CatalogManagementService
                 'slug' => $product->slug,
             ]);
 
-            return $product->refresh()->load(['category', 'images', 'variants']);
+            return $product->refresh()->load(['category', 'images', 'iconImage', 'variants']);
         });
     }
 
@@ -115,7 +140,7 @@ class CatalogManagementService
                 'changed' => array_values(array_unique($changed)),
             ]);
 
-            return $product->refresh()->load(['category', 'images', 'variants']);
+            return $product->refresh()->load(['category', 'images', 'iconImage', 'variants']);
         });
     }
 
@@ -140,24 +165,58 @@ class CatalogManagementService
                 ],
             );
 
-            return $product->refresh()->load(['category', 'images', 'variants']);
+            return $product->refresh()->load(['category', 'images', 'iconImage', 'variants']);
         });
     }
 
     private function syncImages(Product $product, array $images): void
     {
-        $product->images()->delete();
+        $product->media()->delete();
+
+        $primaryAssigned = false;
 
         foreach ($images as $index => $image) {
-            $product->images()->create([
+            $role = $image['role'] ?? 'gallery';
+            $isPrimary = $role === 'gallery' && ! $primaryAssigned && (bool) ($image['is_primary'] ?? true);
+            $primaryAssigned = $primaryAssigned || $isPrimary;
+
+            $product->media()->create([
+                'role' => $role,
+                'is_primary' => $isPrimary,
                 'url' => $image['url'],
+                'original_name' => $image['original_name'] ?? null,
+                'mime_type' => $image['mime_type'] ?? null,
+                'size_bytes' => $image['size_bytes'] ?? null,
                 'width' => $image['width'] ?? null,
                 'height' => $image['height'] ?? null,
                 'dominant_color' => $image['dominant_color'] ?? null,
                 'alt_text' => $image['alt_text'] ?? null,
-                'sort_order' => $image['sort_order'] ?? $index + 1,
+                'sort_order' => $role === 'icon' ? 0 : ($image['sort_order'] ?? $index + 1),
             ]);
         }
+    }
+
+    private function localizedPair(array $values, ?string $fallback = null): array
+    {
+        $first = collect([$values['fr'] ?? null, $values['en'] ?? null, $fallback])
+            ->first(fn ($value) => $value !== null && $value !== '');
+
+        return [
+            'fr' => $values['fr'] ?? $first ?? '',
+            'en' => $values['en'] ?? $first ?? '',
+        ];
+    }
+
+    private function uniqueProductValue(string $column, string $base): string
+    {
+        $candidate = $base;
+        $suffix = 1;
+
+        while (Product::query()->where($column, $candidate)->exists()) {
+            $candidate = $base.'-'.$suffix++;
+        }
+
+        return $candidate;
     }
 
     private function syncVariants(Product $product, array $variants): void

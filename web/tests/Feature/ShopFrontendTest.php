@@ -80,6 +80,9 @@ class ShopFrontendTest extends TestCase
             ->assertSee('Mountain honey')
             ->assertSee('A dense floral honey')
             ->assertSee('EUR 8.90')
+            ->assertSee('EUR 10.90')
+            ->assertSee('VAT included')
+            ->assertSee('Marché Peyi')
             ->assertSee('https://example.test/honey.jpg')
             ->assertSee('Premium selection')
             ->assertSee('Prepared within 24 to 48 business hours.')
@@ -200,10 +203,17 @@ class ShopFrontendTest extends TestCase
             'description' => 'A dense floral honey for breakfasts and desserts.',
             'origin' => $origin,
             'sku' => 'DEN-MIEL-250',
+            'barcode' => '3760123456789',
+            'brand' => 'Marché Peyi',
             'price_cents' => 890,
             'formatted_price' => 'EUR 8.90',
+            'compare_at_price_cents' => 1090,
+            'formatted_compare_at_price' => 'EUR 10.90',
+            'discount_percent' => 18,
+            'price_includes_tax' => true,
             'currency' => 'EUR',
             'weight_grams' => 250,
+            'unit_label' => 'jar',
             'stock_quantity' => 35,
             'is_active' => true,
             'short_description' => 'A dense floral honey selected for breakfast and dessert.',

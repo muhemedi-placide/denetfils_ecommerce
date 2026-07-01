@@ -3,10 +3,234 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class AdminBackOfficeFrontendTest extends TestCase
 {
+    public function test_admin_can_open_and_fully_update_product_details(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+        $session = [
+            'admin_api_token' => 'admin-token',
+            'admin_user' => ['name' => 'Admin Test', 'email' => 'admin@example.test', 'roles' => ['admin']],
+        ];
+
+        $this->withSession($session)
+            ->get('/fr/admin/catalogue/produits/10')
+            ->assertOk()
+            ->assertSee('Référencement du produit')
+            ->assertSee('Santé du produit')
+            ->assertSee('Enregistrer toutes les modifications');
+
+        $this->withSession($session)
+            ->patch('/fr/admin/catalogue/produits/10', [
+                'category_id' => 3,
+                'name_fr' => 'Miel doux optimisé',
+                'name_en' => 'Optimized sweet honey',
+                'slug' => 'miel-doux-optimise',
+                'sku' => 'MIEL-001',
+                'brand' => 'Marché Peyi',
+                'purchase_price_eur' => '5.00',
+                'sale_price_ttc_eur' => '9.90',
+                'tax_class' => 'food',
+                'stock_quantity' => 20,
+                'description_fr' => 'Description complète optimisée.',
+                'description_en' => 'Optimized full description.',
+                'seo_title_fr' => 'Miel doux naturel | Marché Peyi',
+                'seo_title_en' => 'Natural sweet honey | Marché Peyi',
+                'seo_description_fr' => 'Achetez un miel doux naturel soigneusement sélectionné.',
+                'seo_description_en' => 'Shop carefully selected natural sweet honey.',
+                'seo_keywords_fr' => 'miel, naturel',
+                'seo_keywords_en' => 'honey, natural',
+                'primary_existing_id' => 44,
+            ])
+            ->assertRedirect('/fr/admin/catalogue/produits/10')
+            ->assertSessionHas('status', 'Produit mis à jour.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/products/10')
+            && $request->method() === 'PATCH'
+            && $request['price_cents'] === 990
+            && $request['purchase_price_cents'] === 500
+            && data_get($request->data(), 'seo_title.fr') === 'Miel doux naturel | Marché Peyi'
+            && data_get($request->data(), 'images.0.is_primary') === true);
+    }
+
+    public function test_admin_can_start_catalog_health_scan_and_see_missing_elements(): void
+    {
+        $diagnostic = [
+            'id' => 10,
+            'name' => ['fr' => 'Miel premium', 'en' => 'Premium honey'],
+            'slug' => 'miel-premium',
+            'sku' => 'MP-MIEL-001',
+            'is_active' => true,
+            'primary_image' => null,
+            'health' => [
+                'score' => 63,
+                'status' => 'incomplete',
+                'visibility' => 'limited',
+                'checks_count' => 27,
+                'completed_count' => 17,
+                'missing_count' => 10,
+                'critical_count' => 1,
+                'missing' => [
+                    ['key' => 'primary_image', 'section' => 'media', 'type' => 'missing', 'critical' => true, 'label' => 'Image principale'],
+                    ['key' => 'seo_title_fr', 'section' => 'seo', 'type' => 'missing', 'critical' => false, 'label' => 'Titre SEO FR'],
+                ],
+            ],
+        ];
+
+        Http::fake([
+            '*/admin/catalog-health*' => Http::response([
+                'data' => [$diagnostic],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+                'summary' => [
+                    'products_count' => 1,
+                    'average_score' => 63,
+                    'missing_total' => 10,
+                    'excellent_count' => 0,
+                    'critical_count' => 0,
+                    'scanned_at' => now()->toIso8601String(),
+                ],
+            ]),
+        ]);
+
+        $session = [
+            'admin_api_token' => 'admin-token',
+            'admin_user' => ['name' => 'Admin Test', 'email' => 'admin@example.test', 'roles' => ['admin']],
+        ];
+
+        $this->withSession($session)
+            ->get('/fr/admin/catalogue/suivi')
+            ->assertOk()
+            ->assertSee('Démarrer le scan du catalogue')
+            ->assertDontSee('Miel premium');
+
+        $this->withSession($session)
+            ->get('/fr/admin/catalogue/suivi?scan=1')
+            ->assertOk()
+            ->assertSee('Miel premium')
+            ->assertSee('10 élément(s)')
+            ->assertSee('Image principale')
+            ->assertSee('Visibilité limitée');
+    }
+
+    public function test_admin_can_create_complete_product_with_prices_gallery_and_icon(): void
+    {
+        Storage::fake('public');
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->post('/fr/admin/catalogue/produits', [
+            'category_id' => 1,
+            'name_fr' => 'Miel premium',
+            'name_en' => 'Premium honey',
+            'slug' => 'miel-premium',
+            'sku' => 'MP-MIEL-001',
+            'barcode' => '3760123456789',
+            'brand' => 'Marché Peyi',
+            'supplier_reference' => 'FOUR-001',
+            'origin_fr' => 'France',
+            'origin_en' => 'France',
+            'purchase_price_eur' => '5.20',
+            'sale_price_ttc_eur' => '9.90',
+            'compare_at_price_eur' => '11.90',
+            'tax_class' => 'food',
+            'stock_quantity' => 24,
+            'max_order_quantity' => 6,
+            'weight_grams' => 250,
+            'unit_label' => 'pot',
+            'short_description_fr' => 'Miel floral.',
+            'short_description_en' => 'Floral honey.',
+            'description_fr' => 'Description complète du miel.',
+            'description_en' => 'Complete honey description.',
+            'product_images' => [
+                UploadedFile::fake()->image('face.png', 800, 800),
+                UploadedFile::fake()->image('dos.png', 800, 800),
+            ],
+            'primary_image_index' => 1,
+            'product_icon' => UploadedFile::fake()->image('icone.png', 256, 256),
+            'is_active' => '1',
+        ])
+            ->assertRedirect()
+            ->assertSessionHas('status', 'Produit créé avec sa fiche commerciale et ses médias.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/products')
+            && $request->method() === 'POST'
+            && $request['purchase_price_cents'] === 520
+            && $request['price_cents'] === 990
+            && $request['compare_at_price_cents'] === 1190
+            && count($request['images']) === 3
+            && data_get($request->data(), 'images.1.is_primary') === true
+            && data_get($request->data(), 'images.2.role') === 'icon');
+
+        $this->assertCount(3, Storage::disk('public')->allFiles('products'));
+    }
+
+    public function test_admin_can_open_cart_list_and_cart_details(): void
+    {
+        $cart = [
+            'id' => 7,
+            'reference' => 'CRT-ABC123',
+            'admin_status' => 'abandoned',
+            'items_count' => 2,
+            'distinct_items_count' => 1,
+            'total_weight_grams' => 500,
+            'formatted_total' => '17,80 EUR',
+            'created_at' => now()->subDays(2)->toIso8601String(),
+            'last_activity_at' => now()->subDays(2)->toIso8601String(),
+            'expires_at' => now()->addDays(28)->toIso8601String(),
+            'customer' => ['name' => 'Client Test', 'email' => 'client@example.test'],
+            'recovery_links' => [],
+            'items' => [[
+                'quantity' => 2,
+                'formatted_unit_price' => '8,90 EUR',
+                'formatted_line_total' => '17,80 EUR',
+                'product' => ['name' => 'Miel', 'sku' => 'MIEL-1', 'origin' => 'France'],
+                'variant' => null,
+            ]],
+        ];
+
+        Http::fake([
+            '*/admin/carts/7*' => Http::response(['data' => $cart]),
+            '*/admin/carts*' => Http::response([
+                'data' => [$cart],
+                'meta' => ['total' => 1],
+                'summary' => ['formatted_value' => '17,80 EUR', 'abandoned_count' => 1],
+            ]),
+        ]);
+
+        $session = [
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+                'permissions' => ['carts.view', 'carts.manage'],
+            ],
+        ];
+
+        $this->withSession($session)
+            ->get('/fr/admin/paniers')
+            ->assertOk()
+            ->assertSee('CRT-ABC123')
+            ->assertSee('Client Test');
+
+        $this->withSession($session)
+            ->get('/fr/admin/paniers/7')
+            ->assertOk()
+            ->assertSee('Détail du panier')
+            ->assertSee('Créer un lien de récupération');
+    }
+
     public function test_admin_pages_render_with_shell_and_action_modals(): void
     {
         $this->withoutVite();
@@ -33,8 +257,10 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->get('/fr/admin/catalogue/produits')
             ->assertOk()
             ->assertSee('Nouveau produit')
-            ->assertSee('product-create-modal', false)
-            ->assertSee('product-publication-10', false);
+            ->assertSee('product-create-wizard', false)
+            ->assertSee('/fr/admin/catalogue/produits/10', false)
+            ->assertSee('name="stock_quantity"', false)
+            ->assertDontSee('product-publication-10', false);
 
         $this->withSession($session)
             ->get('/fr/admin/catalogue/categories')
@@ -482,6 +708,9 @@ class AdminBackOfficeFrontendTest extends TestCase
                     'recent_activity' => [$this->auditLog()],
                 ],
             ]),
+            '*/admin/products/10*' => Http::response([
+                'data' => $this->product(),
+            ]),
             '*/admin/products*' => Http::response([
                 'data' => [$this->product()],
                 'meta' => ['total' => 1],
@@ -582,11 +811,30 @@ class AdminBackOfficeFrontendTest extends TestCase
             'name' => ['fr' => 'Miel doux', 'en' => 'Sweet honey'],
             'slug' => 'miel-doux',
             'description' => ['fr' => 'Description produit', 'en' => 'Product description'],
+            'short_description' => ['fr' => 'Miel doux.', 'en' => 'Sweet honey.'],
+            'origin' => ['fr' => 'France', 'en' => 'France'],
             'sku' => 'MIEL-001',
+            'barcode' => '3760123456789',
+            'brand' => 'Marché Peyi',
+            'supplier_reference' => 'SUP-001',
+            'purchase_price_cents' => 500,
             'price_cents' => 890,
+            'compare_at_price_cents' => null,
             'currency' => 'EUR',
+            'tax_class' => 'food',
+            'weight_grams' => 250,
+            'unit_label' => 'pot',
             'stock_quantity' => 12,
+            'max_order_quantity' => 6,
+            'seo_title' => ['fr' => 'Miel doux', 'en' => 'Sweet honey'],
+            'seo_description' => ['fr' => 'Description SEO', 'en' => 'SEO description'],
+            'seo_keywords' => ['fr' => ['miel'], 'en' => ['honey']],
+            'canonical_path' => '/{locale}/products/miel-doux',
             'is_active' => true,
+            'primary_image' => ['id' => 44, 'url' => 'https://example.test/miel.jpg', 'alt_text' => ['fr' => 'Miel', 'en' => 'Honey'], 'is_primary' => true],
+            'images' => [['id' => 44, 'url' => 'https://example.test/miel.jpg', 'alt_text' => ['fr' => 'Miel', 'en' => 'Honey'], 'is_primary' => true, 'sort_order' => 1]],
+            'icon_image' => null,
+            'health' => ['score' => 82, 'status' => 'good', 'visibility' => 'high', 'missing_count' => 4, 'missing' => []],
             'variants' => [],
         ];
     }

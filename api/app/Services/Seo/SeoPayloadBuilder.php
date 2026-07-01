@@ -306,7 +306,7 @@ class SeoPayloadBuilder
             'sku' => $product->sku,
             'brand' => [
                 '@type' => 'Brand',
-                'name' => config('seo.brand_name'),
+                'name' => $product->brand ?: config('seo.brand_name'),
             ],
             'category' => $product->category?->localized('name', $locale),
             'image' => $imageUrls,
@@ -321,6 +321,18 @@ class SeoPayloadBuilder
                 'priceValidUntil' => now()->addMonths(6)->toDateString(),
             ],
         ];
+
+        if (filled($product->barcode)) {
+            $schema[strlen($product->barcode) === 13 ? 'gtin13' : 'gtin'] = $product->barcode;
+        }
+
+        if ($product->weight_grams) {
+            $schema['weight'] = [
+                '@type' => 'QuantitativeValue',
+                'value' => $product->weight_grams,
+                'unitCode' => 'GRM',
+            ];
+        }
 
         if ($product->rating_count > 0) {
             $schema['aggregateRating'] = [

@@ -4,7 +4,7 @@
 @section('page_title', ($locale === 'en' ? 'Cart details' : 'Détail du panier'))
 @section('page_subtitle', $cart['reference'] ?? '')
 
-@section('admin_content')
+@section('content')
     @php($isEnglish = $locale === 'en')
 
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">

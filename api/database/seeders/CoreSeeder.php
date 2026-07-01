@@ -17,7 +17,7 @@ class CoreSeeder extends Seeder
         ]);
 
         $admin = User::updateOrCreate(
-            ['email' => env('SHOP_ADMIN_EMAIL', 'admin@example.com')],
+            ['email' => env('SHOP_ADMIN_EMAIL', 'admin@gmail.com')],
             [
                 'name' => config('shop.name').' Admin',
                 'first_name' => config('shop.name'),

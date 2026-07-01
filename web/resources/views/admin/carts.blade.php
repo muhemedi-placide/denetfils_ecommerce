@@ -4,7 +4,7 @@
 @section('page_title', $locale === 'en' ? 'Carts' : 'Paniers')
 @section('page_subtitle', $locale === 'en' ? 'Active and abandoned carts, value and recovery.' : 'Paniers actifs et abandonnés, valeur et récupération.')
 
-@section('admin_content')
+@section('content')
     @php
         $isEnglish = $locale === 'en';
         $rows = $carts['data'] ?? [];

@@ -29,6 +29,7 @@ class AdminApiClient
     public function products(string $token, array $filters = []): array
     {
         return $this->send('get', 'admin/products', $this->clean([
+            'locale' => $filters['locale'] ?? null,
             'q' => $filters['q'] ?? null,
             'category_id' => $filters['category_id'] ?? null,
             'publication_status' => $filters['publication_status'] ?? null,
@@ -38,9 +39,27 @@ class AdminApiClient
         ]), $token);
     }
 
+    public function catalogHealth(string $token, string $locale, array $filters = []): array
+    {
+        return $this->send('get', 'admin/catalog-health', $this->clean([
+            'locale' => $this->locale($locale),
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'page' => $filters['page'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+        ]), $token);
+    }
+
     public function createProduct(string $token, array $payload): array
     {
         return $this->send('post', 'admin/products', $payload, $token);
+    }
+
+    public function product(string $token, int|string $product, string $locale): array
+    {
+        return $this->send('get', "admin/products/{$product}", [
+            'locale' => $this->locale($locale),
+        ], $token);
     }
 
     public function updateProduct(string $token, int|string $product, array $payload): array

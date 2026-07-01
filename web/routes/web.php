@@ -69,7 +69,10 @@ Route::prefix('/{locale}/admin')
         Route::get('/catalogue', [BackOfficeController::class, 'catalog'])->name('admin.catalog');
         Route::get('/catalogue/produits', [BackOfficeController::class, 'catalogProducts'])->name('admin.catalog.products');
         Route::get('/catalogue/categories', [BackOfficeController::class, 'catalogCategories'])->name('admin.catalog.categories');
+        Route::get('/catalogue/suivi', [BackOfficeController::class, 'catalogHealth'])->name('admin.catalog.health');
         Route::post('/catalogue/produits', [BackOfficeController::class, 'storeProduct'])->name('admin.catalog.products.store');
+        Route::get('/catalogue/produits/{product}', [BackOfficeController::class, 'showProduct'])->name('admin.catalog.products.show');
+        Route::patch('/catalogue/produits/{product}', [BackOfficeController::class, 'updateProduct'])->name('admin.catalog.products.update');
         Route::patch('/catalogue/produits/{product}/stock', [BackOfficeController::class, 'updateProductStock'])->name('admin.catalog.products.stock');
         Route::patch('/catalogue/produits/{product}/classe-tva', [BackOfficeController::class, 'updateProductTaxClass'])->name('admin.catalog.products.tax-class');
         Route::post('/catalogue/produits/{product}/publication', [BackOfficeController::class, 'setProductPublication'])->name('admin.catalog.products.publication');
