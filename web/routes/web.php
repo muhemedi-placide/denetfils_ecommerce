@@ -86,6 +86,11 @@ Route::prefix('/{locale}/admin')
         Route::post('/commandes/{order}/discussion/messages', [BackOfficeController::class, 'sendOrderDiscussionMessage'])->name('admin.orders.discussion.messages');
         Route::post('/commandes/{order}/discussion/read', [BackOfficeController::class, 'markOrderDiscussionRead'])->name('admin.orders.discussion.read');
         Route::post('/commandes/{order}/discussion/close', [BackOfficeController::class, 'closeOrderDiscussion'])->name('admin.orders.discussion.close');
+        Route::get('/factures', [BackOfficeController::class, 'invoices'])->name('admin.invoices');
+        Route::get('/factures/{invoice}', [BackOfficeController::class, 'showInvoice'])->name('admin.invoices.show');
+        Route::get('/paniers', [BackOfficeController::class, 'carts'])->name('admin.carts');
+        Route::get('/paniers/{cart}', [BackOfficeController::class, 'showCart'])->name('admin.carts.show');
+        Route::post('/paniers/{cart}/lien-recuperation', [BackOfficeController::class, 'createCartRecoveryLink'])->name('admin.carts.recovery-link');
         Route::post('/commandes/{order}/expedition', function (Request $request, string $locale, int $order) {
             $token = $request->session()->get('admin_api_token');
             if (! $token) return redirect()->route('admin.login', ['locale' => $locale]);
@@ -122,11 +127,16 @@ Route::prefix('/{locale}/admin')
             ]);
         })->name('admin.orders.shipment.label');
         Route::get('/stock', [BackOfficeController::class, 'inventory'])->name('admin.inventory');
-        Route::get('/utilisateurs', [BackOfficeController::class, 'users'])->name('admin.users');
-        Route::post('/utilisateurs', [BackOfficeController::class, 'storeUser'])->name('admin.users.store');
-        Route::post('/utilisateurs/{user}/roles', [BackOfficeController::class, 'assignUserRoles'])->name('admin.users.roles');
-        Route::post('/utilisateurs/{user}/suspension', [BackOfficeController::class, 'suspendUser'])->name('admin.users.suspend');
+        Route::get('/clients', [BackOfficeController::class, 'customers'])->name('admin.customers');
+        Route::get('/clients/{customer}', [BackOfficeController::class, 'showCustomer'])->name('admin.customers.show');
+        Route::patch('/clients/{customer}', [BackOfficeController::class, 'updateCustomer'])->name('admin.customers.update');
+        Route::get('/equipe', [BackOfficeController::class, 'users'])->name('admin.users');
+        Route::post('/equipe', [BackOfficeController::class, 'storeUser'])->name('admin.users.store');
+        Route::post('/equipe/{user}/roles', [BackOfficeController::class, 'assignUserRoles'])->name('admin.users.roles');
+        Route::post('/equipe/{user}/suspension', [BackOfficeController::class, 'suspendUser'])->name('admin.users.suspend');
+        Route::get('/utilisateurs', [BackOfficeController::class, 'users'])->name('admin.users.legacy');
         Route::get('/acces', [BackOfficeController::class, 'access'])->name('admin.access');
+        Route::patch('/acces/roles/{role}/permissions', [BackOfficeController::class, 'syncRolePermissions'])->name('admin.access.permissions');
         Route::get('/audit', [BackOfficeController::class, 'audit'])->name('admin.audit');
 
         Route::get('/modules/livraison', function (Request $request, string $locale) {
@@ -437,6 +447,10 @@ Route::post('/{locale}/mon-compte/commandes/{order}/discussion/close', [Customer
 Route::post('/{locale}/mon-compte/adresses', [CustomerAccountController::class, 'storeAddress'])->whereIn('locale', ['fr', 'en'])->name('account.addresses.store');
 Route::patch('/{locale}/mon-compte/adresses/{address}', [CustomerAccountController::class, 'updateAddress'])->whereIn('locale', ['fr', 'en'])->name('account.addresses.update');
 Route::delete('/{locale}/mon-compte/adresses/{address}', [CustomerAccountController::class, 'deleteAddress'])->whereIn('locale', ['fr', 'en'])->name('account.addresses.delete');
+Route::get('/{locale}/panier/recuperer/{recoveryToken}', [ShopController::class, 'cart'])
+    ->whereIn('locale', ['fr', 'en'])
+    ->where('recoveryToken', '[A-Za-z0-9]{64}')
+    ->name('cart.recover');
 Route::get('/{locale}/panier', [ShopController::class, 'cart'])->whereIn('locale', ['fr', 'en'])->name('cart.show');
 Route::get('/checkout/paypal/return', [ShopController::class, 'paypalReturn'])->name('checkout.paypal.return');
 Route::get('/checkout/paypal/cancel', [ShopController::class, 'paypalCancel'])->name('checkout.paypal.cancel');

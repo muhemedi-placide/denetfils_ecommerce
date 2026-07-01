@@ -8,6 +8,7 @@ use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Support\ApiPresenter;
+use App\Services\Carts\CartRecoveryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,7 @@ class CartController extends Controller
             'tax_cents' => 0,
             'total_cents' => 0,
             'expires_at' => now()->addDays(30),
+            'last_activity_at' => now(),
         ]);
 
         return response()->json([
@@ -38,6 +40,26 @@ class CartController extends Controller
 
         return response()->json([
             'data' => ApiPresenter::cart($cart, $this->locale($request)),
+        ]);
+    }
+
+    public function createRecoveryLink(
+        Request $request,
+        string $cartToken,
+        CartRecoveryService $recovery,
+    ): JsonResponse {
+        $link = $recovery->issue($this->findCart($cartToken));
+
+        return response()->json(['data' => $link], 201);
+    }
+
+    public function recover(
+        Request $request,
+        string $recoveryToken,
+        CartRecoveryService $recovery,
+    ): JsonResponse {
+        return response()->json([
+            'data' => ApiPresenter::cart($recovery->recover($recoveryToken), $this->locale($request)),
         ]);
     }
 
@@ -138,6 +160,7 @@ class CartController extends Controller
     {
         return Cart::query()
             ->where('cart_token', $cartToken)
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->firstOrFail();
     }
 

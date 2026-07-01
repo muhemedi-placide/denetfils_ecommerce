@@ -2,10 +2,14 @@
 
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\Admin\AuditLogController;
+use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\CatalogCategoryController;
 use App\Http\Controllers\Api\Admin\CatalogProductController;
+use App\Http\Controllers\Api\Admin\CustomerController;
+use App\Http\Controllers\Api\Admin\CartController as AdminCartController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\InventoryController;
+use App\Http\Controllers\Api\Admin\InvoiceController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\OrderConversationController as AdminOrderConversationController;
 use App\Http\Controllers\Api\Admin\PaymentMethodController;
@@ -28,7 +32,6 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SeoController;
 use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\Api\SupportedCountryController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/v1/health', function () {
@@ -42,6 +45,7 @@ Route::get('/v1/health', function () {
 Route::prefix('v1')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/admin/auth/login', [AdminAuthController::class, 'login']);
     Route::get('/seo/site', [SeoController::class, 'site']);
     Route::get('/sitemap.xml', [SeoController::class, 'sitemap']);
     Route::get('/robots.txt', [SeoController::class, 'robots']);
@@ -62,9 +66,11 @@ Route::prefix('v1')->group(function () {
     Route::post('/carts/{cartToken}/items', [CartController::class, 'addItem']);
     Route::patch('/carts/{cartToken}/items/{item}', [CartController::class, 'updateItem']);
     Route::delete('/carts/{cartToken}/items/{item}', [CartController::class, 'destroyItem']);
+    Route::post('/carts/{cartToken}/recovery-links', [CartController::class, 'createRecoveryLink'])->middleware('throttle:20,1');
+    Route::get('/cart-recoveries/{recoveryToken}', [CartController::class, 'recover'])->middleware('throttle:60,1');
     Route::post('/carts/{cartToken}/estimate', [CartEstimateController::class, 'store'])->middleware('throttle:60,1');
 
-    Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
+    Route::middleware(['auth:sanctum', 'customer', 'active.user'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
 
@@ -95,7 +101,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/shipping/postal-codes/search', [ShippingController::class, 'postalCodes'])->middleware('throttle:pickup-search');
         Route::post('/shipping/selection', [ShippingController::class, 'select']);
 
-        Route::prefix('admin')->group(function () {
+    });
+
+    Route::middleware(['auth:sanctum', 'system.user', 'active.user'])->prefix('admin')->group(function () {
+        Route::get('/auth/me', [AdminAuthController::class, 'me']);
+        Route::post('/auth/logout', [AdminAuthController::class, 'logout']);
             Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:catalog.view');
             Route::get('/inventory', [InventoryController::class, 'index'])->middleware('permission:catalog.view');
 
@@ -110,6 +120,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/orders/{order}/conversation/close', [AdminOrderConversationController::class, 'close'])->middleware('permission:orders.manage');
             Route::post('/orders/{order}/shipment/create', [ShipmentController::class, 'create'])->middleware('permission:orders.manage');
             Route::get('/orders/{order}/shipments/{shipment}/label', [ShipmentController::class, 'label'])->middleware('permission:orders.view');
+            Route::get('/invoices', [InvoiceController::class, 'index'])->middleware('permission:orders.view');
+            Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->middleware('permission:orders.view');
+            Route::get('/carts', [AdminCartController::class, 'index'])->middleware('permission:orders.view');
+            Route::get('/carts/{cart}', [AdminCartController::class, 'show'])->middleware('permission:orders.view');
+            Route::post('/carts/{cart}/recovery-links', [AdminCartController::class, 'createRecoveryLink'])->middleware('permission:orders.manage');
 
             Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
             Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');
@@ -118,7 +133,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/users/{user}/roles', [UserController::class, 'assignRoles'])->middleware('permission:roles.assign');
             Route::post('/users/{user}/suspend', [UserController::class, 'suspend'])->middleware('permission:users.suspend');
 
+            Route::get('/customers', [CustomerController::class, 'index'])->middleware('permission:customers.view');
+            Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('permission:customers.view');
+            Route::patch('/customers/{customer}', [CustomerController::class, 'update'])->middleware('permission:customers.manage');
+
             Route::get('/roles', [RoleController::class, 'index'])->middleware('permission:roles.view');
+            Route::patch('/roles/{role}/permissions', [RoleController::class, 'syncPermissions'])->middleware('permission:roles.assign');
             Route::get('/permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view');
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('permission:audit.view');
 
@@ -153,10 +173,5 @@ Route::prefix('v1')->group(function () {
             Route::patch('/products/{product}', [CatalogProductController::class, 'update'])->middleware('permission:catalog.manage');
             Route::post('/products/{product}/publish', [CatalogProductController::class, 'publish'])->middleware('permission:catalog.manage');
             Route::post('/products/{product}/unpublish', [CatalogProductController::class, 'unpublish'])->middleware('permission:catalog.manage');
-        });
     });
 });
-
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');

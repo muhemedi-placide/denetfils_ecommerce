@@ -401,6 +401,29 @@ img {
     @apply divide-y divide-leaf/10;
 }
 
+/*
+ * Tailwind equivalent of Bootstrap's table-striped + table-hover.
+ * The shared class keeps every admin data list visually consistent.
+ */
+.admin-table tbody tr {
+    transition:
+        background-color 160ms ease,
+        color 160ms ease;
+}
+
+.admin-table tbody tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.admin-table tbody tr:nth-child(even) {
+    background-color: rgba(249, 115, 22, 0.045);
+}
+
+.admin-table tbody tr:hover,
+.admin-table tbody tr:focus-within {
+    background-color: rgba(249, 115, 22, 0.12);
+}
+
 .admin-dialog {
     width: min(100% - 2rem, 760px);
     max-height: calc(100vh - 2rem);
@@ -604,6 +627,10 @@ html.dark .admin-muted { color: rgba(255, 255, 255, 0.68); }
 html.dark .admin-table thead { background-color: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.58); }
 html.dark .admin-table,
 html.dark .admin-table tbody { border-color: rgba(255, 255, 255, 0.12); }
+html.dark .admin-table tbody tr:nth-child(odd) { background-color: transparent; }
+html.dark .admin-table tbody tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.035); }
+html.dark .admin-table tbody tr:hover,
+html.dark .admin-table tbody tr:focus-within { background-color: rgba(249, 115, 22, 0.16); }
 html.dark .admin-shell-backdrop {
     background:
         radial-gradient(circle at 12% 8%, rgba(255, 90, 0, 0.16), transparent 28%),

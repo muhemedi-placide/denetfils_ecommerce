@@ -144,6 +144,20 @@ class ShopApiClient
         ]);
     }
 
+    public function createCartRecoveryLink(string $token, string $locale): array
+    {
+        return $this->send('post', "carts/{$token}/recovery-links", [
+            'locale' => $this->locale($locale),
+        ]);
+    }
+
+    public function recoverCart(string $recoveryToken, string $locale): array
+    {
+        return $this->send('get', "cart-recoveries/{$recoveryToken}", [
+            'locale' => $this->locale($locale),
+        ]);
+    }
+
     public function sitemapXml(): ?string
     {
         try {

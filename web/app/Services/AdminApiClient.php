@@ -130,6 +130,52 @@ class AdminApiClient
         ], $token);
     }
 
+    public function invoices(string $token, string $locale, array $filters = []): array
+    {
+        return $this->send('get', 'admin/invoices', $this->clean([
+            'locale' => $this->locale($locale),
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'payment_status' => $filters['payment_status'] ?? null,
+            'date_from' => $filters['date_from'] ?? null,
+            'date_to' => $filters['date_to'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+            'page' => $filters['page'] ?? null,
+        ]), $token);
+    }
+
+    public function invoice(string $token, int|string $invoice, string $locale): array
+    {
+        return $this->send('get', "admin/invoices/{$invoice}", [
+            'locale' => $this->locale($locale),
+        ], $token);
+    }
+
+    public function carts(string $token, string $locale, array $filters = []): array
+    {
+        return $this->send('get', 'admin/carts', $this->clean([
+            'locale' => $this->locale($locale),
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'date_from' => $filters['date_from'] ?? null,
+            'date_to' => $filters['date_to'] ?? null,
+            'page' => $filters['page'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+        ]), $token);
+    }
+
+    public function cart(string $token, int|string $cart, string $locale): array
+    {
+        return $this->send('get', "admin/carts/{$cart}", [
+            'locale' => $this->locale($locale),
+        ], $token);
+    }
+
+    public function createCartRecoveryLink(string $token, int|string $cart): array
+    {
+        return $this->send('post', "admin/carts/{$cart}/recovery-links", [], $token);
+    }
+
     public function updateOrder(string $token, int|string $order, array $payload): array
     {
         return $this->send('patch', "admin/orders/{$order}", $this->clean($payload), $token);
@@ -173,6 +219,27 @@ class AdminApiClient
         ]), $token);
     }
 
+    public function customers(string $token, array $filters = []): array
+    {
+        return $this->send('get', 'admin/customers', $this->clean([
+            'q' => $filters['q'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'country_code' => $filters['country_code'] ?? null,
+            'per_page' => $filters['per_page'] ?? 25,
+            'page' => $filters['page'] ?? null,
+        ]), $token);
+    }
+
+    public function customer(string $token, int|string $customer): array
+    {
+        return $this->send('get', "admin/customers/{$customer}", [], $token);
+    }
+
+    public function updateCustomer(string $token, int|string $customer, array $payload): array
+    {
+        return $this->send('patch', "admin/customers/{$customer}", $payload, $token);
+    }
+
     public function createUser(string $token, array $payload): array
     {
         return $this->send('post', 'admin/users', $payload, $token);
@@ -196,6 +263,13 @@ class AdminApiClient
     public function roles(string $token): array
     {
         return $this->send('get', 'admin/roles', [], $token);
+    }
+
+    public function syncRolePermissions(string $token, int|string $role, array $permissions): array
+    {
+        return $this->send('patch', "admin/roles/{$role}/permissions", [
+            'permissions' => array_values($permissions),
+        ], $token);
     }
 
     public function permissions(string $token): array

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Core;
 
 use App\Models\AuditLog;
+use App\Models\Customer;
 use App\Models\User;
 use App\Support\CoreDefaults;
 use Database\Seeders\AccessControlSeeder;
@@ -24,8 +25,7 @@ class RbacApiTest extends TestCase
 
     public function test_customer_cannot_access_admin_routes(): void
     {
-        $customer = User::factory()->create();
-        $customer->assignRole('customer');
+        $customer = Customer::factory()->create();
         Sanctum::actingAs($customer);
 
         $this->getJson('/api/v1/admin/users')->assertForbidden();
@@ -35,6 +35,7 @@ class RbacApiTest extends TestCase
     {
         $manager = User::factory()->create();
         $manager->assignRole('catalog_manager');
+        $this->assertSame('catalog_manager', $manager->fresh()->role->name);
         $target = User::factory()->create();
         Sanctum::actingAs($manager);
 
@@ -60,6 +61,7 @@ class RbacApiTest extends TestCase
         ])
             ->assertCreated()
             ->assertJsonPath('data.email', 'support@example.com')
+            ->assertJsonPath('data.role', 'support_agent')
             ->assertJsonPath('data.roles.0', 'support_agent')
             ->json('data.id');
 
@@ -83,5 +85,34 @@ class RbacApiTest extends TestCase
         ));
 
         $this->getJson('/api/v1/admin/permissions')->assertOk();
+    }
+
+    public function test_admin_can_sync_permissions_for_editable_role_but_not_protected_roles(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $support = \Spatie\Permission\Models\Role::findByName('support_agent', 'web');
+        $protected = \Spatie\Permission\Models\Role::findByName('admin', 'web');
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/v1/admin/roles/{$support->id}/permissions", [
+            'permissions' => ['catalog.view', 'orders.view'],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'support_agent')
+            ->assertJsonPath('data.permissions.0', 'catalog.view')
+            ->assertJsonPath('data.permissions.1', 'orders.view');
+
+        $this->assertTrue($support->fresh()->hasPermissionTo('catalog.view'));
+        $this->assertFalse($support->fresh()->hasPermissionTo('customers.manage'));
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'roles.permissions_updated',
+            'auditable_id' => $support->id,
+        ]);
+
+        $this->patchJson("/api/v1/admin/roles/{$protected->id}/permissions", [
+            'permissions' => ['catalog.view'],
+        ])->assertUnprocessable();
     }
 }

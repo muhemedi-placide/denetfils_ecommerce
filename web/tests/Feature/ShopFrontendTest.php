@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Shop\CartManager;
+use App\Livewire\Shop\CartPage;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -111,6 +112,48 @@ class ShopFrontendTest extends TestCase
             && $request->method() === 'POST'
             && $request['product_id'] === 10
             && $request['quantity'] === 1);
+    }
+
+    public function test_cart_page_creates_a_secure_recovery_url(): void
+    {
+        Http::fake([
+            '*/carts/cart-token-123/recovery-links' => Http::response([
+                'data' => [
+                    'token' => str_repeat('r', 64),
+                    'expires_at' => now()->addDays(30)->toIso8601String(),
+                ],
+            ], 201),
+        ]);
+
+        Livewire::test(CartPage::class, ['locale' => 'fr'])
+            ->set('cartToken', 'cart-token-123')
+            ->set('cart', $this->cart([$this->cartItem()]))
+            ->call('createRecoveryLink')
+            ->assertSet('recoveryUrl', route('cart.recover', [
+                'locale' => 'fr',
+                'recoveryToken' => str_repeat('r', 64),
+            ]))
+            ->assertSee('Copier');
+    }
+
+    public function test_recovery_route_restores_the_cart_from_api(): void
+    {
+        $recoveryToken = str_repeat('r', 64);
+
+        Http::fake([
+            '*/cart-recoveries/*' => Http::response([
+                'data' => $this->cart([$this->cartItem()]),
+            ]),
+        ]);
+
+        Livewire::test(CartPage::class, [
+            'locale' => 'en',
+            'recoveryToken' => $recoveryToken,
+        ])
+            ->assertSet('recoveredFromLink', true)
+            ->assertSet('cartToken', 'cart-token-123')
+            ->assertSee('Cart restored')
+            ->assertSee('Mountain honey');
     }
 
     private function fakeCatalog(string $name, string $origin, string $categoryName): void
@@ -275,6 +318,9 @@ class ShopFrontendTest extends TestCase
             'tax_cents' => 0,
             'total_cents' => 890,
             'formatted_total' => 'EUR 8.90',
+            'formatted_subtotal' => 'EUR 8.90',
+            'items_count' => count($items),
+            'reference' => 'CRT-TEST123',
             'items' => $items,
         ];
     }
@@ -285,10 +331,15 @@ class ShopFrontendTest extends TestCase
             'id' => 55,
             'quantity' => 1,
             'line_total_cents' => 890,
+            'unit_price_cents' => 890,
+            'formatted_unit_price' => 'EUR 8.90',
             'formatted_line_total' => 'EUR 8.90',
             'product' => [
                 'id' => 10,
                 'name' => 'Mountain honey',
+                'slug' => 'miel-de-montagne',
+                'sku' => 'DEN-MIEL-250',
+                'stock_quantity' => 35,
                 'origin' => 'French origin',
                 'image' => [
                     'url' => 'https://example.test/honey.jpg',

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\Core;
 
+use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\User;
 use Database\Seeders\AccessControlSeeder;
@@ -139,8 +140,7 @@ class PaymentMethodBackOfficeApiTest extends TestCase
 
     public function test_customer_cannot_manage_payment_methods(): void
     {
-        $customer = User::factory()->create();
-        $customer->assignRole('customer');
+        $customer = Customer::factory()->create();
 
         Sanctum::actingAs($customer);
 

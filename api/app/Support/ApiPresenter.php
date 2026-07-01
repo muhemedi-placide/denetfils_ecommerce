@@ -67,11 +67,37 @@ class ApiPresenter
 
     public static function cart(Cart $cart, string $locale): array
     {
-        $cart->loadMissing(['items.product.images', 'items.variant']);
+        $cart->loadMissing(['items.product.category', 'items.product.images', 'items.variant', 'customer', 'order']);
+
+        $itemCount = (int) $cart->items->sum('quantity');
+        $weight = (int) $cart->items->sum(
+            fn ($item) => ((int) ($item->product?->weight_grams ?? 0)) * (int) $item->quantity,
+        );
+        $status = $cart->order
+            ? 'converted'
+            : ($cart->expires_at?->isPast() ? 'expired' : ($itemCount === 0 ? 'empty' : 'active'));
 
         return [
             'cart_token' => $cart->cart_token,
+            'reference' => 'CRT-'.strtoupper(substr(hash('sha256', $cart->cart_token), 0, 10)),
+            'status' => $status,
             'currency' => $cart->currency,
+            'distinct_items_count' => $cart->items->count(),
+            'items_count' => $itemCount,
+            'total_weight_grams' => $weight,
+            'created_at' => $cart->created_at?->toIso8601String(),
+            'updated_at' => $cart->updated_at?->toIso8601String(),
+            'last_activity_at' => $cart->last_activity_at?->toIso8601String(),
+            'expires_at' => $cart->expires_at?->toIso8601String(),
+            'customer' => $cart->customer ? [
+                'id' => $cart->customer->id,
+                'name' => $cart->customer->name,
+                'email' => $cart->customer->email,
+            ] : null,
+            'order' => $cart->order ? [
+                'id' => $cart->order->id,
+                'order_number' => $cart->order->order_number,
+            ] : null,
             'subtotal_cents' => $cart->subtotal_cents,
             'formatted_subtotal' => MoneyFormatter::format($cart->subtotal_cents, $cart->currency, $locale),
             'tax_cents' => $cart->tax_cents,
@@ -97,13 +123,23 @@ class ApiPresenter
                             'id' => $product->id,
                             'name' => $product->localized('name', $locale),
                             'slug' => $product->slug,
+                            'sku' => $product->sku,
                             'origin' => $product->localized('origin', $locale),
+                            'weight_grams' => $product->weight_grams,
+                            'stock_quantity' => $product->stock_quantity,
+                            'is_active' => $product->is_active,
+                            'category' => $product->category ? [
+                                'id' => $product->category->id,
+                                'name' => $product->category->localized('name', $locale),
+                            ] : null,
                             'image' => $primaryImage ? self::productImage($primaryImage, $locale) : null,
                         ] : null,
                         'variant' => $variant ? [
                             'id' => $variant->id,
                             'name' => $variant->localized('name', $locale),
                             'sku' => $variant->sku,
+                            'stock_quantity' => $variant->stock_quantity,
+                            'is_active' => $variant->is_active,
                         ] : null,
                     ];
                 })

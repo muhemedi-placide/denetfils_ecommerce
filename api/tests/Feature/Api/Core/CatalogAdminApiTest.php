@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Core;
 
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\AccessControlSeeder;
@@ -24,8 +25,7 @@ class CatalogAdminApiTest extends TestCase
 
     public function test_customer_cannot_access_admin_catalog(): void
     {
-        $customer = User::factory()->create();
-        $customer->assignRole('customer');
+        $customer = Customer::factory()->create();
         Sanctum::actingAs($customer);
 
         $this->getJson('/api/v1/admin/products')->assertForbidden();

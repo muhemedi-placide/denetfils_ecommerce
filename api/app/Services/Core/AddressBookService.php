@@ -2,13 +2,13 @@
 
 namespace App\Services\Core;
 
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\UserAddress;
 use Illuminate\Support\Facades\DB;
 
 class AddressBookService
 {
-    public function create(User $user, array $data): UserAddress
+    public function create(Customer $user, array $data): UserAddress
     {
         return DB::transaction(function () use ($user, $data) {
             $this->clearDefaultIfNeeded($user, $data);
@@ -24,14 +24,14 @@ class AddressBookService
     public function update(UserAddress $address, array $data): UserAddress
     {
         return DB::transaction(function () use ($address, $data) {
-            $this->clearDefaultIfNeeded($address->user, $data, $address);
+            $this->clearDefaultIfNeeded($address->customer, $data, $address);
             $address->update($data);
 
             return $address->refresh();
         });
     }
 
-    private function clearDefaultIfNeeded(User $user, array $data, ?UserAddress $currentAddress = null): void
+    private function clearDefaultIfNeeded(Customer $user, array $data, ?UserAddress $currentAddress = null): void
     {
         if (! ($data['is_default'] ?? false)) {
             return;

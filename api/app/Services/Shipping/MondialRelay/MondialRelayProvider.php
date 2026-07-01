@@ -45,7 +45,7 @@ class MondialRelayProvider implements CarrierProviderInterface
         $pickup = $shipment->pickupPoint;
 
         $payload = $this->client->call('WSI2_CreationExpedition', [
-            'ModeCol' => 'CCC', 'ModeLiv' => $shipment->method->service_code, 'NDossier' => $order->order_number, 'NClient' => (string) $order->user_id,
+            'ModeCol' => 'CCC', 'ModeLiv' => $shipment->method->service_code, 'NDossier' => $order->order_number, 'NClient' => (string) $order->customer_id,
             'Expe_Langage' => 'FR', 'Expe_Ad1' => (string) ($sender['name'] ?? ''), 'Expe_Ad2' => '', 'Expe_Ad3' => (string) ($sender['address'] ?? ''), 'Expe_Ad4' => (string) ($sender['address_2'] ?? ''),
             'Expe_Ville' => (string) ($sender['city'] ?? ''), 'Expe_CP' => (string) ($sender['postal_code'] ?? ''), 'Expe_Pays' => (string) ($sender['country'] ?? 'FR'), 'Expe_Tel1' => (string) ($sender['phone'] ?? ''), 'Expe_Tel2' => '', 'Expe_Mail' => (string) ($sender['email'] ?? ''),
             'Dest_Langage' => strtoupper($order->customer_locale ?: 'FR'), 'Dest_Ad1' => $address->recipient_name, 'Dest_Ad2' => (string) $address->company, 'Dest_Ad3' => $address->street_line_1, 'Dest_Ad4' => (string) $address->street_line_2,

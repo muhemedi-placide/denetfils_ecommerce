@@ -3,7 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Product;
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\UserAddress;
 use Database\Seeders\AccessControlSeeder;
 use Database\Seeders\EcommerceSeeder;
@@ -169,15 +169,12 @@ class CheckoutQuoteApiTest extends TestCase
             ->assertJsonValidationErrors('cart_token');
     }
 
-    private function customer(array $overrides = []): User
+    private function customer(array $overrides = []): Customer
     {
-        $user = User::factory()->create($overrides);
-        $user->assignRole('customer');
-
-        return $user;
+        return Customer::factory()->create($overrides);
     }
 
-    private function address(User $user, array $overrides = []): UserAddress
+    private function address(Customer $user, array $overrides = []): UserAddress
     {
         return $user->addresses()->create(array_merge([
             'type' => 'shipping',

@@ -21,14 +21,19 @@ class OrderDocumentPdfRenderer
 
     private string $title = 'FACTURE';
 
+    private string $locale = 'fr';
+
     private array $order = [];
 
     private array $shop = [];
 
-    public function render(string $type, array $order): string
+    public function render(string $type, array $order, string $locale = 'fr'): string
     {
         $this->type = $type === 'delivery-note' ? 'delivery-note' : 'invoice';
-        $this->title = $this->type === 'invoice' ? 'FACTURE' : 'BON DE LIVRAISON';
+        $this->locale = $locale === 'en' ? 'en' : 'fr';
+        $this->title = $this->type === 'invoice'
+            ? $this->t('FACTURE', 'INVOICE')
+            : $this->t('BON DE LIVRAISON', 'DELIVERY NOTE');
         $this->order = $order;
         $this->shop = config('documents.shop', []);
         $this->pages = [];
@@ -74,33 +79,28 @@ class OrderDocumentPdfRenderer
         $documentRef = $this->documentReference();
         $this->textRight(self::PAGE_WIDTH - self::MARGIN, 782, $this->title, 20, 'F2', [0.08, 0.08, 0.08]);
         $this->textRight(self::PAGE_WIDTH - self::MARGIN, 760, $documentRef, 10, 'F2', [0, 0, 0]);
-        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 744, 'Date: '.$this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null), 8.5, 'F1', [0.30, 0.30, 0.30]);
+        $this->textRight(self::PAGE_WIDTH - self::MARGIN, 744, $this->t('Date : ', 'Date: ').$this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null), 8.5, 'F1', [0.30, 0.30, 0.30]);
 
         if ($page > 1) {
-            $this->textRight(self::PAGE_WIDTH - self::MARGIN, 708, 'Suite du document', 8.5, 'F2', [0.30, 0.30, 0.30]);
+            $this->textRight(self::PAGE_WIDTH - self::MARGIN, 708, $this->t('Suite du document', 'Document continued'), 8.5, 'F2', [0.30, 0.30, 0.30]);
         }
     }
 
     private function drawOrderSummary(): void
     {
-        $this->sectionTitle('Commande');
+        $this->sectionTitle($this->t('Commande', 'Order'));
 
-        $status = $this->labelFromMap($this->order['status'] ?? null, [
-            'pending_payment' => 'Paiement en attente',
-            'confirmed' => 'Confirmee',
-            'processing' => 'En traitement',
-            'completed' => 'Terminee',
-            'cancelled' => 'Annulee',
-            'refunded' => 'Remboursee',
-        ]);
+        $status = $this->labelFromMap($this->order['status'] ?? null, $this->locale === 'en'
+            ? ['pending_payment' => 'Payment pending', 'confirmed' => 'Confirmed', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'refunded' => 'Refunded']
+            : ['pending_payment' => 'Paiement en attente', 'confirmed' => 'Confirmée', 'processing' => 'En traitement', 'completed' => 'Terminée', 'cancelled' => 'Annulée', 'refunded' => 'Remboursée']);
 
         $this->infoGrid([
-            ['Reference', (string) ($this->order['order_number'] ?? '-')],
-            ['ID commande', (string) ($this->order['id'] ?? '-')],
-            ['Date commande', $this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null)],
-            ['Etat', $status],
-            ['Paiement', (string) (data_get($this->order, 'payment_method') ?: data_get($this->order, 'metadata.payment.method') ?: '-')],
-            ['Transporteur', (string) ($this->order['carrier'] ?? '-')],
+            [$this->t('Référence', 'Reference'), (string) ($this->order['order_number'] ?? '-')],
+            [$this->t('ID commande', 'Order ID'), (string) ($this->order['id'] ?? '-')],
+            [$this->t('Date de commande', 'Order date'), $this->date($this->order['placed_at'] ?? $this->order['created_at'] ?? null)],
+            [$this->t('État', 'Status'), $status],
+            [$this->t('Paiement', 'Payment'), (string) (data_get($this->order, 'payment_method') ?: data_get($this->order, 'metadata.payment.method') ?: '-')],
+            [$this->t('Transporteur', 'Carrier'), (string) ($this->order['carrier'] ?? '-')],
         ]);
     }
 
@@ -117,8 +117,8 @@ class OrderDocumentPdfRenderer
 
         $this->box($left, $top - $height, 240, $height);
         $this->box($right, $top - $height, 240, $height);
-        $this->text($left + 14, $top - 22, 'Adresse de livraison', 11, 'F2', [0.08, 0.08, 0.08]);
-        $this->text($right + 14, $top - 22, 'Adresse de facturation', 11, 'F2', [0.08, 0.08, 0.08]);
+        $this->text($left + 14, $top - 22, $this->t('Adresse de livraison', 'Shipping address'), 11, 'F2', [0.08, 0.08, 0.08]);
+        $this->text($right + 14, $top - 22, $this->t('Adresse de facturation', 'Billing address'), 11, 'F2', [0.08, 0.08, 0.08]);
 
         $this->addressLines($left + 14, $top - 42, $shipping);
         $this->addressLines($right + 14, $top - 42, $billing);
@@ -127,15 +127,15 @@ class OrderDocumentPdfRenderer
 
     private function drawItemsTable(): void
     {
-        $this->sectionTitle('Articles');
+        $this->sectionTitle($this->t('Articles', 'Items'));
 
         $columns = $this->type === 'invoice'
             ? [
                 ['label' => 'Ref.', 'x' => self::MARGIN + 8, 'w' => 70],
-                ['label' => 'Produit', 'x' => self::MARGIN + 84, 'w' => 202],
-                ['label' => 'PU TTC', 'x' => self::MARGIN + 300, 'w' => 70, 'align' => 'right'],
+                ['label' => $this->t('Produit', 'Product'), 'x' => self::MARGIN + 84, 'w' => 202],
+                ['label' => $this->t('PU TTC', 'Unit price'), 'x' => self::MARGIN + 300, 'w' => 70, 'align' => 'right'],
                 ['label' => 'Qt.', 'x' => self::MARGIN + 384, 'w' => 42, 'align' => 'right'],
-                ['label' => 'Total TTC', 'x' => self::MARGIN + 440, 'w' => 70, 'align' => 'right'],
+                ['label' => $this->t('Total TTC', 'Total'), 'x' => self::MARGIN + 440, 'w' => 70, 'align' => 'right'],
             ]
             : [
                 ['label' => 'Ref.', 'x' => self::MARGIN + 8, 'w' => 80],
@@ -146,7 +146,7 @@ class OrderDocumentPdfRenderer
         $this->drawTableHeader($columns);
 
         foreach (($this->order['items'] ?? []) as $item) {
-            $name = (string) data_get($item, 'product.name', 'Produit');
+            $name = (string) data_get($item, 'product.name', $this->t('Produit', 'Product'));
             $nameLines = $this->wrap($name, $this->type === 'invoice' ? 42 : 62);
             $rowHeight = max(34, count($nameLines) * 12 + 16 + ($this->type === 'invoice' ? 12 : 0));
             $this->ensureTableSpace($rowHeight, $columns);
@@ -165,7 +165,7 @@ class OrderDocumentPdfRenderer
                 $this->text(
                     $columns[1]['x'],
                     $lineY,
-                    'TVA '.number_format((float) ($item['tax_rate_percent'] ?? 0), 2, ',', ' ').'% incluse: '.(string) ($item['formatted_tax'] ?? '-'),
+                    $this->t('TVA ', 'VAT ').number_format((float) ($item['tax_rate_percent'] ?? 0), 2, ',', ' ').$this->t('% incluse : ', '% included: ').(string) ($item['formatted_tax'] ?? '-'),
                     7.5,
                     'F1',
                     [0.35, 0.35, 0.35],
@@ -185,7 +185,7 @@ class OrderDocumentPdfRenderer
 
         if (empty($this->order['items'])) {
             $this->ensureTableSpace(38, $columns);
-            $this->text(self::MARGIN + 8, $this->y - 22, 'Aucun article dans cette commande.', 9, 'F1', [0.30, 0.30, 0.30]);
+            $this->text(self::MARGIN + 8, $this->y - 22, $this->t('Aucun article dans cette commande.', 'No items in this order.'), 9, 'F1', [0.30, 0.30, 0.30]);
             $this->y -= 38;
         }
 
@@ -202,11 +202,11 @@ class OrderDocumentPdfRenderer
             $w = 213;
             $top = $this->y;
             $this->box($x, $top - 116, $w, 116);
-            $this->totalLine($x, $top - 24, 'Produits', (string) ($this->order['formatted_subtotal'] ?? '-'));
-            $this->totalLine($x, $top - 44, 'Livraison', (string) ($this->order['formatted_shipping'] ?? '-'));
-            $this->totalLine($x, $top - 64, 'Dont TVA incluse', (string) ($this->order['formatted_tax'] ?? '-'));
+            $this->totalLine($x, $top - 24, $this->t('Produits', 'Products'), (string) ($this->order['formatted_subtotal'] ?? '-'));
+            $this->totalLine($x, $top - 44, $this->t('Livraison', 'Shipping'), (string) ($this->order['formatted_shipping'] ?? '-'));
+            $this->totalLine($x, $top - 64, $this->t('Dont TVA incluse', 'Including VAT'), (string) ($this->order['formatted_tax'] ?? '-'));
             $this->line($x + 14, $top - 78, $x + $w - 14, $top - 78, [0.87, 0.87, 0.87]);
-            $this->totalLine($x, $top - 98, 'Total TTC', (string) ($this->order['formatted_total'] ?? '-'), true);
+            $this->totalLine($x, $top - 98, $this->t('Total TTC', 'Total'), (string) ($this->order['formatted_total'] ?? '-'), true);
             $this->drawFooterNote($top - 140);
             $this->y = $top - 158;
 
@@ -231,8 +231,8 @@ class OrderDocumentPdfRenderer
     private function drawFooterNote(float $y): void
     {
         $lines = $this->shop['legal'] ?? [];
-        $this->text(self::MARGIN, $y, (string) ($lines[0] ?? 'Document genere par le back-office '.config('shop.name').'.'), 8.5, 'F1', [0.15, 0.15, 0.15]);
-        $this->text(self::MARGIN, $y - 14, (string) ($lines[1] ?? 'Merci de verifier la commande avant expedition.'), 8.5, 'F1', [0.30, 0.30, 0.30]);
+        $this->text(self::MARGIN, $y, (string) ($lines[0] ?? $this->t('Document généré par le back-office ', 'Document generated by the back office ').config('shop.name').'.'), 8.5, 'F1', [0.15, 0.15, 0.15]);
+        $this->text(self::MARGIN, $y - 14, (string) ($lines[1] ?? $this->t('Merci de vérifier la commande avant expédition.', 'Please verify the order before shipment.')), 8.5, 'F1', [0.30, 0.30, 0.30]);
     }
 
     private function sectionTitle(string $title): void
@@ -331,6 +331,11 @@ class OrderDocumentPdfRenderer
         }
 
         $this->text($column['x'], $y, $value, $size, $font, $color);
+    }
+
+    private function t(string $french, string $english): string
+    {
+        return $this->locale === 'en' ? $english : $french;
     }
 
     private function documentReference(): string

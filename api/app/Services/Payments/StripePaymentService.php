@@ -43,7 +43,7 @@ class StripePaymentService
                 'metadata' => [
                     'order_id' => (string) $order->id,
                     'order_number' => $order->order_number,
-                    'user_id' => (string) $order->user_id,
+                    'customer_id' => (string) $order->customer_id,
                 ],
             ], [
                 'idempotency_key' => "order:{$order->id}:stripe:payment_intent",

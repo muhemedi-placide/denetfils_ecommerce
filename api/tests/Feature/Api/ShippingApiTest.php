@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Cart;
+use App\Models\Customer;
 use App\Models\PickupPoint;
 use App\Models\Product;
 use App\Models\ShippingCarrier;
@@ -142,7 +143,7 @@ class ShippingApiTest extends TestCase
 
     private function checkoutContext(): array
     {
-        $user = User::factory()->create(['country_code' => 'FR']);
+        $user = Customer::factory()->create(['country_code' => 'FR']);
         $address = $user->addresses()->create(['type' => 'shipping', 'label' => 'Maison', 'recipient_name' => $user->name, 'street_line_1' => '12 rue Test', 'postal_code' => '75001', 'city' => 'Paris', 'country_code' => 'FR', 'phone' => '+33600000000', 'is_default' => true]);
         $product = Product::query()->whereNotNull('weight_grams')->firstOrFail();
         $cart = Cart::query()->create(['cart_token' => str_repeat('a', 64), 'currency' => 'EUR', 'subtotal_cents' => $product->price_cents, 'total_cents' => $product->price_cents]);

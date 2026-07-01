@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\User;
+use App\Models\Customer;
 use App\Notifications\WelcomeCustomerNotification;
 use App\Services\Checkout\CheckoutQuoteService;
 use App\Services\Core\UserProvisioningService;
@@ -101,7 +101,7 @@ class PaymentController extends Controller
                 throw new PaymentGatewayException('PayPal did not provide complete customer and shipping information.', 422);
             }
 
-            $user = User::query()->where('email', $email)->first();
+            $user = Customer::query()->where('email', $email)->first();
             $temporaryPassword = null;
 
             if (! $user) {
@@ -218,7 +218,7 @@ class PaymentController extends Controller
 
     private function authorizeOrder(Request $request, Order $order, bool $allowPaid = false): void
     {
-        abort_unless($order->user_id === $request->user()?->id, 404);
+        abort_unless($order->customer_id === $request->user()?->id, 404);
         abort_if(! $allowPaid && $order->payment_status === 'paid', 409, 'This order is already paid.');
     }
 

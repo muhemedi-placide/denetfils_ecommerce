@@ -30,14 +30,14 @@ class AddressController extends Controller
 
     public function update(AddressRequest $request, UserAddress $address, AddressBookService $addresses): UserAddressResource
     {
-        abort_unless($address->user_id === $request->user()->id, 404);
+        abort_unless($address->customer_id === $request->user()->id, 404);
 
         return new UserAddressResource($addresses->update($address, $request->validated()));
     }
 
     public function destroy(Request $request, UserAddress $address): JsonResponse
     {
-        abort_unless($address->user_id === $request->user()->id, 404);
+        abort_unless($address->customer_id === $request->user()->id, 404);
 
         $address->delete();
 

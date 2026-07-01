@@ -17,7 +17,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::query()
-            ->with(['roles', 'permissions', 'customerProfile', 'staffProfile'])
+            ->with(['roles', 'permissions', 'staffProfile'])
             ->latest('id');
 
         if ($request->filled('q')) {
@@ -63,7 +63,7 @@ class UserController extends Controller
 
     public function show(User $user): UserResource
     {
-        return new UserResource($user->load(['roles', 'permissions', 'customerProfile', 'staffProfile']));
+        return new UserResource($user->load(['roles', 'permissions', 'staffProfile']));
     }
 
     public function update(UpdateUserRequest $request, User $user, UserProvisioningService $users): UserResource

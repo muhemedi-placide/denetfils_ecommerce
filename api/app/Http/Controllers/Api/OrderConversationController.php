@@ -54,7 +54,7 @@ class OrderConversationController extends Controller
         }
 
         $conversation->messages()->create([
-            'user_id' => $request->user()->id,
+            'customer_id' => $request->user()->id,
             'sender_type' => 'customer',
             'body' => trim($validated['body']),
         ]);
@@ -109,7 +109,7 @@ class OrderConversationController extends Controller
 
     private function authorizeCustomerOrder(Request $request, Order $order): void
     {
-        abort_unless($order->user_id === $request->user()->id, 404);
+        abort_unless($order->customer_id === $request->user()->id, 404);
     }
 
     private function respond(Request $request, ?OrderConversation $conversation): JsonResponse

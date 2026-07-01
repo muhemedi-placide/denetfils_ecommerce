@@ -10,5 +10,6 @@
         :locale="$locale"
         :recommended-products="$recommendedProducts"
         :country-code="$visitorContext['country_code'] ?? 'FR'"
+        :recovery-token="$recoveryToken"
     />
 @endsection

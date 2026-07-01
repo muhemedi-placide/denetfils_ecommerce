@@ -10,7 +10,7 @@ class OrderConversationResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $isAdminViewer = str_contains($request->path(), 'admin/orders/');
+        $isAdminViewer = str_contains($request->path(), 'admin/');
 
         if (! $this->resource) {
             return [
@@ -42,7 +42,10 @@ class OrderConversationResource extends JsonResource
                     $unreadForCustomer = $message->sender_type !== 'customer' && $message->read_at === null;
                     $unreadForStaff = $message->sender_type === 'customer' && $message->read_at === null;
 
-                    $isOwn = $message->user_id === $request->user()?->id || ($isAdminViewer && $message->sender_type === 'staff');
+                    $ownerId = $message->sender_type === 'customer'
+                        ? $message->customer_id
+                        : $message->user_id;
+                    $isOwn = $ownerId === $request->user()?->id || ($isAdminViewer && $message->sender_type === 'staff');
                     $statusForCustomer = $message->sender_type === 'customer' || ! $unreadForCustomer ? 'read' : 'unread';
                     $statusForStaff = $message->sender_type === 'staff' || ! $unreadForStaff ? 'read' : 'unread';
 

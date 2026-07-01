@@ -16,7 +16,7 @@ class AssignRolesRequest extends FormRequest
     {
         return [
             'roles' => ['required', 'array', 'min:1'],
-            'roles.*' => ['required', 'string', Rule::exists('roles', 'name')->where('guard_name', 'web')],
+            'roles.*' => ['required', 'string', 'not_in:customer', Rule::exists('roles', 'name')->where('guard_name', 'web')],
         ];
     }
 }

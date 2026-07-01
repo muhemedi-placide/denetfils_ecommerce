@@ -6,7 +6,7 @@ use App\Models\Order;
 use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
 use App\Models\Product;
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\UserAddress;
 use Database\Seeders\AccessControlSeeder;
 use Database\Seeders\EcommerceSeeder;
@@ -395,7 +395,7 @@ class PaymentsApiTest extends TestCase
         ]);
     }
 
-    private function orderFor(User $user): Order
+    private function orderFor(Customer $user): Order
     {
         $address = $this->address($user);
         $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
@@ -427,15 +427,12 @@ class PaymentsApiTest extends TestCase
         return $order->refresh();
     }
 
-    private function customer(array $overrides = []): User
+    private function customer(array $overrides = []): Customer
     {
-        $user = User::factory()->create($overrides);
-        $user->assignRole('customer');
-
-        return $user;
+        return Customer::factory()->create($overrides);
     }
 
-    private function address(User $user, array $overrides = []): UserAddress
+    private function address(Customer $user, array $overrides = []): UserAddress
     {
         return $user->addresses()->create(array_merge([
             'type' => 'shipping',

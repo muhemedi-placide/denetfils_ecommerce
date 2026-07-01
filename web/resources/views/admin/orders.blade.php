@@ -1,56 +1,58 @@
 @extends('layouts.admin')
 
-@section('title', 'Commandes')
-@section('page_title', 'Commandes')
-@section('page_subtitle', 'Suivi des commandes web, paiement, preparation et expedition.')
+@php $isEnglish = $locale === 'en'; @endphp
+
+@section('title', $isEnglish ? 'Orders' : 'Commandes')
+@section('page_title', $isEnglish ? 'Orders' : 'Commandes')
+@section('page_subtitle', $isEnglish ? 'Track online orders, payments, preparation and shipping.' : 'Suivi des commandes web, des paiements, de la préparation et des expéditions.')
 
 @php
     $rows = data_get($orders, 'data', []);
     $summary = data_get($orders, 'summary', []);
     $totalRows = data_get($orders, 'meta.total', data_get($summary, 'total_orders', count($rows)));
     $statusLabels = [
-        'pending_payment' => 'Paiement en attente',
-        'confirmed' => 'Confirmee',
-        'processing' => 'En traitement',
-        'completed' => 'Terminee',
-        'cancelled' => 'Annulee',
-        'refunded' => 'Remboursee',
+        'pending_payment' => $isEnglish ? 'Payment pending' : 'Paiement en attente',
+        'confirmed' => $isEnglish ? 'Confirmed' : 'Confirmée',
+        'processing' => $isEnglish ? 'Processing' : 'En traitement',
+        'completed' => $isEnglish ? 'Completed' : 'Terminée',
+        'cancelled' => $isEnglish ? 'Cancelled' : 'Annulée',
+        'refunded' => $isEnglish ? 'Refunded' : 'Remboursée',
     ];
     $paymentLabels = [
-        'unpaid' => 'Non payee',
-        'authorized' => 'Autorisee',
-        'paid' => 'Payee',
-        'failed' => 'Echec',
-        'partially_refunded' => 'Partiel',
-        'refunded' => 'Remboursee',
+        'unpaid' => $isEnglish ? 'Unpaid' : 'Non payée',
+        'authorized' => $isEnglish ? 'Authorized' : 'Autorisée',
+        'paid' => $isEnglish ? 'Paid' : 'Payée',
+        'failed' => $isEnglish ? 'Failed' : 'Échec',
+        'partially_refunded' => $isEnglish ? 'Partially refunded' : 'Partiellement remboursée',
+        'refunded' => $isEnglish ? 'Refunded' : 'Remboursée',
     ];
     $fulfillmentLabels = [
-        'unfulfilled' => 'Non preparee',
-        'preparing' => 'En preparation',
-        'ready_to_ship' => 'Prete',
-        'shipped' => 'Expediee',
-        'delivered' => 'Livree',
-        'returned' => 'Retournee',
-        'cancelled' => 'Annulee',
+        'unfulfilled' => $isEnglish ? 'Unfulfilled' : 'Non préparée',
+        'preparing' => $isEnglish ? 'Preparing' : 'En préparation',
+        'ready_to_ship' => $isEnglish ? 'Ready to ship' : 'Prête à expédier',
+        'shipped' => $isEnglish ? 'Shipped' : 'Expédiée',
+        'delivered' => $isEnglish ? 'Delivered' : 'Livrée',
+        'returned' => $isEnglish ? 'Returned' : 'Retournée',
+        'cancelled' => $isEnglish ? 'Cancelled' : 'Annulée',
     ];
     $orderStateOptions = [
-        'cancelled' => 'Annule',
-        'authorized' => 'Autorisation. A capturer par le marchand',
-        'pending_payment' => 'En attente de paiement',
-        'cash_on_delivery' => 'En attente de paiement a la livraison',
-        'awaiting_stock_unpaid' => 'En attente de reapprovisionnement (non paye)',
-        'awaiting_stock_paid' => 'En attente de reapprovisionnement (paye)',
-        'awaiting_wire' => 'En attente de virement bancaire',
-        'awaiting_check' => 'En attente du paiement par cheque',
-        'processing' => 'En cours de preparation',
-        'failed' => 'Erreur de paiement',
-        'ready_to_ship' => 'Pret a expedier',
-        'shipped' => 'Expedie',
-        'paid' => 'Paiement accepte',
-        'partially_refunded' => 'Paiement partiel',
-        'delivered' => 'Livre',
-        'refunded' => 'Rembourse',
-        'returned' => 'Retour produit',
+        'cancelled' => $isEnglish ? 'Cancelled' : 'Annulée',
+        'authorized' => $isEnglish ? 'Authorized; merchant capture required' : 'Autorisée ; capture requise par le marchand',
+        'pending_payment' => $isEnglish ? 'Payment pending' : 'En attente de paiement',
+        'cash_on_delivery' => $isEnglish ? 'Cash on delivery pending' : 'En attente du paiement à la livraison',
+        'awaiting_stock_unpaid' => $isEnglish ? 'Awaiting stock (unpaid)' : 'En attente de réapprovisionnement (non payée)',
+        'awaiting_stock_paid' => $isEnglish ? 'Awaiting stock (paid)' : 'En attente de réapprovisionnement (payée)',
+        'awaiting_wire' => $isEnglish ? 'Awaiting bank transfer' : 'En attente de virement bancaire',
+        'awaiting_check' => $isEnglish ? 'Awaiting cheque payment' : 'En attente du paiement par chèque',
+        'processing' => $isEnglish ? 'Preparing' : 'En cours de préparation',
+        'failed' => $isEnglish ? 'Payment failed' : 'Erreur de paiement',
+        'ready_to_ship' => $isEnglish ? 'Ready to ship' : 'Prête à expédier',
+        'shipped' => $isEnglish ? 'Shipped' : 'Expédiée',
+        'paid' => $isEnglish ? 'Payment accepted' : 'Paiement accepté',
+        'partially_refunded' => $isEnglish ? 'Partially refunded' : 'Partiellement remboursée',
+        'delivered' => $isEnglish ? 'Delivered' : 'Livrée',
+        'refunded' => $isEnglish ? 'Refunded' : 'Remboursée',
+        'returned' => $isEnglish ? 'Product returned' : 'Produit retourné',
     ];
     $carrierLabels = [
         'mondial_relay_pickup' => 'Mondial Relay',
@@ -89,7 +91,7 @@
 @section('content')
     @if (! data_get($orders, 'ok', true))
         <div class="mb-5 rounded border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-            {{ data_get($orders, 'message', 'Commandes indisponibles pour le moment.') }}
+            {{ data_get($orders, 'message', $isEnglish ? 'Orders are currently unavailable.' : 'Les commandes sont indisponibles pour le moment.') }}
         </div>
     @endif
 
@@ -98,21 +100,21 @@
             <div>
                 <div class="flex items-center gap-2 text-sm font-semibold text-ink dark:text-cream">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-leaf dark:text-meadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l-1 12H7L6 7Z" /><path d="M9 7a3 3 0 0 1 6 0" /></svg>
-                    <span>Commandes</span>
+                    <span>{{ $isEnglish ? 'Orders' : 'Commandes' }}</span>
                 </div>
-                <h2 class="mt-2 text-4xl font-black tracking-normal text-ink dark:text-cream">Commandes</h2>
+                <h2 class="mt-2 text-4xl font-black tracking-normal text-ink dark:text-cream">{{ $isEnglish ? 'Orders' : 'Commandes' }}</h2>
             </div>
             <div class="flex flex-wrap gap-3">
                 <button type="button" data-dialog-target="order-create-modal" class="inline-flex min-h-[48px] items-center gap-2 bg-ink px-5 py-3 text-sm font-black text-white transition hover:bg-leaf dark:bg-meadow dark:text-ink">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /><path d="M12 8v8" /><path d="M8 12h8" /></svg>
-                    Ajouter une commande
+                    {{ $isEnglish ? 'Add order' : 'Ajouter une commande' }}
                 </button>
                 <button type="button" class="inline-flex min-h-[48px] items-center gap-2 bg-cocoa/15 px-5 py-3 text-sm font-black text-ink transition hover:bg-cocoa/25 dark:bg-white/10 dark:text-cream">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
-                    Booster les ventes
+                    {{ $isEnglish ? 'Boost sales' : 'Booster les ventes' }}
                 </button>
                 <a href="{{ route('admin.modules.show', ['locale' => $locale, 'module' => 'assistance']) }}" class="inline-flex min-h-[48px] items-center border border-ink/70 px-5 py-3 text-sm font-black text-ink transition hover:bg-ink hover:text-white dark:border-white/60 dark:text-cream dark:hover:bg-white dark:hover:text-ink">
-                    Aide
+                    {{ $isEnglish ? 'Help' : 'Aide' }}
                 </a>
             </div>
         </div>
@@ -121,30 +123,30 @@
     <section class="mt-5 grid border border-leaf/10 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 lg:grid-cols-[1fr_1fr_1fr_1fr_64px]">
         @foreach ([
             [
-                'label' => 'Taux de transformation',
+                'label' => $isEnglish ? 'Conversion rate' : 'Taux de transformation',
                 'value' => number_format((float) data_get($summary, 'conversion_rate_percent', 0), 1, ',', ' ').'%',
-                'hint' => '30 jours',
+                'hint' => $isEnglish ? '30 days' : '30 jours',
                 'color' => 'text-ink dark:text-cream',
                 'icon' => '<path d="M4 20V4h16v16H4Z" /><path d="M8 16v-5" /><path d="M12 16V8" /><path d="M16 16v-3" />',
             ],
             [
-                'label' => 'Paniers abandonnes',
+                'label' => $isEnglish ? 'Abandoned carts' : 'Paniers abandonnés',
                 'value' => data_get($summary, 'abandoned_carts', 0),
-                'hint' => 'paniers sans commande',
+                'hint' => $isEnglish ? 'carts without orders' : 'paniers sans commande',
                 'color' => 'text-red-600 dark:text-red-300',
                 'icon' => '<path d="M6 6h15l-2 8H8L6 3H3" /><circle cx="9" cy="20" r="1" /><circle cx="18" cy="20" r="1" />',
             ],
             [
-                'label' => 'Panier moyen',
+                'label' => $isEnglish ? 'Average order' : 'Panier moyen',
                 'value' => data_get($summary, 'formatted_average_order', '0,00 EUR'),
-                'hint' => '30 jours',
+                'hint' => $isEnglish ? '30 days' : '30 jours',
                 'color' => 'text-purple-600 dark:text-purple-300',
                 'icon' => '<rect x="5" y="4" width="14" height="16" rx="2" /><path d="M9 8h6" /><path d="M9 12h6" /><path d="M9 16h3" />',
             ],
             [
-                'label' => 'Marge nette par visiteur',
+                'label' => $isEnglish ? 'Net margin per visitor' : 'Marge nette par visiteur',
                 'value' => data_get($summary, 'formatted_net_margin_per_visitor', '0,00 EUR'),
-                'hint' => '30 jours',
+                'hint' => $isEnglish ? '30 days' : '30 jours',
                 'color' => 'text-emerald-600 dark:text-emerald-300',
                 'icon' => '<rect x="4" y="4" width="16" height="16" rx="2" /><circle cx="12" cy="10" r="3" /><path d="M7 19a5 5 0 0 1 10 0" />',
             ],
@@ -162,7 +164,7 @@
                 </div>
             </article>
         @endforeach
-        <a href="{{ route('admin.orders', ['locale' => $locale]) }}" class="grid min-h-[64px] place-items-center bg-ink text-white transition hover:bg-leaf" aria-label="Rafraichir les commandes">
+        <a href="{{ route('admin.orders', ['locale' => $locale]) }}" class="grid min-h-[64px] place-items-center bg-ink text-white transition hover:bg-leaf" aria-label="{{ $isEnglish ? 'Refresh orders' : 'Rafraîchir les commandes' }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 3v6h-6" /></svg>
         </a>
     </section>
@@ -170,7 +172,7 @@
     <section class="mt-7 border border-leaf/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-7">
         <div class="mb-10 flex items-start justify-between gap-4">
             <div>
-                <h3 class="text-3xl font-black text-ink dark:text-cream">Commandes ({{ $totalRows }})</h3>
+                <h3 class="text-3xl font-black text-ink dark:text-cream">{{ $isEnglish ? 'Orders' : 'Commandes' }} ({{ $totalRows }})</h3>
             </div>
             <button type="button" class="admin-icon-btn" aria-label="Parametres liste">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.36.17.7.38 1 .6.33.25.7.4 1.1.4H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z" /></svg>
@@ -179,25 +181,25 @@
 
         <form method="GET">
             <div class="mb-5 inline-flex min-h-[48px] items-center gap-3 bg-cocoa/5 px-5 text-sm font-black text-cocoa/35 dark:bg-white/5 dark:text-cream/35">
-                Actions groupees
+                {{ $isEnglish ? 'Bulk actions' : 'Actions groupées' }}
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6" /></svg>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-[1320px] w-full border-collapse text-left text-sm">
+                <table class="admin-table min-w-[1320px] border-collapse">
                     <thead>
                         <tr class="border-b-2 border-ink text-sm font-black text-ink dark:border-white dark:text-cream">
                             <th class="w-12 px-2 py-3"></th>
                             <th class="w-20 px-3 py-3">ID <span class="ml-2 text-xs">^</span></th>
-                            <th class="w-40 px-3 py-3">Reference</th>
-                            <th class="w-28 px-3 py-3">Nouveau client</th>
-                            <th class="w-32 px-3 py-3">Livraison</th>
-                            <th class="w-52 px-3 py-3">Client</th>
+                            <th class="w-40 px-3 py-3">{{ $isEnglish ? 'Reference' : 'Référence' }}</th>
+                            <th class="w-28 px-3 py-3">{{ $isEnglish ? 'New customer' : 'Nouveau client' }}</th>
+                            <th class="w-32 px-3 py-3">{{ $isEnglish ? 'Delivery' : 'Livraison' }}</th>
+                            <th class="w-52 px-3 py-3">{{ $isEnglish ? 'Customer' : 'Client' }}</th>
                             <th class="w-32 px-3 py-3">Total</th>
-                            <th class="w-40 px-3 py-3">Paiement</th>
-                            <th class="px-3 py-3">Etat</th>
-                            <th class="w-44 px-3 py-3">Date</th>
-                            <th class="w-36 px-3 py-3 text-right">Actions</th>
+                            <th class="w-40 px-3 py-3">{{ $isEnglish ? 'Payment' : 'Paiement' }}</th>
+                            <th class="px-3 py-3">{{ $isEnglish ? 'Status' : 'État' }}</th>
+                            <th class="w-44 px-3 py-3">{{ $isEnglish ? 'Date' : 'Date' }}</th>
+                            <th class="w-36 px-3 py-3 text-right">{{ $isEnglish ? 'Actions' : 'Actions' }}</th>
                         </tr>
                         <tr class="border-b border-leaf/10 bg-cocoa/[0.03] dark:border-white/10 dark:bg-white/[0.03]">
                             <th class="px-2 py-4"><input type="checkbox" class="h-6 w-6 rounded-none border-cocoa/30"></th>
@@ -205,13 +207,13 @@
                                 <input name="id" value="{{ $filters['id'] ?? '' }}" class="admin-input rounded-none px-2" placeholder="ID">
                             </th>
                             <th class="px-3 py-4">
-                                <input name="q" value="{{ $filters['q'] ?? '' }}" class="admin-input rounded-none px-2" placeholder="Chercher une reference">
+                                <input name="q" value="{{ $filters['q'] ?? '' }}" class="admin-input rounded-none px-2" placeholder="{{ $isEnglish ? 'Search reference' : 'Chercher une référence' }}">
                             </th>
                             <th class="px-3 py-4">
                                 <select name="new_customer" class="admin-select rounded-none px-2">
-                                    <option value="">Tous</option>
-                                    <option value="1" @selected(($filters['new_customer'] ?? '') === '1')>Oui</option>
-                                    <option value="0" @selected(($filters['new_customer'] ?? '') === '0')>Non</option>
+                                    <option value="">{{ $isEnglish ? 'All' : 'Tous' }}</option>
+                                    <option value="1" @selected(($filters['new_customer'] ?? '') === '1')>{{ $isEnglish ? 'Yes' : 'Oui' }}</option>
+                                    <option value="0" @selected(($filters['new_customer'] ?? '') === '0')>{{ $isEnglish ? 'No' : 'Non' }}</option>
                                 </select>
                             </th>
                             <th class="px-3 py-4">
@@ -223,14 +225,14 @@
                                 </select>
                             </th>
                             <th class="px-3 py-4">
-                                <input name="customer" value="{{ $filters['customer'] ?? '' }}" class="admin-input rounded-none px-2" placeholder="Chercher un client">
+                                <input name="customer" value="{{ $filters['customer'] ?? '' }}" class="admin-input rounded-none px-2" placeholder="{{ $isEnglish ? 'Search customer' : 'Chercher un client' }}">
                             </th>
                             <th class="px-3 py-4">
-                                <input name="total" value="{{ $filters['total'] ?? '' }}" class="admin-input rounded-none px-2" placeholder="Chercher">
+                                <input name="total" value="{{ $filters['total'] ?? '' }}" class="admin-input rounded-none px-2" placeholder="{{ $isEnglish ? 'Search' : 'Chercher' }}">
                             </th>
                             <th class="px-3 py-4">
                                 <select name="payment_status" class="admin-select rounded-none px-2">
-                                    <option value="">Chercher un paiement</option>
+                                    <option value="">{{ $isEnglish ? 'Search payment' : 'Chercher un paiement' }}</option>
                                     @foreach ($paymentLabels as $key => $label)
                                         <option value="{{ $key }}" @selected(($filters['payment_status'] ?? '') === $key)>{{ $label }}</option>
                                     @endforeach
@@ -291,7 +293,7 @@
                                             name="order_state"
                                             form="order-state-form-{{ $orderId }}"
                                             data-submit-on-change
-                                            aria-label="Mettre a jour l'etat de la commande {{ $order['order_number'] ?? $orderId }}"
+                                            aria-label="{{ $isEnglish ? 'Update order status' : 'Mettre à jour l’état de la commande' }} {{ $order['order_number'] ?? $orderId }}"
                                             class="min-h-[40px] max-w-[250px] rounded-none border-2 border-transparent px-2 py-1 text-sm font-black outline-none transition focus:border-ink focus:ring-4 focus:ring-leaf/15 {{ $stateBadge($currentOrderState) }}"
                                         >
                                             @foreach ($orderStateOptions as $stateKey => $stateLabel)
@@ -306,13 +308,13 @@
                                 <td class="px-3 py-4">
                                     <div class="flex justify-end gap-3 text-ink dark:text-cream">
                                         @if ($orderId)
-                                            <a href="{{ route('admin.orders.invoice', ['locale' => $locale, 'order' => $orderId]) }}" class="transition hover:text-leaf" title="Telecharger la facture" aria-label="Telecharger la facture">
+                                            <a href="{{ route('admin.orders.invoice', ['locale' => $locale, 'order' => $orderId]) }}" class="transition hover:text-leaf" title="{{ $isEnglish ? 'Download invoice' : 'Télécharger la facture' }}" aria-label="{{ $isEnglish ? 'Download invoice' : 'Télécharger la facture' }}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z" /><path d="M8 8h8" /><path d="M8 12h8" /><path d="M8 16h5" /></svg>
                                             </a>
-                                            <a href="{{ route('admin.orders.delivery-note', ['locale' => $locale, 'order' => $orderId]) }}" class="transition hover:text-leaf" title="Telecharger le bon de livraison" aria-label="Telecharger le bon de livraison">
+                                            <a href="{{ route('admin.orders.delivery-note', ['locale' => $locale, 'order' => $orderId]) }}" class="transition hover:text-leaf" title="{{ $isEnglish ? 'Download delivery note' : 'Télécharger le bon de livraison' }}" aria-label="{{ $isEnglish ? 'Download delivery note' : 'Télécharger le bon de livraison' }}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h12v9H3z" /><path d="M15 10h3l3 3v3h-6z" /><circle cx="7" cy="18" r="2" /><circle cx="18" cy="18" r="2" /></svg>
                                             </a>
-                                            <a href="{{ route('admin.orders.show', ['locale' => $locale, 'order' => $orderId]) }}" class="transition hover:text-leaf" title="Voir le detail de la commande" aria-label="Voir le detail de la commande">
+                                            <a href="{{ route('admin.orders.show', ['locale' => $locale, 'order' => $orderId]) }}" class="transition hover:text-leaf" title="{{ $isEnglish ? 'View order details' : 'Voir le détail de la commande' }}" aria-label="{{ $isEnglish ? 'View order details' : 'Voir le détail de la commande' }}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6" /><path d="m20 20-4-4" /><path d="M11 8v6" /><path d="M8 11h6" /></svg>
                                             </a>
                                         @endif
@@ -320,7 +322,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="11" class="px-4 py-8 text-center text-cocoa/55 dark:text-cream/55">Aucune commande ne correspond aux filtres.</td></tr>
+                            <tr><td colspan="11" class="px-4 py-8 text-center text-cocoa/55 dark:text-cream/55">{{ $isEnglish ? 'No orders match these filters.' : 'Aucune commande ne correspond à ces filtres.' }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -354,8 +356,8 @@
             @csrf
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <p class="admin-kicker">Nouvelle commande</p>
-                    <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">Ajouter une commande</h2>
+                    <p class="admin-kicker">{{ $isEnglish ? 'New order' : 'Nouvelle commande' }}</p>
+                    <h2 class="mt-2 text-2xl font-black text-cocoa dark:text-cream">{{ $isEnglish ? 'Add order' : 'Ajouter une commande' }}</h2>
                 </div>
                 <button type="button" data-dialog-close class="admin-icon-btn" aria-label="Fermer">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -370,35 +372,35 @@
 
             <div class="mt-5 grid gap-3">
                 <label class="block">
-                    <span class="admin-kicker mb-2 block">ID client</span>
+                    <span class="admin-kicker mb-2 block">{{ $isEnglish ? 'Customer ID' : 'ID client' }}</span>
                     <input name="customer_id" value="{{ old('customer_id') }}" type="number" min="1" class="admin-input rounded-none" required>
                 </label>
                 <label class="block">
-                    <span class="admin-kicker mb-2 block">Token panier</span>
+                    <span class="admin-kicker mb-2 block">{{ $isEnglish ? 'Cart token' : 'Jeton du panier' }}</span>
                     <input name="cart_token" value="{{ old('cart_token') }}" class="admin-input rounded-none" required>
                 </label>
                 <div class="grid gap-3 sm:grid-cols-2">
                     <label class="block">
-                        <span class="admin-kicker mb-2 block">Adresse livraison ID</span>
+                        <span class="admin-kicker mb-2 block">{{ $isEnglish ? 'Shipping address ID' : 'ID de l’adresse de livraison' }}</span>
                         <input name="shipping_address_id" value="{{ old('shipping_address_id') }}" type="number" min="1" class="admin-input rounded-none" required>
                     </label>
                     <label class="block">
-                        <span class="admin-kicker mb-2 block">Adresse facturation ID</span>
+                        <span class="admin-kicker mb-2 block">{{ $isEnglish ? 'Billing address ID' : 'ID de l’adresse de facturation' }}</span>
                         <input name="billing_address_id" value="{{ old('billing_address_id') }}" type="number" min="1" class="admin-input rounded-none">
                     </label>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
                     <label class="block">
-                        <span class="admin-kicker mb-2 block">Mode livraison</span>
+                        <span class="admin-kicker mb-2 block">{{ $isEnglish ? 'Delivery method' : 'Mode de livraison' }}</span>
                         <select name="delivery_method" class="admin-select rounded-none">
-                            <option value="standard" @selected(old('delivery_method') === 'standard')>Domicile</option>
-                            <option value="relay" @selected(old('delivery_method') === 'relay')>Point relais</option>
+                            <option value="standard" @selected(old('delivery_method') === 'standard')>{{ $isEnglish ? 'Home delivery' : 'Domicile' }}</option>
+                            <option value="relay" @selected(old('delivery_method') === 'relay')>{{ $isEnglish ? 'Pickup point' : 'Point relais' }}</option>
                         </select>
                     </label>
                     <label class="block">
-                        <span class="admin-kicker mb-2 block">Transporteur</span>
+                        <span class="admin-kicker mb-2 block">{{ $isEnglish ? 'Carrier' : 'Transporteur' }}</span>
                         <select name="carrier" class="admin-select rounded-none">
-                            <option value="">Non renseigne</option>
+                            <option value="">{{ $isEnglish ? 'Not specified' : 'Non renseigné' }}</option>
                             @foreach ($carrierLabels as $key => $label)
                                 <option value="{{ $key }}" @selected(old('carrier') === $key)>{{ $label }}</option>
                             @endforeach
@@ -406,14 +408,14 @@
                     </label>
                 </div>
                 <label class="block">
-                    <span class="admin-kicker mb-2 block">Note interne</span>
-                    <textarea name="admin_note" class="admin-textarea rounded-none" placeholder="Contexte de creation, demande client, consigne commerciale...">{{ old('admin_note') }}</textarea>
+                    <span class="admin-kicker mb-2 block">{{ $isEnglish ? 'Internal note' : 'Note interne' }}</span>
+                    <textarea name="admin_note" class="admin-textarea rounded-none" placeholder="{{ $isEnglish ? 'Creation context, customer request, business instruction…' : 'Contexte de création, demande client, consigne commerciale…' }}">{{ old('admin_note') }}</textarea>
                 </label>
             </div>
 
             <div class="mt-6 grid grid-cols-2 gap-3">
-                <button type="button" data-dialog-close class="admin-btn-secondary rounded-none">Annuler</button>
-                <button class="admin-btn rounded-none">Creer la commande</button>
+                <button type="button" data-dialog-close class="admin-btn-secondary rounded-none">{{ $isEnglish ? 'Cancel' : 'Annuler' }}</button>
+                <button class="admin-btn rounded-none">{{ $isEnglish ? 'Create order' : 'Créer la commande' }}</button>
             </div>
         </form>
     </dialog>

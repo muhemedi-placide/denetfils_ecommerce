@@ -15,7 +15,7 @@ class StoreAdminOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'cart_token' => ['required', 'string', 'max:64'],
             'shipping_address_id' => ['required', 'integer'],
             'billing_address_id' => ['nullable', 'integer'],

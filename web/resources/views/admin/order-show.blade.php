@@ -200,7 +200,7 @@
                 </div>
 
                 <div class="mt-7 overflow-x-auto">
-                    <table class="min-w-[880px] w-full text-left text-sm">
+                    <table class="admin-table min-w-[880px]">
                         <thead>
                             <tr class="border-b-2 border-ink text-ink dark:border-white dark:text-cream">
                                 <th class="px-3 py-3">Produit</th>

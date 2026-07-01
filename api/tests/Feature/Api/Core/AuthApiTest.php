@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Core;
 
 use App\Models\PrivacyConsent;
+use App\Models\Customer;
 use App\Models\User;
 use Database\Seeders\AccessControlSeeder;
 use Database\Seeders\SupportedCountrySeeder;
@@ -21,7 +22,7 @@ class AuthApiTest extends TestCase
         $this->seed([SupportedCountrySeeder::class, AccessControlSeeder::class]);
     }
 
-    public function test_customer_can_register_and_receives_customer_role_and_consents(): void
+    public function test_customer_can_register_and_receives_account_and_consents(): void
     {
         $response = $this->postJson('/api/v1/auth/register', [
             'first_name' => 'Jean',
@@ -39,19 +40,19 @@ class AuthApiTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonPath('data.token_type', 'Bearer')
-            ->assertJsonPath('data.user.email', 'jean.martin@example.com');
+            ->assertJsonPath('data.user.email', 'jean.martin@example.com')
+            ->assertJsonPath('data.user.role', 'customer');
 
-        $user = User::where('email', 'jean.martin@example.com')->firstOrFail();
+        $user = Customer::where('email', 'jean.martin@example.com')->firstOrFail();
 
-        $this->assertTrue($user->hasRole('customer'));
         $this->assertTrue($user->customerProfile->accepts_marketing);
-        $this->assertSame(3, PrivacyConsent::where('user_id', $user->id)->count());
+        $this->assertSame('customer', $user->role->name);
+        $this->assertSame(3, PrivacyConsent::where('customer_id', $user->id)->count());
     }
 
     public function test_login_returns_sanctum_token_and_logout_revokes_it(): void
     {
-        $user = User::factory()->create(['email' => 'client@example.com']);
-        $user->assignRole('customer');
+        $user = Customer::factory()->create(['email' => 'client@example.com']);
 
         $login = $this->postJson('/api/v1/auth/login', [
             'email' => 'client@example.com',
@@ -74,7 +75,7 @@ class AuthApiTest extends TestCase
 
     public function test_suspended_user_cannot_login(): void
     {
-        User::factory()->create([
+        Customer::factory()->create([
             'email' => 'blocked@example.com',
             'status' => 'suspended',
         ]);
@@ -92,13 +93,44 @@ class AuthApiTest extends TestCase
 
     public function test_authenticated_user_can_read_auth_me(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('customer');
+        $user = Customer::factory()->create();
 
         Sanctum::actingAs($user);
 
         $this->getJson('/api/v1/auth/me')
             ->assertOk()
             ->assertJsonPath('data.email', $user->email);
+    }
+
+    public function test_customer_and_system_authentication_are_strictly_separated(): void
+    {
+        $password = 'SecurePass123!';
+        $customer = Customer::factory()->create(['password' => $password]);
+        $staff = User::factory()->create(['password' => $password]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => $staff->email,
+            'password' => $password,
+        ])->assertUnprocessable();
+
+        $this->postJson('/api/v1/admin/auth/login', [
+            'email' => $customer->email,
+            'password' => $password,
+        ])->assertUnprocessable();
+
+        Sanctum::actingAs($customer);
+        $this->getJson('/api/v1/admin/auth/me')->assertForbidden();
+
+        $login = $this->postJson('/api/v1/admin/auth/login', [
+            'email' => $staff->email,
+            'password' => $password,
+        ])->assertOk();
+
+        $this->assertNotEmpty($login->json('data.token'));
+
+        Sanctum::actingAs($staff);
+        $this->getJson('/api/v1/admin/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.email', $staff->email);
     }
 }

@@ -18,18 +18,18 @@
             ],
         ],
         [
-            'title' => 'VENDRE',
+            'title' => $currentLocale === 'en' ? 'SELL' : 'VENDRE',
             'menus' => [
                 [
                     'key' => 'sales',
-                    'label' => 'Commandes',
+                    'label' => $currentLocale === 'en' ? 'Orders' : 'Commandes',
                     'icon' => 'orders',
                     'items' => [
-                        ['key' => 'sales.orders', 'label' => 'Commandes', 'route' => 'admin.orders', 'hint' => 'Ventes'],
-                        ['key' => 'sales.invoices', 'label' => 'Factures', 'route' => 'admin.modules.show', 'params' => ['module' => 'factures'], 'hint' => 'Documents'],
-                        ['key' => 'sales.credits', 'label' => 'Avoirs', 'route' => 'admin.modules.show', 'params' => ['module' => 'avoirs'], 'hint' => 'Retours'],
-                        ['key' => 'sales.delivery-notes', 'label' => 'Bons de livraison', 'route' => 'admin.modules.show', 'params' => ['module' => 'bons-livraison'], 'hint' => 'Logistique'],
-                        ['key' => 'sales.carts', 'label' => 'Paniers', 'route' => 'admin.modules.show', 'params' => ['module' => 'paniers'], 'hint' => 'Abandons'],
+                        ['key' => 'sales.orders', 'label' => $currentLocale === 'en' ? 'Orders' : 'Commandes', 'route' => 'admin.orders', 'hint' => $currentLocale === 'en' ? 'Sales' : 'Ventes'],
+                        ['key' => 'sales.invoices', 'label' => $currentLocale === 'en' ? 'Invoices' : 'Factures', 'route' => 'admin.invoices', 'hint' => $currentLocale === 'en' ? 'Billing' : 'Documents'],
+                        ['key' => 'sales.credits', 'label' => $currentLocale === 'en' ? 'Credit notes' : 'Avoirs', 'route' => 'admin.modules.show', 'params' => ['module' => 'avoirs'], 'hint' => $currentLocale === 'en' ? 'Returns' : 'Retours'],
+                        ['key' => 'sales.delivery-notes', 'label' => $currentLocale === 'en' ? 'Delivery notes' : 'Bons de livraison', 'route' => 'admin.modules.show', 'params' => ['module' => 'bons-livraison'], 'hint' => $currentLocale === 'en' ? 'Logistics' : 'Logistique'],
+                        ['key' => 'sales.carts', 'label' => $currentLocale === 'en' ? 'Carts' : 'Paniers', 'route' => 'admin.carts', 'hint' => $currentLocale === 'en' ? 'Abandoned carts' : 'Abandons'],
                     ],
                 ],
                 [
@@ -53,8 +53,7 @@
                     'label' => 'Clients',
                     'icon' => 'users',
                     'items' => [
-                        ['key' => 'users', 'label' => 'Clients', 'route' => 'admin.users', 'hint' => 'Comptes'],
-                        ['key' => 'customers.addresses', 'label' => 'Adresses', 'route' => 'admin.modules.show', 'params' => ['module' => 'adresses-clients'], 'hint' => 'Livraison'],
+                        ['key' => 'customers', 'label' => 'Clients', 'route' => 'admin.customers', 'hint' => 'Comptes'],
                     ],
                 ],
                 [
@@ -96,11 +95,19 @@
                     'icon' => 'settings',
                     'items' => [
                         ['key' => 'settings.shop', 'label' => 'Parametres de la boutique', 'route' => 'admin.modules.show', 'params' => ['module' => 'parametres-boutique'], 'hint' => 'General'],
-                        ['key' => 'access', 'label' => 'Acces et roles', 'route' => 'admin.access', 'hint' => 'RBAC'],
-                        ['key' => 'audit', 'label' => 'Audit', 'route' => 'admin.audit', 'hint' => 'Journal'],
                         ['key' => 'settings.advanced', 'label' => 'Parametres avances', 'route' => 'admin.modules.show', 'params' => ['module' => 'parametres-avances'], 'hint' => 'Systeme'],
                         ['key' => 'settings.assistance', 'label' => 'Assistance', 'route' => 'admin.modules.show', 'params' => ['module' => 'assistance'], 'hint' => 'Support'],
                         ['key' => 'settings.update', 'label' => 'Update assistant', 'route' => 'admin.modules.show', 'params' => ['module' => 'update-assistant'], 'hint' => 'Maintenance'],
+                    ],
+                ],
+                [
+                    'key' => 'access-management',
+                    'label' => 'Acces et roles',
+                    'icon' => 'access',
+                    'items' => [
+                        ['key' => 'team', 'label' => 'Equipe', 'route' => 'admin.users', 'hint' => 'Personnel'],
+                        ['key' => 'access', 'label' => 'Roles et permissions', 'route' => 'admin.access', 'hint' => 'RBAC'],
+                        ['key' => 'audit', 'label' => 'Audit', 'route' => 'admin.audit', 'hint' => 'Journal'],
                     ],
                 ],
             ],
@@ -250,18 +257,6 @@
                     @endforeach
                 </nav>
 
-                <div class="mt-4 rounded-2xl border border-leaf/10 bg-linen p-3 dark:border-white/10 dark:bg-white/5" :class="sidebarExpanded() ? '' : 'px-2'">
-                    <div class="flex items-center gap-3">
-                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-forest text-xs font-black uppercase text-white dark:bg-meadow dark:text-ink">{{ Str::of($adminName)->substr(0, 2) }}</span>
-                        <div x-show="sidebarExpanded()" x-cloak x-transition.opacity class="min-w-0">
-                            <p class="truncate text-sm font-black text-cocoa dark:text-cream">{{ $adminName }}</p>
-                            <p class="truncate text-xs text-cocoa/55 dark:text-cream/55">{{ $adminEmail }}</p>
-                        </div>
-                    </div>
-                    <button type="button" x-show="sidebarExpanded()" x-cloak x-transition.opacity x-on:click="logoutOpen = true" class="mt-3 w-full rounded-xl bg-white px-4 py-2.5 text-sm font-black text-cocoa ring-1 ring-leaf/10 transition hover:bg-mint hover:text-leaf dark:bg-white/10 dark:text-cream dark:ring-white/10">
-                        Deconnexion
-                    </button>
-                </div>
             </aside>
 
             <div x-show="sidebarOpen" x-cloak x-transition.opacity class="fixed inset-0 z-40 bg-ink/60 backdrop-blur-sm lg:hidden" x-on:click="sidebarOpen = false"></div>

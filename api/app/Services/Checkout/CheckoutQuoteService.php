@@ -6,7 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ShippingMethod;
 use App\Models\SupportedCountry;
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\UserAddress;
 use App\Services\Shipping\ShippingManager;
 use App\Support\MoneyFormatter;
@@ -16,13 +16,18 @@ class CheckoutQuoteService
 {
     public function __construct(private ShippingManager $shipping) {}
 
-    public function quoteForUser(User $user, array $data): array
+    public function quoteForUser(Customer $user, array $data): array
     {
         $locale = $this->locale($data['locale'] ?? $user->preferred_locale ?? 'fr');
         $country = $this->destinationCountry($user, $data);
+        $cart = $this->cart((string) $data['cart_token']);
+        $cart->forceFill([
+            'customer_id' => $user->id,
+            'last_activity_at' => now(),
+        ])->save();
 
         return $this->quote(
-            $this->cart((string) $data['cart_token']),
+            $cart,
             $country,
             $locale,
             $data,
@@ -108,7 +113,7 @@ class CheckoutQuoteService
         return $cart;
     }
 
-    public function destinationCountry(User $user, array $data): SupportedCountry
+    public function destinationCountry(Customer $user, array $data): SupportedCountry
     {
         $countryCode = null;
 
@@ -126,7 +131,7 @@ class CheckoutQuoteService
         return $country;
     }
 
-    public function address(User $user, int $addressId, string $field): UserAddress
+    public function address(Customer $user, int $addressId, string $field): UserAddress
     {
         $address = $user->addresses()->whereKey($addressId)->first();
 

@@ -14,7 +14,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_number',
-        'user_id',
+        'customer_id',
         'cart_id',
         'status',
         'payment_status',
@@ -41,9 +41,9 @@ class Order extends Model
         'placed_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function cart(): BelongsTo
@@ -74,5 +74,10 @@ class Order extends Model
     public function conversation(): HasOne
     {
         return $this->hasOne(OrderConversation::class);
+    }
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
     }
 }

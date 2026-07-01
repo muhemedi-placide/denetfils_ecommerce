@@ -26,7 +26,7 @@ class CreateUserRequest extends FormRequest
             'timezone' => ['nullable', 'string', 'max:64'],
             'status' => ['nullable', Rule::in(CoreDefaults::USER_STATUSES)],
             'roles' => ['nullable', 'array', 'min:1'],
-            'roles.*' => ['required', 'string', Rule::exists('roles', 'name')->where('guard_name', 'web')],
+            'roles.*' => ['required', 'string', 'not_in:customer', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'position' => ['nullable', 'string', 'max:120'],
             'admin_notes' => ['nullable', 'string', 'max:2000'],
         ];

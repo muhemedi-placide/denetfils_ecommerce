@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\AdminApiClient;
 use App\Services\Documents\OrderDocumentPdfRenderer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -227,6 +228,119 @@ class BackOfficeController extends Controller
         ]));
     }
 
+    public function invoices(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $filters = $request->only(['q', 'status', 'payment_status', 'date_from', 'date_to', 'page']);
+
+        return view('admin.invoices', $this->payload($context, [
+            'activeAdmin' => 'sales.invoices',
+            'invoices' => $admin->invoices($context['token'], $locale, $filters),
+            'filters' => $filters,
+        ]));
+    }
+
+    public function showInvoice(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $invoice,
+    ): View|RedirectResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->invoice($context['token'], $invoice, $locale);
+
+        if (! $response['ok']) {
+            return redirect()->route('admin.invoices', ['locale' => $locale])
+                ->withErrors($this->responseErrors($response, 'admin_action'));
+        }
+
+        return view('admin.invoice-show', $this->payload($context, [
+            'activeAdmin' => 'sales.invoices',
+            'invoice' => $response['data'],
+        ]));
+    }
+
+    public function carts(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $filters = $request->only(['q', 'status', 'date_from', 'date_to', 'page']);
+
+        return view('admin.carts', $this->payload($context, [
+            'activeAdmin' => 'sales.carts',
+            'carts' => $admin->carts($context['token'], $locale, $filters),
+            'filters' => $filters,
+        ]));
+    }
+
+    public function showCart(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $cart,
+    ): View|RedirectResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->cart($context['token'], $cart, $locale);
+
+        if (! $response['ok']) {
+            return redirect()->route('admin.carts', ['locale' => $locale])
+                ->withErrors($this->responseErrors($response, 'cart'));
+        }
+
+        return view('admin.cart-show', $this->payload($context, [
+            'activeAdmin' => 'sales.carts',
+            'cart' => $response['data'],
+        ]));
+    }
+
+    public function createCartRecoveryLink(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $cart,
+    ): RedirectResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->createCartRecoveryLink($context['token'], $cart);
+
+        if (! $response['ok'] || empty($response['data']['token'])) {
+            return back()->withErrors($this->responseErrors($response, 'cart'));
+        }
+
+        return back()->with('cart_recovery_url', route('cart.recover', [
+            'locale' => $locale,
+            'recoveryToken' => $response['data']['token'],
+        ]))->with('admin_success', $locale === 'en' ? 'Recovery link created.' : 'Lien de récupération créé.');
+    }
+
     public function openOrderDiscussion(Request $request, AdminApiClient $admin, string $locale, int $order): RedirectResponse
     {
         return $this->discussionAction($request, $admin, $locale, $order, fn (string $token) => $admin->openOrderConversation($token, $order));
@@ -299,11 +413,83 @@ class BackOfficeController extends Controller
         $roles = $admin->roles($context['token']);
 
         return view('admin.users', $this->payload($context, [
-            'activeAdmin' => 'users',
+            'activeAdmin' => 'team',
             'users' => $users,
             'roles' => $roles,
             'filters' => $filters,
         ]));
+    }
+
+    public function customers(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
+    {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $filters = $request->only(['q', 'status', 'country_code', 'page']);
+
+        return view('admin.customers', $this->payload($context, [
+            'activeAdmin' => 'customers',
+            'customers' => $admin->customers($context['token'], $filters),
+            'filters' => $filters,
+        ]));
+    }
+
+    public function showCustomer(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $customer,
+    ): View|RedirectResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $response = $admin->customer($context['token'], $customer);
+
+        if (! $response['ok']) {
+            return redirect()->route('admin.customers', ['locale' => $locale])
+                ->withErrors(['customer' => $response['message'] ?: 'Client introuvable.']);
+        }
+
+        return view('admin.customer-show', $this->payload($context, [
+            'activeAdmin' => 'customers',
+            'customer' => $response['data'],
+        ]));
+    }
+
+    public function updateCustomer(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $customer,
+    ): RedirectResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            return $context;
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['active', 'suspended', 'deleted_pending'])],
+        ]);
+        $response = $admin->updateCustomer($context['token'], $customer, $validated);
+
+        if (! $response['ok']) {
+            return back()->withErrors($response['errors'] ?: [
+                'customer' => $response['message'] ?: 'Mise a jour du client impossible.',
+            ]);
+        }
+
+        return redirect()->route('admin.customers.show', compact('locale', 'customer'))
+            ->with('admin_success', 'Statut du client mis a jour.');
     }
 
     public function modulePage(Request $request, AdminApiClient $admin, string $locale, string $module): View|RedirectResponse
@@ -317,6 +503,10 @@ class BackOfficeController extends Controller
 
         if ($module === 'commandes') {
             return redirect()->route('admin.orders', ['locale' => $locale]);
+        }
+
+        if ($module === 'paniers') {
+            return redirect()->route('admin.carts', ['locale' => $locale]);
         }
 
         $definition = $this->moduleDefinitions()[$module] ?? null;
@@ -347,7 +537,62 @@ class BackOfficeController extends Controller
             'activeAdmin' => 'access',
             'roles' => $admin->roles($context['token']),
             'permissions' => $admin->permissions($context['token']),
+            'selectedRoleName' => (string) $request->query('role', ''),
         ]));
+    }
+
+    public function syncRolePermissions(
+        Request $request,
+        AdminApiClient $admin,
+        string $locale,
+        int $role,
+    ): RedirectResponse|JsonResponse {
+        $locale = $this->setLocale($locale);
+        $context = $this->context($request, $admin, $locale);
+
+        if ($context instanceof RedirectResponse) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Session administrateur expiree.'], 401);
+            }
+
+            return $context;
+        }
+
+        $validated = $request->validate([
+            'role_name' => ['required', 'string', 'max:100'],
+            'permissions' => ['sometimes', 'array'],
+            'permissions.*' => ['string', 'max:120'],
+        ]);
+        $response = $admin->syncRolePermissions(
+            $context['token'],
+            $role,
+            $validated['permissions'] ?? [],
+        );
+
+        if (! $response['ok']) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $response['message'] ?: 'Attribution des permissions impossible.',
+                    'errors' => $response['errors'],
+                ], $response['status'] ?: 422);
+            }
+
+            return back()->withErrors($response['errors'] ?: [
+                'permissions' => $response['message'] ?: 'Attribution des permissions impossible.',
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Permission mise a jour automatiquement.',
+                'data' => $response['data'],
+            ]);
+        }
+
+        return redirect()->route('admin.access', [
+            'locale' => $locale,
+            'role' => $validated['role_name'],
+        ])->with('admin_success', 'Permissions du role mises a jour.');
     }
 
     public function audit(Request $request, AdminApiClient $admin, string $locale): View|RedirectResponse
@@ -1084,9 +1329,11 @@ class BackOfficeController extends Controller
 
         $orderData = $response['data'];
         $reference = preg_replace('/[^A-Za-z0-9_-]/', '-', (string) ($orderData['order_number'] ?? $order));
-        $filename = ($type === 'invoice' ? 'facture-' : 'bon-livraison-').$reference.'.pdf';
+        $filename = ($type === 'invoice'
+            ? ($locale === 'en' ? 'invoice-' : 'facture-')
+            : ($locale === 'en' ? 'delivery-note-' : 'bon-livraison-')).$reference.'.pdf';
 
-        return response(app(OrderDocumentPdfRenderer::class)->render($type, $orderData), 200, [
+        return response(app(OrderDocumentPdfRenderer::class)->render($type, $orderData, $locale), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);

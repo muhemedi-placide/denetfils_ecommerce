@@ -11,7 +11,7 @@ class PrivacyConsent extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'customer_id',
         'type',
         'version',
         'accepted',
@@ -27,8 +27,8 @@ class PrivacyConsent extends Model
         'consented_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
     }
 }

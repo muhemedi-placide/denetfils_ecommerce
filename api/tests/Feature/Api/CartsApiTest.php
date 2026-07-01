@@ -82,4 +82,48 @@ class CartsApiTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('quantity');
     }
+
+    public function test_non_empty_cart_can_be_recovered_with_a_hashed_expiring_link(): void
+    {
+        $this->seed(EcommerceSeeder::class);
+        $product = Product::query()->where('slug', 'miel-de-montagne')->firstOrFail();
+        $cartToken = $this->postJson('/api/v1/carts')->json('data.cart_token');
+
+        $this->postJson("/api/v1/carts/{$cartToken}/items", [
+            'product_id' => $product->id,
+            'quantity' => 2,
+        ])->assertCreated();
+
+        $link = $this->postJson("/api/v1/carts/{$cartToken}/recovery-links")
+            ->assertCreated()
+            ->assertJsonStructure(['data' => ['token', 'expires_at']])
+            ->json('data.token');
+
+        $this->assertDatabaseMissing('cart_recovery_links', ['token_hash' => $link]);
+        $this->assertDatabaseHas('cart_recovery_links', ['token_hash' => hash('sha256', $link)]);
+
+        $this->getJson("/api/v1/cart-recoveries/{$link}?locale=en")
+            ->assertOk()
+            ->assertJsonPath('data.cart_token', $cartToken)
+            ->assertJsonPath('data.items_count', 2)
+            ->assertJsonPath('data.items.0.product.sku', $product->sku);
+
+        $this->assertDatabaseHas('cart_recovery_links', [
+            'token_hash' => hash('sha256', $link),
+            'uses_count' => 1,
+        ]);
+    }
+
+    public function test_empty_expired_and_unknown_carts_cannot_be_recovered(): void
+    {
+        $emptyCartToken = $this->postJson('/api/v1/carts')->json('data.cart_token');
+
+        $this->postJson("/api/v1/carts/{$emptyCartToken}/recovery-links")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('cart');
+
+        $this->getJson('/api/v1/cart-recoveries/'.str_repeat('x', 64))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('recovery_token');
+    }
 }

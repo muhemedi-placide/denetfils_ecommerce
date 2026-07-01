@@ -7,7 +7,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\UserAddress;
 use App\Services\Checkout\CheckoutQuoteService;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +20,7 @@ class OrderCreationService
     {
     }
 
-    public function createFromCart(User $user, array $data): Order
+    public function createFromCart(Customer $user, array $data): Order
     {
         return DB::transaction(function () use ($user, $data) {
             $cart = $this->cart((string) $data['cart_token']);
@@ -29,7 +29,9 @@ class OrderCreationService
                 ->where('cart_id', $cart->id)
                 ->first();
 
-            if ($existingOrder && (int) $existingOrder->user_id === (int) $user->id) {
+            if ($existingOrder && (int) $existingOrder->customer_id === (int) $user->id) {
+                app(InvoiceService::class)->syncForOrder($existingOrder);
+
                 return $existingOrder->load(['items', 'addresses', 'shipments.method', 'shipments.pickupPoint']);
             }
 
@@ -70,7 +72,7 @@ class OrderCreationService
 
             $order = Order::query()->create([
                 'order_number' => $this->orderNumber(),
-                'user_id' => $user->id,
+                'customer_id' => $user->id,
                 'cart_id' => $cart->id,
                 'status' => 'pending_payment',
                 'payment_status' => 'unpaid',
@@ -107,6 +109,7 @@ class OrderCreationService
             ));
             $this->createAddressSnapshot($order, $shippingAddress, 'shipping');
             $this->createAddressSnapshot($order, $billingAddress, 'billing');
+            app(InvoiceService::class)->syncForOrder($order);
 
             if ($selection) {
                 $order->shipments()->create([
@@ -139,7 +142,7 @@ class OrderCreationService
         return $cart;
     }
 
-    private function address(User $user, int $addressId, string $field): UserAddress
+    private function address(Customer $user, int $addressId, string $field): UserAddress
     {
         $address = $user->addresses()->whereKey($addressId)->first();
 

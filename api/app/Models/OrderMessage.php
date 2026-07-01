@@ -10,6 +10,7 @@ class OrderMessage extends Model
     protected $fillable = [
         'order_conversation_id',
         'user_id',
+        'customer_id',
         'sender_type',
         'body',
         'read_at',
@@ -27,5 +28,10 @@ class OrderMessage extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 }

@@ -1,8 +1,8 @@
 @extends('layouts.admin')
 
-@section('title', 'Utilisateurs')
-@section('page_title', 'Utilisateurs')
-@section('page_subtitle', 'Clients, comptes staff et roles associes depuis l API.')
+@section('title', 'Equipe')
+@section('page_title', 'Equipe')
+@section('page_subtitle', 'Comptes du personnel et roles administratifs.')
 
 @php
     $rows = data_get($users, 'data', []);
@@ -26,7 +26,7 @@
                 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p class="admin-kicker">Comptes</p>
-                        <h2 class="mt-2 admin-heading">Recherche utilisateurs</h2>
+                        <h2 class="mt-2 admin-heading">Recherche dans l equipe</h2>
                     </div>
                     <button type="button" data-dialog-target="user-create-modal" class="admin-btn">Inviter un membre</button>
                 </div>
@@ -73,7 +73,7 @@
                         <h2 class="text-xl font-black text-ink dark:text-cream">Liste des comptes</h2>
                         <p class="text-sm text-cocoa/55 dark:text-cream/55">{{ count($rows) }} resultat(s) affiche(s).</p>
                     </div>
-                    <span class="admin-pill">Table API utilisateurs</span>
+                    <span class="admin-pill">Personnel uniquement</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="admin-table">

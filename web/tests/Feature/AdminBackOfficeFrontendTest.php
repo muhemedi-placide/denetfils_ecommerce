@@ -21,12 +21,13 @@ class AdminBackOfficeFrontendTest extends TestCase
             ],
         ];
 
-        $this->withSession($session)
+        $dashboardResponse = $this->withSession($session)
             ->get('/fr/admin')
             ->assertOk()
             ->assertSee('Back-office '.config('shop.name'))
             ->assertSee('adminShell', false)
             ->assertSee('Objectifs rapides');
+        $this->assertSame(1, substr_count($dashboardResponse->getContent(), 'x-on:click="logoutOpen = true"'));
 
         $this->withSession($session)
             ->get('/fr/admin/catalogue/produits')
@@ -50,7 +51,7 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->get('/fr/admin/commandes')
             ->assertOk()
             ->assertSee('Commandes (1)')
-            ->assertSee('Actions groupees')
+            ->assertSee('Actions groupées')
             ->assertSee('Ajouter une commande')
             ->assertSee('order-create-modal', false)
             ->assertSee('order-state-form-42', false)
@@ -65,16 +66,64 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertSee('/fr/admin/commandes/42', false);
 
         $this->withSession($session)
+            ->get('/en/admin/commandes')
+            ->assertOk()
+            ->assertSee('Track online orders, payments, preparation and shipping.')
+            ->assertSee('Add order')
+            ->assertSee('New customer')
+            ->assertDontSee('Ajouter une commande');
+
+        $this->withSession($session)
+            ->get('/fr/admin/factures')
+            ->assertOk()
+            ->assertSee('Recherchez, contrôlez et téléchargez les factures clients.')
+            ->assertSee('FAC-DF-20260616-ABC123')
+            ->assertSee('Date d’émission');
+
+        $this->withSession($session)
+            ->get('/en/admin/factures')
+            ->assertOk()
+            ->assertSee('Search, review and download customer invoices.')
+            ->assertSee('Issue date')
+            ->assertDontSee('Date d’émission');
+
+        $this->withSession($session)
+            ->get('/fr/admin/factures/5')
+            ->assertOk()
+            ->assertSee('Détail de la facture')
+            ->assertSee('Articles facturés')
+            ->assertSee('/fr/admin/commandes/42/facture', false);
+
+        $this->withSession($session)
             ->get('/fr/admin/utilisateurs')
             ->assertOk()
+            ->assertSee('Equipe')
             ->assertSee('Inviter un membre')
             ->assertSee('user-create-modal', false)
             ->assertSee('user-roles-7', false);
 
         $this->withSession($session)
-            ->get('/fr/admin/acces')
+            ->get('/fr/admin/clients')
             ->assertOk()
-            ->assertSee('Voir droits');
+            ->assertSee('Liste des clients')
+            ->assertSee('client@example.test');
+
+        $this->withSession($session)
+            ->get('/fr/admin/clients/9')
+            ->assertOk()
+            ->assertSee('Adresses du client')
+            ->assertSee('DF-20260616-ABC123')
+            ->assertSee('STRIPE')
+            ->assertSee('Question ouverte');
+
+        $this->withSession($session)
+            ->get('/fr/admin/acces?role=support_agent')
+            ->assertOk()
+            ->assertSee('Matrice d autorisation')
+            ->assertSee('Enregistrement automatique')
+            ->assertDontSee('Enregistrer les permissions')
+            ->assertSee('value="catalog.view"', false)
+            ->assertSee('window.permissionMatrix', false);
 
         $this->withSession($session)
             ->get('/fr/admin/audit')
@@ -119,6 +168,53 @@ class AdminBackOfficeFrontendTest extends TestCase
             ->assertSee('Merci pour votre message.')
             ->assertSee('Sources')
             ->assertSee('/fr/admin/commandes/42/impression', false);
+    }
+
+    public function test_admin_can_update_customer_status_through_customer_api(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->patch('/fr/admin/clients/9', [
+            'status' => 'suspended',
+        ])
+            ->assertRedirect('/fr/admin/clients/9')
+            ->assertSessionHas('admin_success');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/customers/9')
+            && $request->method() === 'PATCH'
+            && $request['status'] === 'suspended');
+    }
+
+    public function test_admin_can_assign_permissions_from_access_matrix(): void
+    {
+        $this->withoutVite();
+        Http::fake($this->adminApiFakes());
+
+        $this->withSession([
+            'admin_api_token' => 'admin-token',
+            'admin_user' => [
+                'name' => 'Admin Test',
+                'email' => 'admin@example.test',
+                'roles' => ['admin'],
+            ],
+        ])->patchJson('/fr/admin/acces/roles/2/permissions', [
+            'role_name' => 'support_agent',
+            'permissions' => ['catalog.view', 'orders.view'],
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Permission mise a jour automatiquement.');
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), '/admin/roles/2/permissions')
+            && $request->method() === 'PATCH'
+            && $request['permissions'] === ['catalog.view', 'orders.view']);
     }
 
     public function test_admin_can_send_order_discussion_message(): void
@@ -189,6 +285,14 @@ class AdminBackOfficeFrontendTest extends TestCase
         $this->assertStringContainsString('March', $invoice->baseResponse->getContent());
         $this->assertStringContainsString('FACTURE', $invoice->baseResponse->getContent());
         $this->assertStringContainsString('Page 1 / 1', $invoice->baseResponse->getContent());
+
+        $englishInvoice = $this->withSession($session)
+            ->get('/en/admin/commandes/42/facture')
+            ->assertOk()
+            ->assertDownload('invoice-DF-20260616-ABC123.pdf');
+
+        $this->assertStringContainsString('INVOICE', $englishInvoice->baseResponse->getContent());
+        $this->assertStringContainsString('Order date', $englishInvoice->baseResponse->getContent());
 
         $deliveryNote = $this->withSession($session)
             ->get('/fr/admin/commandes/42/bon-livraison')
@@ -412,12 +516,40 @@ class AdminBackOfficeFrontendTest extends TestCase
                     'formatted_net_margin_per_visitor' => '0,00 EUR',
                 ],
             ]),
+            '*/admin/invoices/5*' => Http::response([
+                'data' => $this->invoice(),
+            ]),
+            '*/admin/invoices*' => Http::response([
+                'data' => [$this->invoice()],
+                'meta' => ['total' => 1, 'current_page' => 1, 'last_page' => 1],
+                'summary' => [
+                    'total_invoices' => 1,
+                    'draft_invoices' => 0,
+                    'issued_invoices' => 0,
+                    'paid_invoices' => 1,
+                    'total_cents' => 2586,
+                    'formatted_total' => '25,86 EUR',
+                ],
+            ]),
+            '*/admin/customers/9*' => Http::response([
+                'data' => $this->customer(),
+            ]),
+            '*/admin/customers*' => Http::response([
+                'data' => [$this->customer()],
+                'meta' => ['total' => 1],
+            ]),
             '*/admin/users*' => Http::response([
                 'data' => [$this->user()],
                 'meta' => ['total' => 1],
             ]),
+            '*/admin/roles/2/permissions' => Http::response([
+                'data' => ['id' => 2, 'name' => 'support_agent', 'permissions' => ['catalog.view', 'orders.view']],
+            ]),
             '*/admin/roles*' => Http::response([
-                'data' => [['name' => 'admin', 'permissions' => ['catalog.view', 'users.view']]],
+                'data' => [
+                    ['id' => 1, 'name' => 'admin', 'permissions' => ['catalog.view', 'users.view']],
+                    ['id' => 2, 'name' => 'support_agent', 'permissions' => ['catalog.view', 'orders.view']],
+                ],
             ]),
             '*/admin/permissions*' => Http::response([
                 'data' => ['catalog.view', 'users.view', 'audit.view'],
@@ -601,6 +733,80 @@ class AdminBackOfficeFrontendTest extends TestCase
             'timezone' => 'Europe/Paris',
             'status' => 'active',
             'roles' => ['admin'],
+        ];
+    }
+
+    private function invoice(): array
+    {
+        return [
+            'id' => 5,
+            'invoice_number' => 'FAC-DF-20260616-ABC123',
+            'status' => 'paid',
+            'status_label' => 'Payée',
+            'currency' => 'EUR',
+            'total_cents' => 2586,
+            'formatted_total' => '25,86 EUR',
+            'issued_at' => '2026-06-16T10:00:00Z',
+            'due_at' => '2026-07-16T10:00:00Z',
+            'paid_at' => '2026-06-16T10:05:00Z',
+            'order' => [
+                'id' => 42,
+                'order_number' => 'DF-20260616-ABC123',
+                'payment_status' => 'paid',
+                'customer' => [
+                    'name' => 'Jean Martin',
+                    'email' => 'jean@example.test',
+                    'phone' => '+33600000000',
+                ],
+            ],
+            'order_detail' => $this->order(),
+        ];
+    }
+
+    private function customer(): array
+    {
+        return [
+            'id' => 9,
+            'role' => 'customer',
+            'name' => 'Client Test',
+            'first_name' => 'Client',
+            'last_name' => 'Test',
+            'email' => 'client@example.test',
+            'phone' => '+33700000000',
+            'preferred_locale' => 'fr',
+            'country_code' => 'FR',
+            'timezone' => 'Europe/Paris',
+            'status' => 'active',
+            'summary' => [
+                'orders_count' => 1,
+                'addresses_count' => 1,
+                'total_spent_cents' => 2586,
+                'open_conversations_count' => 1,
+            ],
+            'addresses' => [[
+                'id' => 4,
+                'type' => 'shipping',
+                'label' => 'Maison',
+                'recipient_name' => 'Client Test',
+                'street_line_1' => '12 rue Test',
+                'postal_code' => '75001',
+                'city' => 'Paris',
+                'country_code' => 'FR',
+                'is_default' => true,
+            ]],
+            'orders' => [[
+                ...$this->order(),
+                'payments' => [[
+                    'provider' => 'stripe',
+                    'status' => 'captured',
+                    'amount_cents' => 2586,
+                    'currency' => 'EUR',
+                ]],
+                'conversation' => [
+                    'status' => 'Question ouverte',
+                    'staff_unread_count' => 1,
+                ],
+            ]],
         ];
     }
 

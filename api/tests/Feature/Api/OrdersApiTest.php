@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Customer;
 use App\Models\User;
 use App\Models\UserAddress;
 use Database\Seeders\AccessControlSeeder;
@@ -66,7 +67,7 @@ class OrdersApiTest extends TestCase
         $this->assertMatchesRegularExpression('/^DF-\d{8}-[A-Z0-9]{6}$/', $response->json('data.order_number'));
         $this->assertDatabaseHas('orders', [
             'id' => $response->json('data.id'),
-            'user_id' => $user->id,
+            'customer_id' => $user->id,
             'cart_id' => $this->cartId($cartToken),
             'status' => 'pending_payment',
             'payment_status' => 'unpaid',
@@ -356,7 +357,7 @@ class OrdersApiTest extends TestCase
         ]);
 
         $adminCreateResponse = $this->postJson('/api/v1/admin/orders', [
-            'user_id' => $customer->id,
+            'customer_id' => $customer->id,
             'cart_token' => $this->cartWithProduct($product),
             'shipping_address_id' => $address->id,
             'delivery_method' => 'standard',
@@ -417,7 +418,7 @@ class OrdersApiTest extends TestCase
 
         $conversation = Order::query()->findOrFail($orderId)->conversation()->firstOrFail();
         $conversation->messages()->create([
-            'user_id' => $customer->id,
+            'customer_id' => $customer->id,
             'sender_type' => 'customer',
             'body' => 'Merci pour le retour.',
         ]);
@@ -447,15 +448,12 @@ class OrdersApiTest extends TestCase
         $this->getJson('/api/v1/admin/orders')->assertForbidden();
     }
 
-    private function customer(array $overrides = []): User
+    private function customer(array $overrides = []): Customer
     {
-        $user = User::factory()->create($overrides);
-        $user->assignRole('customer');
-
-        return $user;
+        return Customer::factory()->create($overrides);
     }
 
-    private function address(User $user, array $overrides = []): UserAddress
+    private function address(Customer $user, array $overrides = []): UserAddress
     {
         return $user->addresses()->create(array_merge([
             'type' => 'shipping',

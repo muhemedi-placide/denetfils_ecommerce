@@ -13,5 +13,7 @@ class ShippingMethod extends Model
 
     public function carrier(): BelongsTo { return $this->belongsTo(ShippingCarrier::class, 'shipping_carrier_id'); }
     public function rates(): HasMany { return $this->hasMany(ShippingRate::class); }
+    public function cartShippingSelections(): HasMany { return $this->hasMany(CartShippingSelection::class); }
+    public function orderShipments(): HasMany { return $this->hasMany(OrderShipment::class); }
     public function localized(string $field, string $locale): ?string { $value = $this->{$field}; return is_array($value) ? ($value[$locale] ?? $value['fr'] ?? $value['en'] ?? null) : $value; }
 }

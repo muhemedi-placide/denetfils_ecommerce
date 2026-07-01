@@ -115,7 +115,7 @@ class ShopController extends Controller
         ]);
     }
 
-    public function cart(ShopApiClient $api, string $locale): View
+    public function cart(ShopApiClient $api, string $locale, ?string $recoveryToken = null): View
     {
         $locale = $this->setLocale($locale);
         $products = $api->products($locale, ['sort' => 'latest']);
@@ -124,6 +124,7 @@ class ShopController extends Controller
             'locale' => $locale,
             'recommendedProducts' => array_slice($products['data'], 0, 3),
             'activeMenu' => 'products',
+            'recoveryToken' => $recoveryToken,
         ]);
     }
 

@@ -48,4 +48,9 @@ class ShippingCarrier extends Model
     {
         return $this->hasMany(ShippingMethod::class);
     }
+
+    public function orderShipments(): HasMany
+    {
+        return $this->hasMany(OrderShipment::class);
+    }
 }

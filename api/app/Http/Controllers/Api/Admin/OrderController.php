@@ -8,7 +8,7 @@ use App\Http\Requests\Api\Admin\Orders\UpdateOrderRequest;
 use App\Http\Resources\Admin\OrderAdminResource;
 use App\Models\Cart;
 use App\Models\Order;
-use App\Models\User;
+use App\Models\Customer;
 use App\Services\Orders\OrderCreationService;
 use App\Services\Orders\OrderManagementService;
 use App\Support\MoneyFormatter;
@@ -31,8 +31,8 @@ class OrderController extends Controller
 
     public function store(StoreAdminOrderRequest $request, OrderCreationService $orders)
     {
-        $customer = User::query()->findOrFail($request->integer('user_id'));
-        $payload = $request->safe()->except('user_id');
+        $customer = Customer::query()->findOrFail($request->integer('customer_id'));
+        $payload = $request->safe()->except('customer_id');
         $requestedMetadata = is_array($payload['metadata'] ?? null) ? $payload['metadata'] : [];
         $adminNote = $requestedMetadata['admin_note'] ?? null;
         unset($requestedMetadata['admin_note']);
@@ -55,13 +55,13 @@ class OrderController extends Controller
         $order = $orders->createFromCart($customer, $payload);
 
         return response()->json([
-            'data' => new OrderAdminResource($order->load(['items', 'addresses', 'user'])),
+            'data' => new OrderAdminResource($order->load(['items', 'addresses', 'customer'])),
         ], 201);
     }
 
     public function show(Order $order): OrderAdminResource
     {
-        return new OrderAdminResource($order->load(['items', 'addresses', 'user', 'shipments.method', 'shipments.pickupPoint']));
+        return new OrderAdminResource($order->load(['items', 'addresses', 'customer', 'shipments.method', 'shipments.pickupPoint']));
     }
 
     public function update(UpdateOrderRequest $request, Order $order, OrderManagementService $orders): OrderAdminResource
@@ -74,7 +74,7 @@ class OrderController extends Controller
     private function query(Request $request)
     {
         $query = Order::query()
-            ->with(['items', 'addresses', 'user'])
+            ->with(['items', 'addresses', 'customer'])
             ->latest('id');
 
         if ($request->filled('id')) {
@@ -124,7 +124,7 @@ class OrderController extends Controller
                 $query
                     ->select(DB::raw(1))
                     ->from('orders as previous_orders')
-                    ->whereColumn('previous_orders.user_id', 'orders.user_id')
+                    ->whereColumn('previous_orders.customer_id', 'orders.customer_id')
                     ->whereColumn('previous_orders.id', '<', 'orders.id');
             };
 

@@ -38,6 +38,7 @@ class OrderManagementService
 
             $changed = array_keys($order->getDirty());
             $order->save();
+            app(InvoiceService::class)->syncForOrder($order);
 
             if (in_array('payment_status', $changed, true) && $order->payment_status === 'paid') {
                 $shipment = $order->shipments()->where('status', 'pending')->first();
@@ -65,7 +66,7 @@ class OrderManagementService
                 ],
             );
 
-            return $order->refresh()->load(['items', 'addresses', 'user', 'shipments.method', 'shipments.pickupPoint']);
+            return $order->refresh()->load(['items', 'addresses', 'customer', 'shipments.method', 'shipments.pickupPoint']);
         });
     }
 
